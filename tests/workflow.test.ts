@@ -43,9 +43,7 @@ function fakeProvider(hooks: {
           goto: async () => {
             if (hooks.gotoError !== undefined) throw hooks.gotoError
             const response = hooks.response
-            return response
-              ? { status: () => response.status, url: () => response.url }
-              : null
+            return response ? { status: () => response.status, url: () => response.url } : null
           },
           title: async () => "Tariff portal",
           text: async () => "customs duty tariff",
@@ -107,10 +105,7 @@ describe("runProbeWorkflow", () => {
     expect(result.browser?.status).toBe(200)
     expect(result.browser?.finalUrl).toBe("https://portal.example/final")
     expect(result.browser?.title).toBe("Tariff portal")
-    expect(result.evidence).toEqual([
-      PROBE_EVIDENCE.BROWSER_RESPONSE,
-      PROBE_EVIDENCE.BROWSER_TEXT,
-    ])
+    expect(result.evidence).toEqual([PROBE_EVIDENCE.BROWSER_RESPONSE, PROBE_EVIDENCE.BROWSER_TEXT])
     expect(result.error).toBeNull()
     expect(pageClosed).toBe(true)
     expect(sessionClosed).toBe(true)

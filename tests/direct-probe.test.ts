@@ -11,7 +11,10 @@ afterEach(() => {
 
 describe("runDirectProbe", () => {
   it("returns ok for an HTTP 200 response", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => okResponse()))
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => okResponse()),
+    )
     const result = await runDirectProbe("https://portal.example/tariff")
     expect(result.ok).toBe(true)
     expect(result.status).toBe(200)

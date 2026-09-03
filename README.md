@@ -87,15 +87,15 @@ properties of an entire country or customs system.
 ## Planned Architecture
 
 1. **Seeds:** Store a manually curated ISO-country list with candidate URLs and
-  source attribution in [data/seeds.json](data/seeds.json). Seeds are inputs to
-  the workflow, not verified registry records.
+   source attribution in [data/seeds.json](data/seeds.json). Seeds are inputs to
+   the workflow, not verified registry records.
 2. **Direct probe:** Make a lightweight request and record status, redirects,
    timing, and response signals.
 3. **Workflow:** Orchestrate the direct and browser probes, including fallback,
-  timeout, retry, and failure decisions.
+   timeout, retry, and failure decisions.
 4. **Browser probe:** Escalate to a configured browser provider only when direct
-  access is inconclusive or fails. Use the provider-neutral contract in
-  `packages/probe-core`.
+   access is inconclusive or fails. Use the provider-neutral contract in
+   `packages/probe-core`.
 5. **Verification:** Check that the rendered page is relevant using observable
    content, links, document metadata, and any available tariff or HS-code UI.
 6. **Registry output:** Write validated observations and timestamps to

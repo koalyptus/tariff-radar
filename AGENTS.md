@@ -14,6 +14,8 @@ module + resolution, shared base in `tsconfig.base.json`.
   it has filesystem side effects). Keep the suite hermetic: stub `fetch`, fake
   providers, never touch portals or the Solari API (`@solarisdk/browser` is
   aliased to `tests/fakes/`).
+- `pnpm format` (write) and `pnpm format:check` (CI gate). Prettier, no
+  semicolons, width 100, LF. Run `format` before committing.
 - `pnpm --filter @tariff-radar/registry generate-registry` → runs
   `tsx src/generate-registry.ts`, writes `data/customs_registry.json`
 
@@ -24,7 +26,7 @@ module + resolution, shared base in `tsconfig.base.json`.
   `DEFAULT_DIRECT_PROBE_TIMEOUT_MS = 10_000`). Use `PROBE_METHOD` /
   `PROBE_EVIDENCE` constants, not string literals.
 - `packages/workflow`: `runProbeWorkflow(seed, {browserProvider, browserOptions,
-  timeoutMs})` — direct-first, browser only after direct failure, always closes
+timeoutMs})` — direct-first, browser only after direct failure, always closes
   page + session (`finally` on both paths).
 - `packages/provider-solari`: the ONLY place that may import
   `@solarisdk/browser`. Adapts to `BrowserProbeProvider` (`name: "solari"`).

@@ -37,7 +37,7 @@ Responsibilities:
 
 - `probe-core`: reusable probe capabilities, contracts, and result types.
 - `workflow`: sequencing, fallback, timeouts, retries, evidence assembly, and
-      workflow logging.
+  workflow logging.
 - `provider-solari`: Solari-specific browser implementation.
 - `registry`: seed and registry models plus eventual output handling.
 - `data`: manually curated inputs and generated artifacts.
@@ -48,13 +48,13 @@ Keep configuration close to the boundary where it is used:
 
 - `data/seeds.json` contains non-secret candidate inputs.
 - Environment variables contain provider credentials such as
-      `SOLARI_API_KEY`.
+  `SOLARI_API_KEY`.
 - A CLI or composition root selects the provider and constructs it with the
-      required credentials.
+  required credentials.
 - `probe-core`, workflow code, and registry models do not read environment
-      variables or know provider-specific key names.
+  variables or know provider-specific key names.
 - `.env` files remain local and ignored; commit `.env.example` files only when
-      a runnable command needs documented variable names.
+  a runnable command needs documented variable names.
 - Unit tests use fake providers and do not require credentials.
 
 The intended dependency direction is:
