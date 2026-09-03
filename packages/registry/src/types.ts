@@ -4,7 +4,6 @@ export interface Seed {
   authority: string
   portalUrl: string
   sourceUrl: string
-  sourceKind: "first_party_authority"
 }
 
 export interface RegistryEntry extends Seed {

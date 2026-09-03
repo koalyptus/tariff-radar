@@ -1,6 +1,6 @@
 # TariffRadar
 
-TariffRadar is a challenge project exploring how [Solari](https://getsolari.com)
+TariffRadar is a project exploring how [Solari](https://getsolari.com)
 can help profile access to official customs and tariff portals.
 
 The immediate goal is deliberately small: create a current, evidence-backed
@@ -22,28 +22,32 @@ TariffRadar tests a more practical workflow:
 
 ```text
 country seeds
-    -> direct probe
-    -> Solari browser probe when needed
+    -> workflow orchestrator
+      -> direct probe
+      -> browser provider probe when needed
     -> record observable evidence
     -> customs_registry.json
 ```
 
-Solari is useful here because the probe can use a real cloud browser, optional
-stealth, country-specific proxy egress, and persistent profiles when a target
-requires browser execution. The project will only record protections such as
-WAFs, CAPTCHA challenges, or geo restrictions when the probe has evidence for
-them. They are not assumed from a country or domain name.
+The workflow orchestrator owns sequencing and decisions: when to try direct
+access, when to escalate to a browser, how to apply timeouts and retries, and
+how to assemble evidence. The browser step is provider-neutral. Solari is the
+first adapter, but the core probe should not depend on a particular vendor or
+assume that every provider supports stealth, proxy egress, CAPTCHA handling, or
+persistent profiles.
 
 ## Challenge Scope
 
-The first demonstration targets eight representative portals rather than
-pretending to solve all 195 countries at once. The selection is intended to
-exercise different conditions: open sources, dynamic interfaces, non-English
-content, regional organizations, intermittent availability, and protected or
-geo-sensitive access.
+The first demonstration starts with eight manually selected portal candidates
+rather than pretending to solve all 195 countries at once. This list is an
+arbitrary starting hypothesis intended to exercise different conditions: open
+sources, dynamic interfaces, non-English content, regional organizations,
+intermittent availability, and protected or geo-sensitive access.
 
-The country list and URLs are hypotheses until verified. The generated registry,
-probe logs, and source URLs are the authority for what the project can claim.
+The entries in [data/seeds.json](data/seeds.json) are assumed inputs, not verified
+facts. In particular, the URLs may be outdated, inaccessible, or not the best
+operational tariff entrypoint. The workflow must verify both the authority and
+the usefulness of each URL before including it in a generated registry.
 
 ## Planned Registry
 
@@ -82,32 +86,57 @@ properties of an entire country or customs system.
 
 ## Planned Architecture
 
-1. **Seeds:** Store a small ISO-country list with candidate first-party URLs and
-  source attribution in [data/seeds.json](data/seeds.json).
+1. **Seeds:** Store a manually curated ISO-country list with candidate URLs and
+  source attribution in [data/seeds.json](data/seeds.json). Seeds are inputs to
+  the workflow, not verified registry records.
 2. **Direct probe:** Make a lightweight request and record status, redirects,
    timing, and response signals.
-3. **Browser probe:** Escalate to Solari only when direct access is inconclusive
-   or fails. Use standard Playwright-compatible page operations.
-4. **Verification:** Check that the rendered page is relevant using observable
+3. **Workflow:** Orchestrate the direct and browser probes, including fallback,
+  timeout, retry, and failure decisions.
+4. **Browser probe:** Escalate to a configured browser provider only when direct
+  access is inconclusive or fails. Use the provider-neutral contract in
+  `packages/probe-core`.
+5. **Verification:** Check that the rendered page is relevant using observable
    content, links, document metadata, and any available tariff or HS-code UI.
-5. **Registry output:** Write validated observations and timestamps to
+6. **Registry output:** Write validated observations and timestamps to
    `customs_registry.json`, retaining enough evidence to explain each result.
 
 Later work may add document downloads, OCR, translation, change detection, and
 structured tariff extraction. Those are outside the first registry milestone.
 
-## Solari Integration
+## Provider Architecture
 
-The existing examples in this repository document the real TypeScript SDK usage:
+The registry and workflow layers depend on capabilities, not on Solari's SDK.
+The browser boundary is defined in `packages/probe-core`:
+
+```text
+registry
+  |
+  v
+workflow orchestrator
+  |
+  v
+BrowserProbeProvider
+  /             \
+  v               v
+provider-solari   another provider
+```
+
+`packages/provider-solari` adapts Solari's browser client to that contract. This
+keeps the registry model and verification logic independent from provider-
+specific APIs and capabilities. The same principle should be applied later to
+document extraction and LLM-backed normalization: those should be injected
+services rather than hard-coded vendors.
+
+## Solari Adapter
+
+The current adapter uses the actual TypeScript SDK:
 
 ```ts
 import { Solari } from "@solarisdk/browser"
 
 const solari = new Solari({ apiKey: process.env.SOLARI_API_KEY! })
-const browser = await solari.launch({
-  stealth: true,
-  proxy: "mx",
-})
+const browser = await solari.launch({ stealth: true, proxy: "mx" })
 
 try {
   const page = await browser.newPage()
@@ -119,8 +148,9 @@ try {
 }
 ```
 
-The final probe should measure what happened, rather than treating every
-Solari option as necessary. Open portals should not incur proxy or browser cost
+The adapter translates provider-neutral probe options into Solari options. The
+final probe should measure what happened, rather than treating every Solari
+option as necessary. Open portals should not incur proxy or browser cost
 without a reason. CAPTCHA solving, proxy routing, and stealth should be enabled
 only where the run and the target's terms permit it.
 
@@ -128,6 +158,9 @@ only where the run and the target's terms permit it.
 
 - Repository forked from the Solari Cookbook.
 - TypeScript Solari browser examples available under `examples/`.
+- Provider-neutral browser contract available in `packages/probe-core`.
+- Solari adapter scaffold available in `packages/provider-solari`.
+- Workflow orchestrator: planned; sequencing logic is not implemented yet.
 - First-party seed list for eight countries: available in
   [data/seeds.json](data/seeds.json).
 - Registry package scaffold: available in `packages/registry`.
@@ -141,8 +174,8 @@ Solari probing logic and must not be presented as verified data. The next step
 is to implement the probe before generating the registry:
 
 ```bash
-npm install
-npm run typecheck
+pnpm install
+pnpm typecheck
 ```
 
 The eventual probe command will write `data/customs_registry.json` from direct

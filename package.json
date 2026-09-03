@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "corepack pnpm --filter @tariff-radar/registry build",
-    "generate-registry": "corepack pnpm --filter @tariff-radar/registry generate-registry",
-    "typecheck": "corepack pnpm --filter @tariff-radar/registry typecheck"
+    "build": "pnpm -r build",
+    "generate-registry": "pnpm --filter @tariff-radar/registry generate-registry",
+    "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {
     "tsx": "^4.19.2",

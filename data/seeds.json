@@ -4,63 +4,55 @@
     "countryName": "United States",
     "authority": "United States International Trade Commission",
     "portalUrl": "https://hts.usitc.gov/",
-    "sourceUrl": "https://www.usitc.gov/tariff_affairs",
-    "sourceKind": "first_party_authority"
+    "sourceUrl": "https://www.usitc.gov/tariff_affairs"
   },
   {
     "isoCode": "MX",
     "countryName": "Mexico",
     "authority": "Secretaria de Economia",
     "portalUrl": "https://www.snice.gob.mx/",
-    "sourceUrl": "https://www.gob.mx/se/acciones-y-programas/sistema-nacional-de-informacion-de-comercio-exterior-snice",
-    "sourceKind": "first_party_authority"
+    "sourceUrl": "https://www.gob.mx/se/acciones-y-programas/sistema-nacional-de-informacion-de-comercio-exterior-snice"
   },
   {
     "isoCode": "JP",
     "countryName": "Japan",
     "authority": "Japan Customs, Ministry of Finance",
-    "portalUrl": "https://www.customs.go.jp/english/index.htm",
-    "sourceUrl": "https://www.customs.go.jp/english/index.htm",
-    "sourceKind": "first_party_authority"
+    "portalUrl": "https://www.customs.go.jp/english/tariff/index.htm",
+    "sourceUrl": "https://www.customs.go.jp/english/index.htm"
   },
   {
     "isoCode": "DE",
     "countryName": "Germany",
     "authority": "German Customs (Zoll)",
     "portalUrl": "https://www.zoll.de/EN/Home/home_node.html",
-    "sourceUrl": "https://www.zoll.de/EN/Home/home_node.html",
-    "sourceKind": "first_party_authority"
+    "sourceUrl": "https://www.zoll.de/EN/Businesses/Movement-of-goods/Import/import_node.html"
   },
   {
     "isoCode": "CN",
     "countryName": "China",
     "authority": "General Administration of Customs of the People's Republic of China",
-    "portalUrl": "http://english.customs.gov.cn/",
-    "sourceUrl": "http://english.customs.gov.cn/",
-    "sourceKind": "first_party_authority"
+    "portalUrl": "http://english.customs.gov.cn/service/query",
+    "sourceUrl": "http://english.customs.gov.cn/"
   },
   {
     "isoCode": "BR",
     "countryName": "Brazil",
     "authority": "Receita Federal do Brasil",
-    "portalUrl": "https://www.gov.br/receitafederal/pt-br",
-    "sourceUrl": "https://www.gov.br/receitafederal/pt-br",
-    "sourceKind": "first_party_authority"
+    "portalUrl": "https://www.gov.br/receitafederal/pt-br/assuntos/aduana-e-comercio-exterior/classificacao-fiscal-de-mercadorias",
+    "sourceUrl": "https://www.gov.br/receitafederal/pt-br/assuntos/aduana-e-comercio-exterior/importacao-e-exportacao"
   },
   {
     "isoCode": "NG",
     "countryName": "Nigeria",
     "authority": "Nigeria Customs Service",
-    "portalUrl": "https://www.customs.gov.ng/",
-    "sourceUrl": "https://www.customs.gov.ng/",
-    "sourceKind": "first_party_authority"
+    "portalUrl": "https://www.customs.gov.ng/cet-tariff",
+    "sourceUrl": "https://www.customs.gov.ng/"
   },
   {
     "isoCode": "SA",
     "countryName": "Saudi Arabia",
     "authority": "Zakat, Tax and Customs Authority",
-    "portalUrl": "https://zatca.gov.sa/en/",
-    "sourceUrl": "https://zatca.gov.sa/en/",
-    "sourceKind": "first_party_authority"
+    "portalUrl": "https://zatca.gov.sa/en/RulesRegulations/Taxes/Pages/Integrated-Tarrifs.aspx",
+    "sourceUrl": "https://zatca.gov.sa/en/"
   }
 ]

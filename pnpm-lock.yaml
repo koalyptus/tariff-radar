@@ -15,6 +15,31 @@ importers:
         specifier: ^5.7.2
         version: 5.9.3
 
+  packages/probe-core:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/provider-solari:
+    dependencies:
+      '@solarisdk/browser':
+        specifier: ^0.1.1
+        version: 0.1.2
+      '@tariff-radar/probe-core':
+        specifier: workspace:*
+        version: link:../probe-core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
   packages/registry:
     devDependencies:
       '@types/node':
@@ -185,6 +210,10 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@solarisdk/browser@0.1.2':
+    resolution: {integrity: sha512-KU6vg7MCIYmLEzigsyeWzStFS1PI+6rLa3LnAGfrDE3fNU/b99HHQzRhy1EFcBVq7R1SNb/gIpid0rA+x4vChw==}
+    engines: {node: '>=20'}
+
   '@types/node@22.20.1':
     resolution: {integrity: sha512-EANqOCF9QFyra+4pfxUcX9STKJpCLjMbObVzljIJomAWSnuSIEAvyzEU53GaajbXJEgdh0iEcPL+DGvpUd4k1Q==}
 
@@ -197,6 +226,11 @@ packages:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
+
+  patchright-core@1.62.2:
+    resolution: {integrity: sha512-XDl3HB/Kjm9ZBFn4ygD5mxdsqK4aIWNGXdea46XAGd0hvHuJJ84w1M83JqofpXIbD2aJfQ2Rtz4YcqPVrxjSzw==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   tsx@4.23.13:
     resolution: {integrity: sha512-BL5MGkRln6aDYhb0xbQlEAGw743BaZYWdbWtdJOBriYJboKgUUYCadFp2/FpBBZquBC/ezNBn7wMMPx7FDZUDw==}
@@ -291,6 +325,10 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
+  '@solarisdk/browser@0.1.2':
+    dependencies:
+      patchright-core: 1.62.2
+
   '@types/node@22.20.1':
     dependencies:
       undici-types: 6.21.0
@@ -326,6 +364,8 @@ snapshots:
 
   fsevents@2.3.3:
     optional: true
+
+  patchright-core@1.62.2: {}
 
   tsx@4.23.13:
     dependencies:
