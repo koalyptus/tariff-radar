@@ -69,4 +69,4 @@ export interface WorkflowResult {
   error: string | null
 }
 
-export { runDirectProbe } from "./direct-probe.js"
+export { DEFAULT_DIRECT_PROBE_TIMEOUT_MS, runDirectProbe } from "./direct-probe.js"

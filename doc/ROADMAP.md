@@ -83,7 +83,7 @@ observed registry output.
 - [x] Add root `build` and `typecheck` scripts.
 - [x] Add the `packages/registry` package scaffold.
 - [x] Keep generated build output and dependencies out of Git.
-- [ ] Add root `test` and `test:watch` scripts using Vitest.
+- [x] Add root `test` and `test:watch` scripts using Vitest.
 - [ ] Add a documented `.env.example` only when the first credentialed CLI is
       implemented.
 

@@ -7,10 +7,15 @@ module + resolution, shared base in `tsconfig.base.json`.
 
 - `pnpm install`
 - `pnpm typecheck` (`pnpm -r typecheck`) and `pnpm build` (`pnpm -r build`)
+- `pnpm test` (`vitest run --coverage`) and `pnpm test:watch` (`vitest`).
+  Tests live in root `tests/`, alias workspace sources (no prior build needed).
+  Coverage thresholds are 100% lines/functions/branches/statements over
+  `packages/*/src/**` (only the `generate-registry` entry script is excluded —
+  it has filesystem side effects). Keep the suite hermetic: stub `fetch`, fake
+  providers, never touch portals or the Solari API (`@solarisdk/browser` is
+  aliased to `tests/fakes/`).
 - `pnpm --filter @tariff-radar/registry generate-registry` → runs
   `tsx src/generate-registry.ts`, writes `data/customs_registry.json`
-- No `test`, `lint`, or formatter scripts exist (Vitest is roadmap Phase 1/5,
-  not installed). Do not invent `pnpm test`.
 
 ## Package boundaries
 

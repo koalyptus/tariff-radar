@@ -5,10 +5,14 @@
   "scripts": {
     "build": "pnpm -r build",
     "generate-registry": "pnpm --filter @tariff-radar/registry generate-registry",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
     "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.11",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.11"
   }
 }
