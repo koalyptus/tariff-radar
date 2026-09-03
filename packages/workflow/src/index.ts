@@ -57,18 +57,26 @@ export async function runProbeWorkflow(
       try {
         const response = await page.goto(seed.portalUrl)
         const text = await page.text()
+        const status = response?.status() ?? null
         return {
           seed,
           method: PROBE_METHOD.BROWSER,
           provider: options.browserProvider.name,
           direct,
           browser: {
-            status: response?.status() ?? null,
+            status,
             finalUrl: response?.url() ?? null,
             title: await page.title(),
             text,
           },
-          evidence: [PROBE_EVIDENCE.BROWSER_RESPONSE, PROBE_EVIDENCE.BROWSER_TEXT],
+          // Claim only what was observed: a null response yields no
+          // browser_response evidence. Method still reports BROWSER because
+          // the page rendered; Phase 10 defines what turns observations
+          // into verified records.
+          evidence: [
+            ...(status !== null ? [PROBE_EVIDENCE.BROWSER_RESPONSE] : []),
+            PROBE_EVIDENCE.BROWSER_TEXT,
+          ],
           error: null,
         }
       } finally {

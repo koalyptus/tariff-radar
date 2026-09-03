@@ -8,6 +8,7 @@ export const solariControl = {
   browserClosed: false,
   clientClosed: false,
   pageClosed: false,
+  browserCloseError: undefined as unknown,
 }
 
 export function resetSolariControl() {
@@ -17,6 +18,7 @@ export function resetSolariControl() {
   solariControl.browserClosed = false
   solariControl.clientClosed = false
   solariControl.pageClosed = false
+  solariControl.browserCloseError = undefined
 }
 
 export class Solari {
@@ -44,6 +46,9 @@ export class Solari {
         },
       }),
       close: async () => {
+        if (solariControl.browserCloseError !== undefined) {
+          throw solariControl.browserCloseError
+        }
         solariControl.browserClosed = true
       },
     }

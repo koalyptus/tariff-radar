@@ -124,6 +124,8 @@ describe("runProbeWorkflow", () => {
     expect(result.method).toBe(PROBE_METHOD.BROWSER)
     expect(result.browser?.status).toBeNull()
     expect(result.browser?.finalUrl).toBeNull()
+    // No response observed, so no browser_response evidence is claimed.
+    expect(result.evidence).toEqual([PROBE_EVIDENCE.BROWSER_TEXT])
   })
 
   it("fails with the launch error when the browser provider throws", async () => {

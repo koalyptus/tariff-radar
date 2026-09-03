@@ -49,4 +49,14 @@ describe("SolariBrowserProvider", () => {
     await page.close()
     await session.close()
   })
+
+  it("still closes the client when the browser fails to close", async () => {
+    resetSolariControl()
+    solariControl.browserCloseError = new Error("browser crashed")
+    const provider = new SolariBrowserProvider({ apiKey: "test-key" })
+    const session = await provider.launch()
+    await expect(session.close()).rejects.toThrow("browser crashed")
+    expect(solariControl.browserClosed).toBe(false)
+    expect(solariControl.clientClosed).toBe(true)
+  })
 })

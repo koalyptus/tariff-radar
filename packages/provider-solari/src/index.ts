@@ -34,8 +34,13 @@ export class SolariBrowserProvider implements BrowserProbeProvider {
     return {
       newPage: async () => createPageAdapter(await browser.newPage()),
       close: async () => {
-        await browser.close()
-        await this.client.close()
+        // The client holds a loopback proxy open: always release it, even
+        // when the browser itself fails to close, or the process hangs.
+        try {
+          await browser.close()
+        } finally {
+          await this.client.close()
+        }
       },
     }
   }
