@@ -14,8 +14,10 @@ export interface SolariProviderOptions {
 type SolariBrowser = Awaited<ReturnType<Solari["launch"]>>
 type SolariPage = Awaited<ReturnType<SolariBrowser["newPage"]>>
 
+const PROVIDER_NAME = "solari"
+
 export class SolariBrowserProvider implements BrowserProbeProvider {
-  readonly name = "solari"
+  readonly name = PROVIDER_NAME
   private readonly client: Solari
 
   constructor(options: SolariProviderOptions) {

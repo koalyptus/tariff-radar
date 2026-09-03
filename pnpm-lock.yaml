@@ -52,6 +52,19 @@ importers:
         specifier: ^5.7.2
         version: 5.9.3
 
+  packages/workflow:
+    dependencies:
+      '@tariff-radar/probe-core':
+        specifier: workspace:*
+        version: link:../probe-core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
 packages:
 
   '@esbuild/aix-ppc64@0.28.2':
