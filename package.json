@@ -7,6 +7,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "generate-registry": "pnpm --filter @tariff-radar/registry generate-registry",
+    "probe": "pnpm --filter @tariff-radar/cli... build && node --env-file-if-exists=.env packages/cli/dist/probe.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest run --coverage",

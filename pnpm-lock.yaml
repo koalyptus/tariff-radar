@@ -33,6 +33,28 @@ importers:
         specifier: ^4.1.11
         version: 4.1.11(@types/node@22.20.1)(@vitest/coverage-v8@4.1.11)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.2)(tsx@4.23.13))
 
+  packages/cli:
+    dependencies:
+      '@tariff-radar/probe-core':
+        specifier: workspace:*
+        version: link:../probe-core
+      '@tariff-radar/provider-solari':
+        specifier: workspace:*
+        version: link:../provider-solari
+      '@tariff-radar/registry':
+        specifier: workspace:*
+        version: link:../registry
+      '@tariff-radar/workflow':
+        specifier: workspace:*
+        version: link:../workflow
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
   packages/probe-core:
     devDependencies:
       '@types/node':

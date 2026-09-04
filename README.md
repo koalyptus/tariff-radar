@@ -154,20 +154,31 @@ option as necessary. Open portals should not incur proxy or browser cost
 without a reason. CAPTCHA solving, proxy routing, and stealth should be enabled
 only where the run and the target's terms permit it.
 
-## Planned Quickstart
+## Quickstart
 
-The seed-only scaffold is not yet a registry generator. It has no network or
-Solari probing logic and must not be presented as verified data. The next step
-is to implement the probe before generating the registry:
+Probe one portal candidate direct-only (no secrets, no browser cost):
 
 ```bash
 pnpm install
-pnpm typecheck
+pnpm probe US
 ```
 
-The eventual probe command will write `data/customs_registry.json` from direct
-and Solari-backed observations. It will require a `SOLARI_API_KEY`; the current
-seed-only scaffold does not contact Solari and does not generate a registry.
+Probe all eight seeds, or escalate to Solari after direct failure:
+
+```bash
+pnpm probe --all
+SOLARI_API_KEY=... pnpm probe MX --browser=solari
+```
+
+`SOLARI_API_KEY` can also live in a local `.env` (see `.env.example`); it is
+only required with `--browser=solari`. Opt-in browser capabilities are flags,
+never defaults: `--stealth`, `--proxy-country=MX`, `--captcha`. Exit code is
+`1` when any seed ends `failed`, `2` on usage errors.
+
+The CLI prints a per-seed summary to stdout and writes no registry file yet:
+the seed-only scaffold in `packages/registry` still emits `unverified`
+placeholders. A `200` below means the portal answered HTTP, not that tariff
+content was verified.
 
 ## Evidence and Limitations
 
