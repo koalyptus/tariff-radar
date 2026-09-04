@@ -1,1 +1,1 @@
-export type { CustomsRegistry, RegistryEntry, Seed } from "./types.js"
+export type { CustomsRegistry, RegistryEntry, Seed } from "./types.js";

@@ -14,8 +14,8 @@ module + resolution, shared base in `tsconfig.base.json`.
   it has filesystem side effects). Keep the suite hermetic: stub `fetch`, fake
   providers, never touch portals or the Solari API (`@solarisdk/browser` is
   aliased to `tests/fakes/`).
-- `pnpm format` (write) and `pnpm format:check` (CI gate). Prettier, no
-  semicolons, width 100, LF. Run `format` before committing.
+- `pnpm format` (write) and `pnpm format:check` (CI gate). Prettier defaults
+  plus width 120 (LF comes from `.editorconfig`). Run `format` before committing.
 - `pnpm --filter @tariff-radar/registry generate-registry` → runs
   `tsx src/generate-registry.ts`, writes `data/customs_registry.json`
 

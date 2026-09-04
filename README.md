@@ -133,18 +133,18 @@ services rather than hard-coded vendors.
 The current adapter uses the actual TypeScript SDK:
 
 ```ts
-import { Solari } from "@solarisdk/browser"
+import { Solari } from "@solarisdk/browser";
 
-const solari = new Solari({ apiKey: process.env.SOLARI_API_KEY! })
-const browser = await solari.launch({ stealth: true, proxy: "mx" })
+const solari = new Solari({ apiKey: process.env.SOLARI_API_KEY! });
+const browser = await solari.launch({ stealth: true, proxy: "mx" });
 
 try {
-  const page = await browser.newPage()
-  await page.goto("https://example.gov")
-  console.log(await page.title())
+  const page = await browser.newPage();
+  await page.goto("https://example.gov");
+  console.log(await page.title());
 } finally {
-  await browser.close()
-  await solari.close()
+  await browser.close();
+  await solari.close();
 }
 ```
 
