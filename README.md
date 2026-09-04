@@ -154,19 +154,6 @@ option as necessary. Open portals should not incur proxy or browser cost
 without a reason. CAPTCHA solving, proxy routing, and stealth should be enabled
 only where the run and the target's terms permit it.
 
-## Current Status
-
-- Repository forked from the Solari Cookbook.
-- TypeScript Solari browser examples available under `examples/`.
-- Provider-neutral browser contract available in `packages/probe-core`.
-- Solari adapter scaffold available in `packages/provider-solari`.
-- Workflow orchestrator: planned; sequencing logic is not implemented yet.
-- First-party seed list for eight countries: available in
-  [data/seeds.json](data/seeds.json).
-- Registry package scaffold: available in `packages/registry`.
-- Generated registry: not available yet; it will be created only after probe
-  logic records observations from the seed URLs.
-
 ## Planned Quickstart
 
 The seed-only scaffold is not yet a registry generator. It has no network or

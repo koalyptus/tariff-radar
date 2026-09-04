@@ -84,8 +84,6 @@ observed registry output.
 - [x] Add the `packages/registry` package scaffold.
 - [x] Keep generated build output and dependencies out of Git.
 - [x] Add root `test` and `test:watch` scripts using Vitest.
-- [ ] Add a documented `.env.example` only when the first credentialed CLI is
-      implemented.
 
 **Done when:** `pnpm install`, `pnpm typecheck`, `pnpm build`, and
 `pnpm test` work in a normal pnpm environment.

@@ -3,9 +3,16 @@ import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import type { CustomsRegistry, Seed } from "./types.js"
 
-const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..")
-const seedsPath = resolve(packageRoot, "data", "seeds.json")
-const registryPath = resolve(packageRoot, "data", "customs_registry.json")
+export const SEEDS_FILE_NAME = "seeds.json"
+export const REGISTRY_FILE_NAME = "customs_registry.json"
+
+// Default data directory, anchored at this file so the script works no
+// matter which directory it is launched from. Pass explicit
+// `[seedsPath] [registryPath]` arguments to point it elsewhere.
+const defaultDataDir = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "data")
+const [seedsPathArg, registryPathArg] = process.argv.slice(2)
+const seedsPath = seedsPathArg ?? resolve(defaultDataDir, SEEDS_FILE_NAME)
+const registryPath = registryPathArg ?? resolve(defaultDataDir, REGISTRY_FILE_NAME)
 
 const seeds = JSON.parse(await readFile(seedsPath, "utf8")) as Seed[]
 const registry: CustomsRegistry = {
