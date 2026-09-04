@@ -31,7 +31,9 @@ export class Solari {
     return {
       newPage: async () => ({
         goto: async () => {
-          if (solariControl.gotoResponse === "none") return null;
+          if (solariControl.gotoResponse === "none") {
+            return null;
+          }
           return {
             status: () => 200,
             url: () => "https://portal.example/final",

@@ -11,9 +11,13 @@ const REGISTRY_FILE_NAME = "customs_registry.json";
 function projectRoot(metaUrl: string): string {
   let dir = dirname(realpathSync(fileURLToPath(metaUrl)));
   while (true) {
-    if (basename(dir) === "packages") return dirname(dir);
+    if (basename(dir) === "packages") {
+      return dirname(dir);
+    }
     const parent = dirname(dir);
-    if (parent === dir) throw new Error("Could not determine project root");
+    if (parent === dir) {
+      throw new Error("Could not determine project root");
+    }
     dir = parent;
   }
 }

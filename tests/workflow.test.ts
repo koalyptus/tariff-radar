@@ -37,11 +37,15 @@ function fakeProvider(hooks: {
   return {
     name: "fake",
     launch: async () => {
-      if (hooks.launchError !== undefined) throw hooks.launchError;
+      if (hooks.launchError !== undefined) {
+        throw hooks.launchError;
+      }
       return {
         newPage: async () => ({
           goto: async () => {
-            if (hooks.gotoError !== undefined) throw hooks.gotoError;
+            if (hooks.gotoError !== undefined) {
+              throw hooks.gotoError;
+            }
             const response = hooks.response;
             return response ? { status: () => response.status, url: () => response.url } : null;
           },

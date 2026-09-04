@@ -16,6 +16,9 @@ module + resolution, shared base in `tsconfig.base.json`.
   aliased to `tests/fakes/`).
 - `pnpm format` (write) and `pnpm format:check` (CI gate). Prettier defaults
   plus width 120 (LF comes from `.editorconfig`). Run `format` before committing.
+- `pnpm lint` and `pnpm lint:fix`. Minimal ESLint (parser only, no preset):
+  `curly` all — braces always required. Gate new rules by explicit decision.
+- `pnpm verify` runs every gate in order: format:check, lint, typecheck, test.
 - `pnpm --filter @tariff-radar/registry generate-registry` → runs
   `tsx src/generate-registry.ts`, writes `data/customs_registry.json`
 
