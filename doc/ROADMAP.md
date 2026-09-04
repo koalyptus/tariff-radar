@@ -115,16 +115,16 @@ Solari SDK directly.
 
 ## Phase 4: Logging and Observability
 
-- [ ] Define a provider-neutral `ProbeLogger` interface.
-- [ ] Accept an injected logger in the workflow.
-- [ ] Log probe start, direct completion, browser fallback, browser completion,
+- [x] Define a provider-neutral `ProbeLogger` interface.
+- [x] Accept an injected logger in the workflow.
+- [x] Log probe start, direct completion, browser fallback, browser completion,
       and failure events.
-- [ ] Include safe structured context such as ISO code, URL, method, status,
+- [x] Include safe structured context such as ISO code, URL, method, status,
       provider, and latency.
-- [ ] Never log API keys, cookies, credentials, tokens, or page contents by
+- [x] Never log API keys, cookies, credentials, tokens, or page contents by
       default.
-- [ ] Provide a simple console logger for the CLI.
-- [ ] Use a no-op or recording logger in tests.
+- [x] Provide a simple console logger for the CLI.
+- [x] Use a no-op or recording logger in tests.
 
 **Done when:** A run explains its decisions and outcomes through structured
 logs without exposing secrets or requiring a logging framework.

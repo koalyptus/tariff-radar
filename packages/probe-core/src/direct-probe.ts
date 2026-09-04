@@ -1,7 +1,16 @@
 import type { DirectProbeResult } from "./index.js";
 
+/** Bounded wait for one direct HTTP attempt. */
 export const DEFAULT_DIRECT_PROBE_TIMEOUT_MS = 10_000;
 
+/**
+ * Probe a URL with a single native `fetch` under a bounded timeout. Never
+ * throws: timeouts, network errors, and non-2xx statuses fold into the
+ * returned result. A 2xx response alone never means verified.
+ * @param url - Candidate portal URL to request.
+ * @param timeoutMs - Abort threshold; defaults to {@link DEFAULT_DIRECT_PROBE_TIMEOUT_MS}.
+ * @returns The observed outcome, including latency on every path.
+ */
 export async function runDirectProbe(
   url: string,
   timeoutMs = DEFAULT_DIRECT_PROBE_TIMEOUT_MS,
