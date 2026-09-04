@@ -10,6 +10,7 @@ import type { BrowserProbeOptions, BrowserProbeProvider, ProbeLogger, WorkflowRe
 
 const DIRECT_PROBE_FAILURE = "direct probe failed and no browser provider was configured";
 
+/** One manually selected portal hypothesis fed into the probe workflow. */
 export interface WorkflowSeed {
   isoCode: string;
   countryName: string;
@@ -17,13 +18,30 @@ export interface WorkflowSeed {
   sourceUrl: string;
 }
 
+/**
+ * Knobs for one workflow run. Everything is optional: without a browser
+ * provider the run is direct-only and reports failure when direct fails.
+ */
 export interface ProbeWorkflowOptions {
+  /** Browser provider for fallback after direct failure. */
   browserProvider?: BrowserProbeProvider;
+  /** Opt-in browser capabilities forwarded to the provider. */
   browserOptions?: BrowserProbeOptions;
+  /** Direct-probe timeout override. */
   timeoutMs?: number;
+  /** Structured logger; defaults to silent. Never receives page contents. */
   logger?: ProbeLogger;
 }
 
+/**
+ * Probe one seed direct-first, escalating to the browser provider only after
+ * direct failure. Page and session are always closed, on success and on
+ * failure. Logs start, direct completion, browser fallback, browser
+ * completion, and failure events with safe structured context.
+ * @param seed - Candidate portal hypothesis with provenance URLs.
+ * @param options - Browser provider, timeouts, and logger overrides.
+ * @returns The workflow result; failures carry the error, never guesses.
+ */
 export async function runProbeWorkflow(
   seed: WorkflowSeed,
   options: ProbeWorkflowOptions = {},
