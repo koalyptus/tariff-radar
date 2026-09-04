@@ -1,6 +1,10 @@
+import yargs from "yargs";
+
 /**
- * CLI argument parsing. Pure and total: every branch is unit-tested, and
- * usage errors throw with a message the entry script prints to stderr.
+ * CLI argument parsing via yargs. The framework owns tokenizing, types,
+ * `--browser` choices, unknown-flag rejection, and `--help` text; the
+ * semantic rules (one target, value ranges) below keep stable messages the
+ * entry script prints to stderr. Pure and throwing, so tests stay hermetic.
  */
 export interface CliOptions {
   /** Uppercase ISO code for one seed, or `"all"` when `--all` is given. */
@@ -23,53 +27,98 @@ export const CLI_USAGE =
   "Usage: pnpm probe <ISO | --all> [--browser=solari] [--timeout-ms=N] [--stealth] [--proxy-country=XX] [--captcha]";
 
 /**
+ * Narrow yargs result to the flags this CLI declares. The `@types/yargs`
+ * inference widens chained option types, so the boundary is cast once here
+ * instead of narrowing at every use site.
+ */
+interface ParsedFlags {
+  all: boolean;
+  browser?: "solari";
+  timeoutMs?: number;
+  stealth?: boolean;
+  proxyCountry?: string;
+  captcha?: boolean;
+  iso?: string;
+  help?: boolean;
+}
+
+/**
+ * Thrown when `--help` is passed. yargs already printed the help text, so
+ * the entry script exits 0 without printing anything else.
+ */
+export class HelpRequested extends Error {
+  constructor() {
+    super("help requested");
+  }
+}
+
+/**
  * Parse CLI arguments into structured options.
  * @param argv - Raw arguments (without node/script prefix).
  * @returns The parsed options with the ISO target uppercased.
- * @throws When the target or any flag value is missing or invalid.
+ * @throws When the target or any flag value is missing or invalid, or when
+ * `--help` is passed ({@link HelpRequested}).
  */
 export function parseArgs(argv: string[]): CliOptions {
-  const options: CliOptions = { target: "", all: false, browser: null };
-  for (const arg of argv) {
-    if (arg === "--all") {
-      options.all = true;
-    } else if (arg.startsWith("--browser=")) {
-      const value = arg.slice("--browser=".length);
-      if (value !== "solari") {
-        throw new Error(`Unknown browser provider "${value}". ${CLI_USAGE}`);
-      }
-      options.browser = value;
-    } else if (arg.startsWith("--timeout-ms=")) {
-      const value = Number(arg.slice("--timeout-ms=".length));
-      if (!Number.isInteger(value) || value <= 0) {
-        throw new Error(`Invalid --timeout-ms value. ${CLI_USAGE}`);
-      }
-      options.timeoutMs = value;
-    } else if (arg === "--stealth") {
-      options.stealth = true;
-    } else if (arg === "--captcha") {
-      options.captcha = true;
-    } else if (arg.startsWith("--proxy-country=")) {
-      const value = arg.slice("--proxy-country=".length).toUpperCase();
-      if (value.length !== 2) {
-        throw new Error(`Invalid --proxy-country value. ${CLI_USAGE}`);
-      }
-      options.proxyCountry = value;
-    } else if (arg.startsWith("--")) {
-      throw new Error(`Unknown flag "${arg}". ${CLI_USAGE}`);
-    } else if (options.target !== "") {
-      throw new Error(`Unexpected extra argument "${arg}". ${CLI_USAGE}`);
-    } else {
-      options.target = arg.toUpperCase();
-    }
+  const parsed = yargs(argv)
+    .scriptName("probe")
+    .usage("Usage: pnpm probe <ISO | --all> [options]")
+    .command(
+      "$0 [iso]",
+      "Probe one portal candidate direct-first, with optional Solari fallback after direct failure.",
+      (cmd) => cmd.positional("iso", { describe: "ISO country code of one seed.", type: "string" }),
+    )
+    .option("all", { type: "boolean", default: false, describe: "Probe every seed in data/seeds.json." })
+    .option("browser", {
+      choices: ["solari"] as const,
+      describe: "Browser provider for fallback after direct failure.",
+    })
+    .option("timeout-ms", { type: "number", describe: "Direct-probe timeout in milliseconds." })
+    .option("stealth", { type: "boolean", describe: "Opt-in provider stealth/anti-detection measures." })
+    .option("proxy-country", { type: "string", describe: "Opt-in two-letter proxy egress country code." })
+    .option("captcha", {
+      type: "boolean",
+      describe: "Opt-in provider CAPTCHA handling where the target's terms permit it.",
+    })
+    .strict()
+    .help()
+    .version(false)
+    .exitProcess(false)
+    .fail((msg, err) => {
+      throw err ?? new Error(msg);
+    })
+    .parseSync() as ParsedFlags;
+  if (parsed.help) {
+    throw new HelpRequested();
   }
-  if (options.all) {
-    if (options.target !== "") {
-      throw new Error(`Pass either an ISO code or --all, not both. ${CLI_USAGE}`);
-    }
-    options.target = "all";
-  } else if (options.target === "") {
+  const target = parsed.iso?.toUpperCase() ?? "";
+  if (parsed.all && target !== "") {
+    throw new Error(`Pass either an ISO code or --all, not both. ${CLI_USAGE}`);
+  }
+  if (!parsed.all && target === "") {
     throw new Error(`Missing target ISO code. ${CLI_USAGE}`);
+  }
+  const timeoutMs = parsed.timeoutMs;
+  if (timeoutMs !== undefined && (!Number.isInteger(timeoutMs) || timeoutMs <= 0)) {
+    throw new Error(`Invalid --timeout-ms value. ${CLI_USAGE}`);
+  }
+  const rawProxy = parsed.proxyCountry;
+  if (rawProxy !== undefined && rawProxy.toUpperCase().length !== 2) {
+    throw new Error(`Invalid --proxy-country value. ${CLI_USAGE}`);
+  }
+  const proxyCountry = rawProxy?.toUpperCase();
+  const options: CliOptions = { target: parsed.all ? "all" : target, all: parsed.all, browser: parsed.browser ?? null };
+  if (timeoutMs !== undefined) {
+    options.timeoutMs = timeoutMs;
+  }
+  if (parsed.stealth !== undefined) {
+    options.stealth = parsed.stealth;
+  }
+  if (proxyCountry !== undefined) {
+    options.proxyCountry = proxyCountry;
+  }
+  if (parsed.captcha !== undefined) {
+    options.captcha = parsed.captcha;
   }
   return options;
 }

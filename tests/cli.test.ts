@@ -7,7 +7,15 @@ import type { WorkflowResult } from "@tariff-radar/probe-core";
 import { noopProbeLogger } from "@tariff-radar/probe-core";
 import type { Seed } from "@tariff-radar/registry";
 import type { ProbeWorkflowOptions } from "@tariff-radar/workflow";
-import { defaultDeps, findSeed, formatSummary, loadSeeds, parseArgs, runTargets } from "../packages/cli/src/index.js";
+import {
+  defaultDeps,
+  findSeed,
+  formatSummary,
+  loadSeeds,
+  parseArgs,
+  runTargets,
+  HelpRequested,
+} from "../packages/cli/src/index.js";
 import type { RunDeps } from "../packages/cli/src/index.js";
 
 const seedUS: Seed = {
@@ -124,7 +132,7 @@ describe("parseArgs", () => {
   });
 
   it("rejects unknown browser providers", () => {
-    expect(() => parseArgs(["US", "--browser=other"])).toThrow('Unknown browser provider "other".');
+    expect(() => parseArgs(["US", "--browser=other"])).toThrow('Argument: browser, Given: "other"');
   });
 
   it("rejects invalid timeout values", () => {
@@ -139,8 +147,12 @@ describe("parseArgs", () => {
   });
 
   it("rejects unknown flags and extra positionals", () => {
-    expect(() => parseArgs(["US", "--nope"])).toThrow('Unknown flag "--nope".');
-    expect(() => parseArgs(["US", "MX"])).toThrow('Unexpected extra argument "MX".');
+    expect(() => parseArgs(["US", "--nope"])).toThrow("Unknown argument: nope");
+    expect(() => parseArgs(["US", "MX"])).toThrow("Unknown argument: MX");
+  });
+
+  it("requests help instead of options for --help", () => {
+    expect(() => parseArgs(["--help"])).toThrow(HelpRequested);
   });
 });
 

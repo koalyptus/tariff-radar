@@ -10,10 +10,12 @@
     "@tariff-radar/probe-core": "workspace:*",
     "@tariff-radar/provider-solari": "workspace:*",
     "@tariff-radar/registry": "workspace:*",
-    "@tariff-radar/workflow": "workspace:*"
+    "@tariff-radar/workflow": "workspace:*",
+    "yargs": "^18.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
+    "@types/yargs": "^17.0.35",
     "typescript": "^5.7.2"
   }
 }

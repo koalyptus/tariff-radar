@@ -2,7 +2,7 @@ import { realpathSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PROBE_METHOD } from "@tariff-radar/probe-core";
-import { parseArgs } from "./args.js";
+import { parseArgs, HelpRequested } from "./args.js";
 import { defaultDeps, runTargets } from "./run.js";
 import { loadSeeds } from "./seeds.js";
 import { formatSummary } from "./summary.js";
@@ -41,6 +41,11 @@ try {
     process.exitCode = 1;
   }
 } catch (error) {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exitCode = 2;
+  if (error instanceof HelpRequested) {
+    // yargs already printed the help text; usage was not an error.
+    process.exitCode = 0;
+  } else {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 2;
+  }
 }

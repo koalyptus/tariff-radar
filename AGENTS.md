@@ -45,10 +45,11 @@ timeoutMs})` — direct-first, browser only after direct failure, always closes
 - `packages/registry`: `Seed` / `RegistryEntry` / `CustomsRegistry` types +
   generator. `data/seeds.json` (8 countries) holds unverified input hypotheses;
   `portalUrl` (candidate tariff page) ≠ `sourceUrl` (authority provenance).
-- `packages/cli`: composition root. The ONLY place (with `run.ts` seams)
-  allowed to read `SOLARI_API_KEY` and construct `SolariBrowserProvider`.
-  `probe-one` entry: `parseArgs` → `loadSeeds`/`findSeed` → `runTargets` →
-  `formatSummary` to stdout; exit 1 on any `failed` result, 2 on usage errors.
+- `packages/cli`: composition root (arg parsing via `yargs`). The ONLY place
+  (with `run.ts` seams) allowed to read `SOLARI_API_KEY` and construct
+  `SolariBrowserProvider`. `probe-one` entry: `parseArgs` → `loadSeeds`/
+  `findSeed` → `runTargets` → `formatSummary` to stdout; exit 1 on any
+  `failed` result, 2 on usage errors, 0 on `--help`.
 - `examples/`: upstream Solari cookbook, standalone per-example projects with
   their own `package.json` (`tsx index.ts`). Not workspace members — leave alone.
 - `doc/ROADMAP.md` owns phase scope and done-criteria; `README.md` owns the
