@@ -1,4 +1,4 @@
-name: ci
+name: CI
 
 on: [push, pull_request]
 
@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   verify:
+    name: Verify and build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -28,8 +29,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Verify (format, lint, typecheck, test)
-        run: pnpm verify
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
 
       - name: Build
         run: pnpm build
