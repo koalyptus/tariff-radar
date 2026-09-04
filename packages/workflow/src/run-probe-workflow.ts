@@ -2,6 +2,7 @@ import {
   PROBE_EVIDENCE,
   PROBE_LOG_EVENT,
   PROBE_METHOD,
+  logProbeEvent,
   noopProbeLogger,
   runDirectProbe,
 } from "@tariff-radar/probe-core";
@@ -28,10 +29,10 @@ export async function runProbeWorkflow(
   options: ProbeWorkflowOptions = {},
 ): Promise<WorkflowResult> {
   const logger = options.logger ?? noopProbeLogger;
-  logger.info(PROBE_LOG_EVENT.START, { isoCode: seed.isoCode, portalUrl: seed.portalUrl });
+  logProbeEvent(logger, PROBE_LOG_EVENT.START, { isoCode: seed.isoCode, portalUrl: seed.portalUrl });
 
   const direct = await runDirectProbe(seed.portalUrl, options.timeoutMs);
-  logger.info(PROBE_LOG_EVENT.DIRECT_COMPLETE, {
+  logProbeEvent(logger, PROBE_LOG_EVENT.DIRECT_COMPLETE, {
     isoCode: seed.isoCode,
     portalUrl: seed.portalUrl,
     ok: direct.ok,
@@ -54,7 +55,7 @@ export async function runProbeWorkflow(
   }
 
   if (!options.browserProvider) {
-    logger.error(PROBE_LOG_EVENT.FAILED, {
+    logProbeEvent(logger, PROBE_LOG_EVENT.FAILED, {
       isoCode: seed.isoCode,
       portalUrl: seed.portalUrl,
       provider: null,
@@ -72,7 +73,7 @@ export async function runProbeWorkflow(
     };
   }
 
-  logger.info(PROBE_LOG_EVENT.BROWSER_FALLBACK, {
+  logProbeEvent(logger, PROBE_LOG_EVENT.BROWSER_FALLBACK, {
     isoCode: seed.isoCode,
     portalUrl: seed.portalUrl,
     provider: options.browserProvider.name,
@@ -87,7 +88,7 @@ export async function runProbeWorkflow(
         const text = await page.text();
         const status = response?.status() ?? null;
         const finalUrl = response?.url() ?? null;
-        logger.info(PROBE_LOG_EVENT.BROWSER_COMPLETE, {
+        logProbeEvent(logger, PROBE_LOG_EVENT.BROWSER_COMPLETE, {
           isoCode: seed.isoCode,
           portalUrl: seed.portalUrl,
           provider: options.browserProvider.name,
@@ -118,7 +119,7 @@ export async function runProbeWorkflow(
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    logger.error(PROBE_LOG_EVENT.FAILED, {
+    logProbeEvent(logger, PROBE_LOG_EVENT.FAILED, {
       isoCode: seed.isoCode,
       portalUrl: seed.portalUrl,
       provider: options.browserProvider.name,

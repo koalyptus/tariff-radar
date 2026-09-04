@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { PROBE_LOG_EVENT, PROBE_METHOD, consoleProbeLogger, noopProbeLogger } from "@tariff-radar/probe-core";
-import type { BrowserProbeProvider, ProbeLogFields, ProbeLogger } from "@tariff-radar/probe-core";
+import {
+  PROBE_LOG_EVENT,
+  PROBE_METHOD,
+  consoleProbeLogger,
+  logProbeEvent,
+  noopProbeLogger,
+} from "@tariff-radar/probe-core";
+import type { BrowserProbeProvider, LogFields, ProbeLogger } from "@tariff-radar/probe-core";
 import { runProbeWorkflow } from "@tariff-radar/workflow";
 import type { WorkflowSeed } from "@tariff-radar/workflow";
 
@@ -14,7 +20,7 @@ const seed: WorkflowSeed = {
 interface RecordedCall {
   level: string;
   message: string;
-  fields?: ProbeLogFields;
+  fields?: LogFields;
 }
 
 function createRecordingLogger(): { logger: ProbeLogger; calls: RecordedCall[] } {
@@ -22,16 +28,16 @@ function createRecordingLogger(): { logger: ProbeLogger; calls: RecordedCall[] }
   return {
     calls,
     logger: {
-      debug: (message: string, fields?: ProbeLogFields) => {
+      debug: (message: string, fields?: LogFields) => {
         calls.push({ level: "debug", message, fields });
       },
-      info: (message: string, fields?: ProbeLogFields) => {
+      info: (message: string, fields?: LogFields) => {
         calls.push({ level: "info", message, fields });
       },
-      warn: (message: string, fields?: ProbeLogFields) => {
+      warn: (message: string, fields?: LogFields) => {
         calls.push({ level: "warn", message, fields });
       },
-      error: (message: string, fields?: ProbeLogFields) => {
+      error: (message: string, fields?: LogFields) => {
         calls.push({ level: "error", message, fields });
       },
     },
@@ -171,6 +177,38 @@ describe("consoleProbeLogger", () => {
       provider: "fake",
       status: 200,
     });
+  });
+});
+
+describe("logProbeEvent", () => {
+  it("routes each event to its specified level with its schema", () => {
+    const { logger, calls } = createRecordingLogger();
+    logProbeEvent(logger, PROBE_LOG_EVENT.START, { isoCode: "T1", portalUrl: seed.portalUrl });
+    logProbeEvent(logger, PROBE_LOG_EVENT.FAILED, {
+      isoCode: "T1",
+      portalUrl: seed.portalUrl,
+      provider: null,
+      method: PROBE_METHOD.FAILED,
+      error: "boom",
+    });
+    expect(calls).toEqual([
+      {
+        level: "info",
+        message: PROBE_LOG_EVENT.START,
+        fields: { isoCode: "T1", portalUrl: seed.portalUrl },
+      },
+      {
+        level: "error",
+        message: PROBE_LOG_EVENT.FAILED,
+        fields: {
+          isoCode: "T1",
+          portalUrl: seed.portalUrl,
+          provider: null,
+          method: PROBE_METHOD.FAILED,
+          error: "boom",
+        },
+      },
+    ]);
   });
 });
 
