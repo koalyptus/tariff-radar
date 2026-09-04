@@ -57,6 +57,7 @@ export async function runProbeWorkflow(
     logger.error(PROBE_LOG_EVENT.FAILED, {
       isoCode: seed.isoCode,
       portalUrl: seed.portalUrl,
+      provider: null,
       method: PROBE_METHOD.FAILED,
       error: DIRECT_PROBE_FAILURE,
     });

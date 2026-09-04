@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { PROBE_LOG_EVENT, consoleProbeLogger, noopProbeLogger } from "@tariff-radar/probe-core";
+import { PROBE_LOG_EVENT, PROBE_METHOD, consoleProbeLogger, noopProbeLogger } from "@tariff-radar/probe-core";
 import type { BrowserProbeProvider, ProbeLogFields, ProbeLogger } from "@tariff-radar/probe-core";
 import { runProbeWorkflow } from "@tariff-radar/workflow";
 import type { WorkflowSeed } from "@tariff-radar/workflow";
@@ -22,16 +22,16 @@ function createRecordingLogger(): { logger: ProbeLogger; calls: RecordedCall[] }
   return {
     calls,
     logger: {
-      debug: (message, fields) => {
+      debug: (message: string, fields?: ProbeLogFields) => {
         calls.push({ level: "debug", message, fields });
       },
-      info: (message, fields) => {
+      info: (message: string, fields?: ProbeLogFields) => {
         calls.push({ level: "info", message, fields });
       },
-      warn: (message, fields) => {
+      warn: (message: string, fields?: ProbeLogFields) => {
         calls.push({ level: "warn", message, fields });
       },
-      error: (message, fields) => {
+      error: (message: string, fields?: ProbeLogFields) => {
         calls.push({ level: "error", message, fields });
       },
     },
@@ -80,21 +80,30 @@ afterEach(() => {
 });
 
 describe("noopProbeLogger", () => {
-  it("accepts all levels without throwing", () => {
+  it("accepts every event schema without throwing", () => {
     expect(() => {
-      noopProbeLogger.debug("probe.debug", { isoCode: "T1" });
-      noopProbeLogger.info("probe.info", { isoCode: "T1" });
-      noopProbeLogger.warn("probe.warn", { isoCode: "T1" });
-      noopProbeLogger.error("probe.error", { isoCode: "T1" });
-    }).not.toThrow();
-  });
-
-  it("accepts calls without fields", () => {
-    expect(() => {
-      noopProbeLogger.debug("probe.debug");
-      noopProbeLogger.info("probe.info");
-      noopProbeLogger.warn("probe.warn");
-      noopProbeLogger.error("probe.error");
+      noopProbeLogger.debug(PROBE_LOG_EVENT.START, { isoCode: "T1", portalUrl: seed.portalUrl });
+      noopProbeLogger.info(PROBE_LOG_EVENT.DIRECT_COMPLETE, {
+        isoCode: "T1",
+        portalUrl: seed.portalUrl,
+        ok: true,
+        status: 200,
+        finalUrl: seed.portalUrl,
+        latencyMs: 1,
+        error: null,
+      });
+      noopProbeLogger.warn(PROBE_LOG_EVENT.BROWSER_FALLBACK, {
+        isoCode: "T1",
+        portalUrl: seed.portalUrl,
+        provider: "fake",
+      });
+      noopProbeLogger.error(PROBE_LOG_EVENT.FAILED, {
+        isoCode: "T1",
+        portalUrl: seed.portalUrl,
+        provider: null,
+        method: PROBE_METHOD.FAILED,
+        error: "boom",
+      });
     }).not.toThrow();
   });
 });
@@ -107,9 +116,27 @@ describe("consoleProbeLogger", () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     consoleProbeLogger.debug(PROBE_LOG_EVENT.START, { isoCode: "T1", portalUrl: seed.portalUrl });
-    consoleProbeLogger.info(PROBE_LOG_EVENT.DIRECT_COMPLETE, { isoCode: "T1", status: 200 });
-    consoleProbeLogger.warn(PROBE_LOG_EVENT.BROWSER_FALLBACK, { isoCode: "T1", provider: "fake" });
-    consoleProbeLogger.error(PROBE_LOG_EVENT.FAILED, { isoCode: "T1", error: "boom" });
+    consoleProbeLogger.info(PROBE_LOG_EVENT.DIRECT_COMPLETE, {
+      isoCode: "T1",
+      portalUrl: seed.portalUrl,
+      ok: true,
+      status: 200,
+      finalUrl: seed.portalUrl,
+      latencyMs: 3,
+      error: null,
+    });
+    consoleProbeLogger.warn(PROBE_LOG_EVENT.BROWSER_FALLBACK, {
+      isoCode: "T1",
+      portalUrl: seed.portalUrl,
+      provider: "fake",
+    });
+    consoleProbeLogger.error(PROBE_LOG_EVENT.FAILED, {
+      isoCode: "T1",
+      portalUrl: seed.portalUrl,
+      provider: "fake",
+      method: PROBE_METHOD.FAILED,
+      error: "boom",
+    });
 
     expect(debugSpy).toHaveBeenCalledTimes(1);
     expect(infoSpy).toHaveBeenCalledTimes(1);
@@ -126,12 +153,24 @@ describe("consoleProbeLogger", () => {
     }
   });
 
-  it("supports calls without fields", () => {
+  it("emits level, event, and fields as one JSON line", () => {
     const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
-    consoleProbeLogger.info(PROBE_LOG_EVENT.START);
+    consoleProbeLogger.info(PROBE_LOG_EVENT.BROWSER_COMPLETE, {
+      isoCode: "T1",
+      portalUrl: seed.portalUrl,
+      provider: "fake",
+      status: 200,
+      finalUrl: "https://portal.example/final",
+    });
     expect(infoSpy).toHaveBeenCalledTimes(1);
     const parsed = JSON.parse(String(infoSpy.mock.calls[0]?.[0])) as Record<string, unknown>;
-    expect(parsed["message"]).toBe(PROBE_LOG_EVENT.START);
+    expect(parsed).toMatchObject({
+      level: "info",
+      message: PROBE_LOG_EVENT.BROWSER_COMPLETE,
+      isoCode: "T1",
+      provider: "fake",
+      status: 200,
+    });
   });
 });
 
@@ -157,6 +196,7 @@ describe("runProbeWorkflow logger", () => {
       PROBE_LOG_EVENT.FAILED,
     ]);
     expect(calls[2]?.level).toBe("error");
+    expect(calls[2]?.fields).toMatchObject({ provider: null, method: PROBE_METHOD.FAILED });
   });
 
   it("logs fallback and browser completion and never logs page contents", async () => {
