@@ -1,91 +1,193 @@
-# Solari Cookbook
+# TariffRadar
 
-Short, runnable examples for [Solari](https://getsolari.com) — cloud browsers,
-sandboxes, and desktops behind one API key.
+TariffRadar is a project exploring how [Solari](https://getsolari.com)
+can help profile access to official customs and tariff portals.
 
-Every example in this repo is a complete program you can run in under a minute.
-They are deliberately small: one idea each, no framework, no scaffolding to read
-past. Copy one into your project and change the parts you care about.
+The immediate goal is deliberately small: create a current, evidence-backed
+`customs_registry.json` for a curated set of countries. The registry should tell
+downstream automation where an official portal is, whether it was reachable, and
+what access conditions were actually observed during the probe.
 
-## Examples
+This is a prototype and challenge submission, not yet a production compliance
+database or a claim to have mapped every country.
 
-### Cloud browser
+## Why This Use Case
 
-| Example | Language | What it shows |
-| --- | --- | --- |
-| [browser-quickstart-ts](examples/browser-quickstart-ts) | TypeScript | Launch a browser, open a page, read it |
-| [browser-quickstart-py](examples/browser-quickstart-py) | Python | Launch a browser, open a page, read it |
-| [browser-stealth-proxy-ts](examples/browser-stealth-proxy-ts) | TypeScript | Stealth mode + residential proxy egress |
-| [browser-profiles-ts](examples/browser-profiles-ts) | TypeScript | Log in once, reuse the session forever |
-| [browser-session-recording-py](examples/browser-session-recording-py) | Python | Record a session, download the replay |
+Customs information is distributed across government portals, tariff search
+tools, notices, and downloadable documents. These sources differ in language,
+site technology, uptime, and access behavior. A single HTTP scraper strategy is
+therefore unlikely to work consistently.
 
-### Sandbox
+TariffRadar tests a more practical workflow:
 
-| Example | Language | What it shows |
-| --- | --- | --- |
-| [sandbox-quickstart-ts](examples/sandbox-quickstart-ts) | TypeScript | Run a command, write and read files |
-| [sandbox-code-interpreter-py](examples/sandbox-code-interpreter-py) | Python | Stateful Python kernel for agent loops |
-| [sandbox-port-preview-ts](examples/sandbox-port-preview-ts) | TypeScript | Expose a server in the VM on a public URL |
-
-### Desktop
-
-| Example | Language | What it shows |
-| --- | --- | --- |
-| [desktop-computer-use-py](examples/desktop-computer-use-py) | Python | Screenshot, click, and type on a Linux GUI |
-
-## Running an example
-
-Each directory is self-contained.
-
-```bash
-git clone https://github.com/solari-sdk/solari-cookbook.git
-cd solari-cookbook/examples/browser-quickstart-ts
-
-npm install                          # or: pip install -r requirements.txt
-export SOLARI_API_KEY=slr_live_...   # grab one at console.getsolari.com
-npm start                            # or: python main.py
+```text
+country seeds
+    -> workflow orchestrator
+      -> direct probe
+      -> browser provider probe when needed
+    -> record observable evidence
+    -> customs_registry.json
 ```
 
-One `slr_live_` key works across browsers, sandboxes, and desktops, and every
-product bills to the same balance.
+The workflow orchestrator owns sequencing and decisions: when to try direct
+access, when to escalate to a browser, how to apply timeouts and retries, and
+how to assemble evidence. The browser step is provider-neutral. Solari is the
+first adapter, but the core probe should not depend on a particular vendor or
+assume that every provider supports stealth, proxy egress, CAPTCHA handling, or
+persistent profiles.
 
-## Which product do I want?
+## Challenge Scope
 
-- **Cloud browser** — you need a *web page*: scraping, testing, filling forms,
-  anything Playwright or Puppeteer would do locally. Adds stealth, managed
-  proxies, captcha solving, profiles, and session recording.
-- **Sandbox** — you need to *run code*: an LLM's Python, an untrusted build, a
-  data job. A headless microVM that boots from a snapshot in about a second.
-- **Desktop** — you need a *screen*: computer-use agents, GUI apps, anything
-  that has to be clicked. A sandbox plus X11 and a live VNC stream.
+The first demonstration starts with eight manually selected portal candidates
+rather than pretending to solve all 195 countries at once. This list is an
+arbitrary starting hypothesis intended to exercise different conditions: open
+sources, dynamic interfaces, non-English content, regional organizations,
+intermittent availability, and protected or geo-sensitive access.
 
-## Gotchas the examples encode
+The entries in [data/seeds.json](data/seeds.json) are assumed inputs, not verified
+facts. In particular, the URLs may be outdated, inaccessible, or not the best
+operational tariff entrypoint. The workflow must verify both the authority and
+the usefulness of each URL before including it in a generated registry.
 
-Things that cost you an afternoon if you meet them cold:
+## Planned Registry
 
-- **TypeScript: call `await solari.close()`.** The browser client keeps a
-  loopback proxy open for connection retries. Skip the close and your script
-  prints its output and then hangs forever instead of exiting.
-- **Recording is per session, not per account.** Pass `recording: true` when you
-  create the session; without it the replay endpoint 404s forever. The upload is
-  async after release, so poll for ~30s before giving up.
-- **Sandbox commands are not shell-interpreted.** `run("ls -la")` looks for a
-  binary named `ls -la`. Put argv in `args`, or run `sh -c` explicitly.
-- **`kill()`, not `close()`, ends a VM.** `close()` drops your local control
-  channel; the VM keeps running until its idle timeout.
-- **`timeoutMs` is a rolling idle window**, not a hard deadline — it resets on
-  every use.
+The first output is a local JSON asset, not a hosted API or SaaS product.
+A registry entry should remain focused on facts that can be checked and replayed:
 
-## Links
+```json
+{
+  "isoCode": "MX",
+  "countryName": "Mexico",
+  "officialPortalUrl": "https://example.gov",
+  "verification": {
+    "status": "verified",
+    "checkedAt": "2026-09-03T00:00:00.000Z",
+    "httpStatus": 200,
+    "latencyMs": 840,
+    "evidence": ["loaded_document", "customs_keyword"]
+  },
+  "accessProfile": {
+    "directRequest": "failed",
+    "browserRequired": true,
+    "proxyCountry": "MX",
+    "stealthUsed": true,
+    "captchaObserved": false
+  },
+  "source": {
+    "kind": "official_registry",
+    "url": "https://example.gov/source"
+  }
+}
+```
 
-- Docs — [docs.getsolari.com](https://docs.getsolari.com)
-- Console — [console.getsolari.com](https://console.getsolari.com)
-- Changelog — [changelog.getsolari.com](https://changelog.getsolari.com)
-- Questions — [hello@getsolari.com](mailto:hello@getsolari.com)
+Fields may change as the implementation develops. In particular, values such as
+`captchaObserved` describe an observation from a run; they are not permanent
+properties of an entire country or customs system.
 
-## Contributing
+## Planned Architecture
 
-New examples are welcome. Keep them small, make them run end-to-end against the
-real API, and put anything surprising in a comment right where it bites.
+1. **Seeds:** Store a manually curated ISO-country list with candidate URLs and
+   source attribution in [data/seeds.json](data/seeds.json). Seeds are inputs to
+   the workflow, not verified registry records.
+2. **Direct probe:** Make a lightweight request and record status, redirects,
+   timing, and response signals.
+3. **Workflow:** Orchestrate the direct and browser probes, including fallback,
+   timeout, retry, and failure decisions.
+4. **Browser probe:** Escalate to a configured browser provider only when direct
+   access is inconclusive or fails. Use the provider-neutral contract in
+   `packages/probe-core`.
+5. **Verification:** Check that the rendered page is relevant using observable
+   content, links, document metadata, and any available tariff or HS-code UI.
+6. **Registry output:** Write validated observations and timestamps to
+   `customs_registry.json`, retaining enough evidence to explain each result.
+
+Later work may add document downloads, OCR, translation, change detection, and
+structured tariff extraction. Those are outside the first registry milestone.
+
+## Provider Architecture
+
+The registry and workflow layers depend on capabilities, not on Solari's SDK.
+The browser boundary is defined in `packages/probe-core`:
+
+```text
+registry
+  |
+  v
+workflow orchestrator
+  |
+  v
+BrowserProbeProvider
+  /             \
+  v               v
+provider-solari   another provider
+```
+
+`packages/provider-solari` adapts Solari's browser client to that contract. This
+keeps the registry model and verification logic independent from provider-
+specific APIs and capabilities. The same principle should be applied later to
+document extraction and LLM-backed normalization: those should be injected
+services rather than hard-coded vendors.
+
+## Solari Adapter
+
+The current adapter uses the actual TypeScript SDK:
+
+```ts
+import { Solari } from "@solarisdk/browser";
+
+const solari = new Solari({ apiKey: process.env.SOLARI_API_KEY! });
+const browser = await solari.launch({ stealth: true, proxy: "mx" });
+
+try {
+  const page = await browser.newPage();
+  await page.goto("https://example.gov");
+  console.log(await page.title());
+} finally {
+  await browser.close();
+  await solari.close();
+}
+```
+
+The adapter translates provider-neutral probe options into Solari options. The
+final probe should measure what happened, rather than treating every Solari
+option as necessary. Open portals should not incur proxy or browser cost
+without a reason. CAPTCHA solving, proxy routing, and stealth should be enabled
+only where the run and the target's terms permit it.
+
+## Planned Quickstart
+
+The seed-only scaffold is not yet a registry generator. It has no network or
+Solari probing logic and must not be presented as verified data. The next step
+is to implement the probe before generating the registry:
+
+```bash
+pnpm install
+pnpm typecheck
+```
+
+The eventual probe command will write `data/customs_registry.json` from direct
+and Solari-backed observations. It will require a `SOLARI_API_KEY`; the current
+seed-only scaffold does not contact Solari and does not generate a registry.
+
+## Evidence and Limitations
+
+- A successful page load does not prove that all tariff data is complete or
+  legally current.
+- A failed probe does not prove that a portal is permanently unavailable.
+- Domain patterns alone do not establish official status.
+- Registry timestamps, source attribution, response metadata, and probe logs are
+  essential for reviewing each result.
+- Any regulatory interpretation must be checked against the original authority
+  and should not be treated as legal advice.
+
+## Solari Examples
+
+The original runnable examples remain available while TariffRadar is developed:
+
+- [Browser quickstart](examples/browser-quickstart-ts)
+- [Stealth and proxy](examples/browser-stealth-proxy-ts)
+- [Persistent profiles](examples/browser-profiles-ts)
+
+See [Solari documentation](https://docs.getsolari.com) for the current API.
 
 MIT licensed.

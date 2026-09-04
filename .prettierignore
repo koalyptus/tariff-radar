@@ -1,0 +1,7 @@
+node_modules/
+dist/
+coverage/
+pnpm-lock.yaml
+*.min.js
+# Upstream Solari cookbook: standalone projects, not workspace members.
+examples/

@@ -1,0 +1,45 @@
+name: CI
+
+on: [push, pull_request]
+
+# Least-privilege: this pipeline only reads the repo and runs local gates.
+# The test suite is hermetic (stubbed fetch, fake providers, SDK alias),
+# so no secrets or env vars are required.
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
