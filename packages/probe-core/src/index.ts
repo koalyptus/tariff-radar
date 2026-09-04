@@ -70,3 +70,5 @@ export interface WorkflowResult {
 }
 
 export { DEFAULT_DIRECT_PROBE_TIMEOUT_MS, runDirectProbe } from "./direct-probe.js";
+export { consoleProbeLogger, noopProbeLogger, PROBE_LOG_EVENT } from "./logger.js";
+export type { ProbeLogEvent, ProbeLogFields, ProbeLogger } from "./logger.js";
