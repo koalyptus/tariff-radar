@@ -70,9 +70,7 @@ export async function runProbeWorkflow(
             text,
           },
           // Claim only what was observed: a null response yields no
-          // browser_response evidence. Method still reports BROWSER because
-          // the page rendered; Phase 10 defines what turns observations
-          // into verified records.
+          // browser_response evidence, even though the page rendered.
           evidence: [
             ...(status !== null ? [PROBE_EVIDENCE.BROWSER_RESPONSE] : []),
             PROBE_EVIDENCE.BROWSER_TEXT,

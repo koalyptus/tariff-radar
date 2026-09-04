@@ -5,9 +5,8 @@ import {
   PROBE_METHOD,
 } from "@tariff-radar/probe-core"
 
-// Phase 1 runner smoke test: proves `pnpm test` discovers tests, transforms
-// TypeScript, and resolves the workspace alias. Behavioural suites live in
-// Phase 5 and must not be seeded here.
+// Smoke test for the test runner itself: test discovery, TypeScript
+// transform, and workspace alias resolution.
 describe("test runner smoke", () => {
   it("exposes the probe contract constants", () => {
     expect(PROBE_METHOD.DIRECT).toBe("direct")
