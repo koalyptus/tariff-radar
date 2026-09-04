@@ -1,3 +1,5 @@
+import type { ProbeMethod } from "./constants.js";
+
 /**
  * Opt-in browser capabilities for one probe run. Every field is optional and
  * unset means provider default. Cost-incurring options (proxy egress,
@@ -82,28 +84,8 @@ export interface DirectProbeResult {
   error: string | null;
 }
 
-/**
- * Outcome vocabulary for a workflow run. Use these constants, never string
- * literals, so result handling stays exhaustive.
- */
-export const PROBE_METHOD = {
-  DIRECT: "direct",
-  BROWSER: "browser",
-  FAILED: "failed",
-} as const;
-
-/**
- * Evidence vocabulary for a workflow run. Entries claim only what was
- * observed: a missing response yields no `*_RESPONSE` entry.
- */
-export const PROBE_EVIDENCE = {
-  DIRECT_RESPONSE: "direct_response",
-  BROWSER_RESPONSE: "browser_response",
-  BROWSER_TEXT: "browser_text",
-} as const;
-
-/** One of the {@link PROBE_METHOD} outcome values. */
-export type ProbeMethod = (typeof PROBE_METHOD)[keyof typeof PROBE_METHOD];
+export { PROBE_EVIDENCE, PROBE_METHOD } from "./constants.js";
+export type { ProbeMethod } from "./constants.js";
 
 /**
  * Complete record of one seed probe: direct-first attempt, optional browser
@@ -138,13 +120,12 @@ export interface WorkflowResult {
 }
 
 export { DEFAULT_DIRECT_PROBE_TIMEOUT_MS, runDirectProbe } from "./direct-probe.js";
-export { consoleProbeLogger, logProbeEvent, noopProbeLogger, PROBE_EVENT_LEVEL, PROBE_LOG_EVENT } from "./logger.js";
+export { consoleProbeLogger, noopProbeLogger, PROBE_LOG_EVENT, ProbeRunLogger } from "./logger.js";
 export type {
   LogFields,
   ProbeBrowserCompleteFields,
   ProbeBrowserFallbackFields,
   ProbeDirectCompleteFields,
-  ProbeEventFields,
   ProbeFailedFields,
   ProbeLogEvent,
   ProbeLogFields,

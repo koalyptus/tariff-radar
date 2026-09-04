@@ -1,4 +1,5 @@
-import type { ProbeMethod } from "./index.js";
+import { PROBE_METHOD } from "./constants.js";
+import type { DirectProbeResult, ProbeMethod } from "./index.js";
 
 /**
  * Flat, JSON-safe fields any structured logger can render. The transport
@@ -97,39 +98,94 @@ export type ProbeLogFields =
   | ProbeFailedFields;
 
 /**
- * Event-keyed schemas: the compiler only accepts the payload that belongs to
- * the event name.
+ * Per-run emitter with the run identity bound once. Call sites pass domain
+ * values, never assembled objects: the fixed wire schemas below are built
+ * inside these methods. The JSON lines on the wire are unchanged.
  */
-export type ProbeEventFields = {
-  [PROBE_LOG_EVENT.START]: ProbeStartFields;
-  [PROBE_LOG_EVENT.DIRECT_COMPLETE]: ProbeDirectCompleteFields;
-  [PROBE_LOG_EVENT.BROWSER_FALLBACK]: ProbeBrowserFallbackFields;
-  [PROBE_LOG_EVENT.BROWSER_COMPLETE]: ProbeBrowserCompleteFields;
-  [PROBE_LOG_EVENT.FAILED]: ProbeFailedFields;
-};
+export class ProbeRunLogger {
+  private readonly logger: ProbeLogger;
+  private readonly isoCode: string;
+  private readonly portalUrl: string;
 
-/** Level is part of the event spec, so call sites never choose it per call. */
-export const PROBE_EVENT_LEVEL = {
-  [PROBE_LOG_EVENT.START]: "info",
-  [PROBE_LOG_EVENT.DIRECT_COMPLETE]: "info",
-  [PROBE_LOG_EVENT.BROWSER_FALLBACK]: "info",
-  [PROBE_LOG_EVENT.BROWSER_COMPLETE]: "info",
-  [PROBE_LOG_EVENT.FAILED]: "error",
-} as const;
+  /**
+   * Bind one run's identity.
+   * @param logger - Destination for the structured lines.
+   * @param seed - Run identity; only ISO code and portal URL are ever logged.
+   */
+  constructor(logger: ProbeLogger, seed: { isoCode: string; portalUrl: string }) {
+    this.logger = logger;
+    this.isoCode = seed.isoCode;
+    this.portalUrl = seed.portalUrl;
+  }
 
-/**
- * Typed entry point for probe logging: general transport, probe-specific
- * shapes. A wrong payload for the event name fails compilation.
- * @param logger - Destination for the structured line.
- * @param event - One of {@link PROBE_LOG_EVENT}; also selects the level.
- * @param fields - The exact schema for that event; see {@link ProbeEventFields}.
- */
-export function logProbeEvent<E extends ProbeLogEvent>(
-  logger: ProbeLogger,
-  event: E,
-  fields: ProbeEventFields[E],
-): void {
-  logger[PROBE_EVENT_LEVEL[event]](event, fields);
+  /** Log run start. */
+  start(): void {
+    const fields: ProbeStartFields = { isoCode: this.isoCode, portalUrl: this.portalUrl };
+    this.logger.info(PROBE_LOG_EVENT.START, fields);
+  }
+
+  /**
+   * Log the direct attempt outcome.
+   * @param direct - Observed direct result, logged field for field.
+   */
+  directComplete(direct: DirectProbeResult): void {
+    const fields: ProbeDirectCompleteFields = {
+      isoCode: this.isoCode,
+      portalUrl: this.portalUrl,
+      ok: direct.ok,
+      status: direct.status,
+      finalUrl: direct.finalUrl,
+      latencyMs: direct.latencyMs,
+      error: direct.error,
+    };
+    this.logger.info(PROBE_LOG_EVENT.DIRECT_COMPLETE, fields);
+  }
+
+  /**
+   * Log escalation to the browser after direct failure.
+   * @param provider - Provider name taking over the run.
+   */
+  browserFallback(provider: string): void {
+    const fields: ProbeBrowserFallbackFields = {
+      isoCode: this.isoCode,
+      portalUrl: this.portalUrl,
+      provider,
+    };
+    this.logger.info(PROBE_LOG_EVENT.BROWSER_FALLBACK, fields);
+  }
+
+  /**
+   * Log the browser observation. Title and page text are never logged.
+   * @param provider - Provider name that ran the browser.
+   * @param status - Observed HTTP status, or null when the page gave none.
+   * @param finalUrl - Observed final URL, or null when the page gave none.
+   */
+  browserComplete(provider: string, status: number | null, finalUrl: string | null): void {
+    const fields: ProbeBrowserCompleteFields = {
+      isoCode: this.isoCode,
+      portalUrl: this.portalUrl,
+      provider,
+      status,
+      finalUrl,
+    };
+    this.logger.info(PROBE_LOG_EVENT.BROWSER_COMPLETE, fields);
+  }
+
+  /**
+   * Log terminal failure.
+   * @param provider - Provider name, or null when no provider was configured.
+   * @param error - Failure reason.
+   */
+  failed(provider: string | null, error: string): void {
+    const fields: ProbeFailedFields = {
+      isoCode: this.isoCode,
+      portalUrl: this.portalUrl,
+      provider,
+      method: PROBE_METHOD.FAILED,
+      error,
+    };
+    this.logger.error(PROBE_LOG_EVENT.FAILED, fields);
+  }
 }
 
 /**

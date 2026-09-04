@@ -1,8 +1,7 @@
 import {
   PROBE_EVIDENCE,
-  PROBE_LOG_EVENT,
   PROBE_METHOD,
-  logProbeEvent,
+  ProbeRunLogger,
   noopProbeLogger,
   runDirectProbe,
 } from "@tariff-radar/probe-core";
@@ -46,19 +45,11 @@ export async function runProbeWorkflow(
   seed: WorkflowSeed,
   options: ProbeWorkflowOptions = {},
 ): Promise<WorkflowResult> {
-  const logger = options.logger ?? noopProbeLogger;
-  logProbeEvent(logger, PROBE_LOG_EVENT.START, { isoCode: seed.isoCode, portalUrl: seed.portalUrl });
+  const log = new ProbeRunLogger(options.logger ?? noopProbeLogger, seed);
+  log.start();
 
   const direct = await runDirectProbe(seed.portalUrl, options.timeoutMs);
-  logProbeEvent(logger, PROBE_LOG_EVENT.DIRECT_COMPLETE, {
-    isoCode: seed.isoCode,
-    portalUrl: seed.portalUrl,
-    ok: direct.ok,
-    status: direct.status,
-    finalUrl: direct.finalUrl,
-    latencyMs: direct.latencyMs,
-    error: direct.error,
-  });
+  log.directComplete(direct);
 
   if (direct.ok) {
     return {
@@ -73,13 +64,7 @@ export async function runProbeWorkflow(
   }
 
   if (!options.browserProvider) {
-    logProbeEvent(logger, PROBE_LOG_EVENT.FAILED, {
-      isoCode: seed.isoCode,
-      portalUrl: seed.portalUrl,
-      provider: null,
-      method: PROBE_METHOD.FAILED,
-      error: DIRECT_PROBE_FAILURE,
-    });
+    log.failed(null, DIRECT_PROBE_FAILURE);
     return {
       seed,
       method: PROBE_METHOD.FAILED,
@@ -91,11 +76,7 @@ export async function runProbeWorkflow(
     };
   }
 
-  logProbeEvent(logger, PROBE_LOG_EVENT.BROWSER_FALLBACK, {
-    isoCode: seed.isoCode,
-    portalUrl: seed.portalUrl,
-    provider: options.browserProvider.name,
-  });
+  log.browserFallback(options.browserProvider.name);
 
   try {
     const session = await options.browserProvider.launch(options.browserOptions);
@@ -106,13 +87,7 @@ export async function runProbeWorkflow(
         const text = await page.text();
         const status = response?.status() ?? null;
         const finalUrl = response?.url() ?? null;
-        logProbeEvent(logger, PROBE_LOG_EVENT.BROWSER_COMPLETE, {
-          isoCode: seed.isoCode,
-          portalUrl: seed.portalUrl,
-          provider: options.browserProvider.name,
-          status,
-          finalUrl,
-        });
+        log.browserComplete(options.browserProvider.name, status, finalUrl);
         return {
           seed,
           method: PROBE_METHOD.BROWSER,
@@ -137,13 +112,7 @@ export async function runProbeWorkflow(
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    logProbeEvent(logger, PROBE_LOG_EVENT.FAILED, {
-      isoCode: seed.isoCode,
-      portalUrl: seed.portalUrl,
-      provider: options.browserProvider.name,
-      method: PROBE_METHOD.FAILED,
-      error: message,
-    });
+    log.failed(options.browserProvider.name, message);
     return {
       seed,
       method: PROBE_METHOD.FAILED,
