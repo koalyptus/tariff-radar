@@ -1,15 +1,27 @@
+import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { CustomsRegistry, Seed } from "./types.js";
 
 export const SEEDS_FILE_NAME = "seeds.json";
 export const REGISTRY_FILE_NAME = "customs_registry.json";
+export const WORKSPACE_ROOT_MARKER = "pnpm-workspace.yaml";
 
-// Default data directory, anchored at this file so the script works no
-// matter which directory it is launched from. Pass explicit
-// `[seedsPath] [registryPath]` arguments to point it elsewhere.
-const defaultDataDir = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "data");
+// Locate the workspace root by walking up from this file: robust to the
+// script moving within the repo and independent of the launch directory.
+// Pass explicit `[seedsPath] [registryPath]` arguments to bypass this.
+function findWorkspaceRoot(startDir: string): string {
+  let dir = resolve(startDir);
+  while (true) {
+    if (existsSync(join(dir, WORKSPACE_ROOT_MARKER))) return dir;
+    const parent = dirname(dir);
+    if (parent === dir) throw new Error(`workspace root marker ${WORKSPACE_ROOT_MARKER} not found`);
+    dir = parent;
+  }
+}
+
+const defaultDataDir = join(findWorkspaceRoot(dirname(fileURLToPath(import.meta.url))), "data");
 const [seedsPathArg, registryPathArg] = process.argv.slice(2);
 const seedsPath = seedsPathArg ?? resolve(defaultDataDir, SEEDS_FILE_NAME);
 const registryPath = registryPathArg ?? resolve(defaultDataDir, REGISTRY_FILE_NAME);
