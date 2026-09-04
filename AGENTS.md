@@ -19,6 +19,9 @@ module + resolution, shared base in `tsconfig.base.json`.
 - `pnpm lint` and `pnpm lint:fix`. Minimal ESLint (parser only, no preset):
   `curly` all — braces always required. Gate new rules by explicit decision.
 - `pnpm verify` runs every gate in order: format:check, lint, typecheck, test.
+- CI (`.github/workflows/ci.yaml`, push + PR, ubuntu/node 22) runs
+  `pnpm install --frozen-lockfile`, `pnpm verify`, `pnpm build`. Hermetic —
+  no secrets or env vars needed.
 - `pnpm --filter @tariff-radar/registry generate-registry` → runs
   `tsx src/generate-registry.ts`, writes `data/customs_registry.json`
 
