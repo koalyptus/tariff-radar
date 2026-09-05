@@ -24,13 +24,13 @@ module + resolution, shared base in `tsconfig.base.json`.
 - CI (`.github/workflows/ci.yaml`, push + PR, ubuntu/node 22) runs
   install, format:check, lint, typecheck, test, build as separate steps
   (same scripts `pnpm verify` chains locally). Hermetic — no secrets needed.
-- `pnpm generate-registry` → builds registry deps, runs
-  `node packages/registry/dist/generate-registry.js`, writes
-  `data/customs_registry.json`
+- `pnpm generate-registry` → runs `node packages/registry/dist/generate-registry.js`
+  (build first: `pnpm build`), writes `data/customs_registry.json`
 - `pnpm probe [ISO] [--browser=solari] [--timeout-ms=N] [--stealth]
-[--proxy-country=XX] [--captcha]` → builds cli deps, runs
-  `node --env-file-if-exists=.env packages/cli/dist/probe.js`. Direct-only by
-  default (no credentials); `--browser=solari` requires `SOLARI_API_KEY`.
+[--proxy-country=XX] [--captcha]` → runs
+  `node --env-file-if-exists=.env packages/cli/dist/probe.js` (build first:
+  `pnpm build`). Direct-only by default (no credentials);
+  `--browser=solari` requires `SOLARI_API_KEY`.
 
 ## Package boundaries
 
