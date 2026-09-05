@@ -59,4 +59,18 @@ describe("SolariBrowserProvider", () => {
     expect(solariControl.browserClosed).toBe(false);
     expect(solariControl.clientClosed).toBe(true);
   });
+
+  it("supports sequential launches from one provider instance", async () => {
+    resetSolariControl();
+    const provider = new SolariBrowserProvider({ apiKey: "test-key" });
+    const first = await provider.launch();
+    await (await first.newPage()).close();
+    await first.close();
+    expect(solariControl.clientClosed).toBe(true);
+    // A second launch on the same provider must open a fresh client: the
+    // first session's close shut the previous loopback proxy down.
+    const second = await provider.launch();
+    await (await second.newPage()).close();
+    await expect(second.close()).resolves.toBeUndefined();
+  });
 });

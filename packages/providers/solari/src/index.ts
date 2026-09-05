@@ -25,28 +25,34 @@ const PROVIDER_NAME = "solari";
  * {@link BrowserProbeProvider} backed by the Solari SDK. The only module
  * allowed to import `@solarisdk/browser`; everything else depends on the
  * provider-neutral contract.
+ *
+ * The provider itself is stateless: every `launch()` opens a fresh SDK client
+ * alongside the browser, and session close releases both. Sharing one client
+ * across sessions breaks the second launch, because closing the first session
+ * shuts the client's loopback proxy down (`LocalProxy not started`).
  */
 export class SolariBrowserProvider implements BrowserProbeProvider {
   readonly name = PROVIDER_NAME;
-  private readonly client: Solari;
+  private readonly apiKey: string;
 
   /**
-   * Build the adapter. Holds no browser resources yet; those open per launch.
+   * Build the adapter. Holds credentials only; no browser resources yet.
    * @param options - SDK credentials from the composition root.
    */
   constructor(options: SolariProviderOptions) {
-    this.client = new Solari({ apiKey: options.apiKey });
+    this.apiKey = options.apiKey;
   }
 
   /**
    * Open a Solari browser session, translating provider-neutral options into
-   * SDK options. Session close always releases the client too, so the
-   * loopback proxy never outlives the run.
+   * SDK options. Session close always releases its browser and its own
+   * client, so the loopback proxy never outlives the run.
    * @param options - Opt-in capabilities (stealth, CAPTCHA, proxy country).
    * @returns A session the caller must close.
    */
   async launch(options: BrowserProbeOptions = {}): Promise<BrowserProbeSession> {
-    const browser = await this.client.launch({
+    const client = new Solari({ apiKey: this.apiKey });
+    const browser = await client.launch({
       stealth: options.stealth,
       captcha: options.captcha,
       proxy: options.proxyCountry,
@@ -60,7 +66,7 @@ export class SolariBrowserProvider implements BrowserProbeProvider {
         try {
           await browser.close();
         } finally {
-          await this.client.close();
+          await client.close();
         }
       },
     };

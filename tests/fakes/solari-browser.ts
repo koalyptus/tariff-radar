@@ -22,11 +22,19 @@ export function resetSolariControl() {
 }
 
 export class Solari {
+  private closed = false;
+
   constructor(options: { apiKey: string }) {
     solariControl.apiKey = options.apiKey;
   }
 
   async launch(options: Record<string, unknown>) {
+    // Mirror the SDK: closing the client shuts its loopback proxy down, so
+    // launching again on the same client fails. The adapter must open a
+    // fresh client per session.
+    if (this.closed) {
+      throw new Error("LocalProxy not started");
+    }
     solariControl.launchOptions = options;
     return {
       newPage: async () => ({
@@ -57,6 +65,7 @@ export class Solari {
   }
 
   async close() {
+    this.closed = true;
     solariControl.clientClosed = true;
   }
 }
