@@ -30,12 +30,14 @@ describe("runGenerateRegistry", () => {
     const dir = mkdtempSync(join(tmpdir(), "generate-test-"));
     try {
       const out = join(dir, "registry.json");
-      await expect(runGenerateRegistry([writeSeeds(dir), out])).resolves.toBe(1);
+      const lines: string[] = [];
+      await expect(runGenerateRegistry([writeSeeds(dir), out], (line) => lines.push(line))).resolves.toBe(1);
       const written = JSON.parse(readFileSync(out, "utf8")) as {
         entries: Array<{ verification: { status: string } }>;
       };
       expect(written.entries).toHaveLength(1);
       expect(written.entries[0]?.verification.status).toBe("unverified");
+      expect(lines).toEqual([`Generated 1 unverified registry entries at ${out}`]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

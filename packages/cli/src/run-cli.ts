@@ -53,7 +53,7 @@ export async function runCli(
       // yargs already printed the help text; usage was not an error.
       return 0;
     }
-    console.error(error instanceof Error ? error.message : String(error));
+    output.printError(error instanceof Error ? error.message : String(error));
     return 2;
   }
 }

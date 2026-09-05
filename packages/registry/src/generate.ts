@@ -15,9 +15,10 @@ const REGISTRY_FILE_NAME = "customs_registry.json";
 /**
  * Generate an unverified registry from a seeds file.
  * @param argv - Optional `[seedsPath] [registryPath]`; defaults to workspace `data/`.
+ * @param log - Success line sink; writes to stdout in production.
  * @returns The number of registry entries written.
  */
-export async function runGenerateRegistry(argv: string[]): Promise<number> {
+export async function runGenerateRegistry(argv: string[], log: (line: string) => void = console.log): Promise<number> {
   const [seedsPathArg, registryPathArg] = argv;
   const dataDir = projectDataDir(import.meta.url);
   const seedsPath = seedsPathArg ?? join(dataDir, SEEDS_FILE_NAME);
@@ -39,6 +40,6 @@ export async function runGenerateRegistry(argv: string[]): Promise<number> {
 
   await mkdir(dirname(registryPath), { recursive: true });
   await writeFile(registryPath, `${JSON.stringify(registry, null, 2)}\n`, "utf8");
-  console.log(`Generated ${registry.entries.length} unverified registry entries at ${registryPath}`);
+  log(`Generated ${registry.entries.length} unverified registry entries at ${registryPath}`);
   return registry.entries.length;
 }

@@ -20,6 +20,10 @@ module + resolution, shared base in `tsconfig.base.json`.
   plus width 120 (LF comes from `.editorconfig`). Run `format` before committing.
 - `pnpm lint` and `pnpm lint:fix`. Minimal ESLint (parser only, no preset):
   `curly` all — braces always required. Gate new rules by explicit decision.
+- `console.*` lives only in the two output transports (`stdioOutput` in
+  `packages/cli`, `consoleProbeLogger` in `packages/probe-core`). Command,
+  workflow, and registry logic never touches console directly — output goes
+  through injected `RunCliOutput`, diagnostics through `ProbeLogger`.
 - `pnpm verify` runs every gate in order: format:check, lint, typecheck, test.
 - CI (`.github/workflows/ci.yaml`, push + PR, ubuntu/node 22) runs
   install, format:check, lint, typecheck, test, build as separate steps

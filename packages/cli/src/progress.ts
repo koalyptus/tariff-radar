@@ -18,6 +18,8 @@ export interface RunCliOutput {
   printTable: (text: string) => void;
   /** Print one progress line (stderr in production). */
   printProgress: (line: string) => void;
+  /** Print a failure message (stderr in production). */
+  printError: (message: string) => void;
 }
 
 /** Production output sinks. */
@@ -27,6 +29,7 @@ export function stdioOutput(): RunCliOutput {
     printProgress: (line) => {
       process.stderr.write(`${line}\n`);
     },
+    printError: (message) => console.error(message),
   };
 }
 

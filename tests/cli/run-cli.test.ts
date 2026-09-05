@@ -55,18 +55,28 @@ function writeSeeds(): { dir: string; seedsFile: string } {
   return { dir, seedsFile };
 }
 
-function recordOutput(): { output: RunCliOutput; tables: string[]; progress: string[] } {
+function recordOutput(): {
+  output: RunCliOutput;
+  tables: string[];
+  progress: string[];
+  errors: string[];
+} {
   const tables: string[] = [];
   const progress: string[] = [];
+  const errors: string[] = [];
   return {
     tables,
     progress,
+    errors,
     output: {
       printTable: (text) => {
         tables.push(text);
       },
       printProgress: (line) => {
         progress.push(line);
+      },
+      printError: (message) => {
+        errors.push(message);
       },
     },
   };
@@ -161,8 +171,10 @@ describe("runCli", () => {
 
   it("returns 2 on usage errors", async () => {
     const { dir, seedsFile } = writeSeeds();
+    const recorded = recordOutput();
     try {
-      await expect(runCli(["--nope"], stubDeps(directResult()), seedsFile)).resolves.toBe(2);
+      await expect(runCli(["--nope"], stubDeps(directResult()), seedsFile, recorded.output)).resolves.toBe(2);
+      expect(recorded.errors).toEqual(["Unknown argument: nope"]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -170,8 +182,12 @@ describe("runCli", () => {
 
   it("returns 2 when the workflow throws a non-Error", async () => {
     const { dir, seedsFile } = writeSeeds();
+    const recorded = recordOutput();
     try {
-      await expect(runCli(["US", "--browser=direct"], stubDeps("plain failure"), seedsFile)).resolves.toBe(2);
+      await expect(
+        runCli(["US", "--browser=direct"], stubDeps("plain failure"), seedsFile, recorded.output),
+      ).resolves.toBe(2);
+      expect(recorded.errors).toEqual(["plain failure"]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
