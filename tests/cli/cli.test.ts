@@ -410,6 +410,47 @@ describe("runTargets", () => {
     const { deps } = stubDeps([]);
     await expect(runTargets([seedUS], parseArgs(["ZZ"]), deps)).rejects.toThrow('Unknown ISO code "ZZ".');
   });
+
+  it("forwards every log level through the buffer", async () => {
+    const expected = workflowResult({ seed: seedUS });
+    const forwarded: Array<{ level: string; message: string }> = [];
+    const runWorkflow = (async (_seed: Seed, options?: ProbeWorkflowOptions) => {
+      options?.logger?.debug("d");
+      options?.logger?.info("i");
+      options?.logger?.warn("w");
+      options?.logger?.error("e");
+      return expected;
+    }) as RunDeps["runWorkflow"];
+    const deps: RunDeps = {
+      runWorkflow,
+      createSolariProvider: () => {
+        throw new Error("unused");
+      },
+      readApiKey: () => undefined,
+      logger: {
+        debug: (message: string) => {
+          forwarded.push({ level: "debug", message });
+        },
+        info: (message: string) => {
+          forwarded.push({ level: "info", message });
+        },
+        warn: (message: string) => {
+          forwarded.push({ level: "warn", message });
+        },
+        error: (message: string) => {
+          forwarded.push({ level: "error", message });
+        },
+      },
+    };
+    const results = await runTargets([seedUS], parseArgs(["US", "--browser=direct"]), deps);
+    expect(results).toEqual([expected]);
+    expect(forwarded).toEqual([
+      { level: "debug", message: "d" },
+      { level: "info", message: "i" },
+      { level: "warn", message: "w" },
+      { level: "error", message: "e" },
+    ]);
+  });
 });
 
 describe("defaultDeps", () => {
