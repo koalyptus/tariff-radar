@@ -32,9 +32,7 @@ try {
     const direct = results.filter((result) => result.method === PROBE_METHOD.DIRECT).length;
     const browser = results.filter((result) => result.method === PROBE_METHOD.BROWSER).length;
     const failed = results.length - direct - browser;
-    console.error(
-      `Direct probe: COMPLETED — ${String(direct)} direct, ${String(browser)} browser, ${String(failed)} failed`,
-    );
+    console.error(`Probe: COMPLETED — ${String(direct)} direct, ${String(browser)} browser, ${String(failed)} failed`);
   }
   if (results.some((result) => result.method === PROBE_METHOD.FAILED)) {
     process.exitCode = 1;

@@ -1,6 +1,9 @@
 import pLimit from "p-limit";
 import { consoleProbeLogger } from "@tariff-radar/probe-core";
-import type { BrowserProbeProvider, ProbeLogger, WorkflowResult } from "@tariff-radar/probe-core";
+import type { BrowserProbeProvider, LogFields, ProbeLogger, WorkflowResult } from "@tariff-radar/probe-core";
+
+/** Log levels the scoped per-seed logger records. */
+type LogLevel = "debug" | "info" | "warn" | "error";
 import { SolariBrowserProvider } from "@tariff-radar/provider-solari";
 import type { Seed } from "@tariff-radar/registry";
 import { runProbeWorkflow } from "@tariff-radar/workflow";
@@ -68,8 +71,17 @@ export async function runTargets(seeds: Seed[], options: CliOptions, deps: RunDe
   }
   const limit = pLimit(options.concurrency ?? 3);
   const tasks = targets.map((seed) =>
-    limit(() =>
-      deps.runWorkflow(seed, {
+    limit(async () => {
+      // Buffer one seed's lines and print them as a block on completion:
+      // concurrent seeds must not interleave mid-story.
+      const recorded: Array<{ level: LogLevel; message: string; fields?: LogFields }> = [];
+      const scoped = {} as ProbeLogger;
+      for (const level of ["debug", "info", "warn", "error"] as const) {
+        scoped[level] = (message, fields) => {
+          recorded.push({ level, message, fields });
+        };
+      }
+      const result = await deps.runWorkflow(seed, {
         browserProvider,
         browserOptions: {
           stealth: options.stealth,
@@ -77,9 +89,13 @@ export async function runTargets(seeds: Seed[], options: CliOptions, deps: RunDe
           captcha: options.captcha,
         },
         timeoutMs: options.timeoutMs,
-        logger: deps.logger,
-      }),
-    ),
+        logger: scoped,
+      });
+      for (const call of recorded) {
+        deps.logger[call.level](call.message, call.fields);
+      }
+      return result;
+    }),
   );
   return Promise.all(tasks);
 }

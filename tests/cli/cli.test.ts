@@ -91,6 +91,7 @@ function stubDeps(
         timeoutMs: options?.timeoutMs,
         browserOptions: options?.browserOptions,
       });
+      options?.logger?.info("probe", { isoCode: seed.isoCode });
       return results[index++];
     }) as RunDeps["runWorkflow"],
     createSolariProvider: () => fakeProvider,
@@ -361,6 +362,48 @@ describe("runTargets", () => {
     const results = await runTargets([seedUS, seedMX], { ...parseArgs([]), concurrency: 2 }, deps);
     expect(maxInFlight).toBe(2);
     expect(results).toEqual([first, second]);
+  });
+
+  it("prints each seed's lines as one block in completion order", async () => {
+    const first = workflowResult({ seed: seedUS });
+    const second = workflowResult({ seed: seedMX });
+    const lines: string[] = [];
+    let releaseUS!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      releaseUS = resolve;
+    });
+    const runWorkflow = (async (seed: Seed, options?: ProbeWorkflowOptions) => {
+      options?.logger?.info(`start-${seed.isoCode}`);
+      if (seed.isoCode === "US") {
+        await gate;
+      }
+      options?.logger?.info(`end-${seed.isoCode}`);
+      return seed.isoCode === "US" ? first : second;
+    }) as RunDeps["runWorkflow"];
+    const deps: RunDeps = {
+      runWorkflow,
+      createSolariProvider: () => ({
+        name: "fake",
+        launch: async () => {
+          throw new Error("unused");
+        },
+      }),
+      readApiKey: () => "test-key",
+      logger: {
+        debug: () => {},
+        info: (message: string) => {
+          lines.push(message);
+        },
+        warn: () => {},
+        error: () => {},
+      },
+    };
+    const pending = runTargets([seedUS, seedMX], { ...parseArgs([]), concurrency: 2 }, deps);
+    await new Promise((resolve) => setImmediate(resolve));
+    releaseUS();
+    const results = await pending;
+    expect(results).toEqual([first, second]);
+    expect(lines).toEqual(["start-MX", "end-MX", "start-US", "end-US"]);
   });
 
   it("throws for unknown ISO codes", async () => {
