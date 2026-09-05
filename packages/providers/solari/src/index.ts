@@ -52,11 +52,20 @@ export class SolariBrowserProvider implements BrowserProbeProvider {
    */
   async launch(options: BrowserProbeOptions = {}): Promise<BrowserProbeSession> {
     const client = new Solari({ apiKey: this.apiKey });
-    const browser = await client.launch({
-      stealth: options.stealth,
-      captcha: options.captcha,
-      proxy: options.proxyCountry,
-    });
+    let browser: SolariBrowser;
+    try {
+      browser = await client.launch({
+        stealth: options.stealth,
+        captcha: options.captcha,
+        proxy: options.proxyCountry,
+      });
+    } catch (error) {
+      // Never leak a client whose browser failed to start: its loopback
+      // proxy would otherwise outlive the run (and the cloud session with
+      // it — see the orphaned instances from shared-client reuse).
+      await client.close();
+      throw error;
+    }
 
     return {
       newPage: async () => createPageAdapter(await browser.newPage()),

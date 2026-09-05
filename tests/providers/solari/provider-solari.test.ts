@@ -73,4 +73,12 @@ describe("SolariBrowserProvider", () => {
     await (await second.newPage()).close();
     await expect(second.close()).resolves.toBeUndefined();
   });
+
+  it("releases the client when the browser fails to start", async () => {
+    resetSolariControl();
+    solariControl.launchError = new Error("browser unavailable");
+    const provider = new SolariBrowserProvider({ apiKey: "test-key" });
+    await expect(provider.launch()).rejects.toThrow("browser unavailable");
+    expect(solariControl.clientClosed).toBe(true);
+  });
 });

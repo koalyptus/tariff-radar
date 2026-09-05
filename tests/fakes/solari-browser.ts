@@ -4,6 +4,7 @@
 export const solariControl = {
   apiKey: "",
   launchOptions: {} as Record<string, unknown>,
+  launchError: undefined as unknown,
   gotoResponse: "response" as "response" | "none",
   browserClosed: false,
   clientClosed: false,
@@ -14,6 +15,7 @@ export const solariControl = {
 export function resetSolariControl() {
   solariControl.apiKey = "";
   solariControl.launchOptions = {};
+  solariControl.launchError = undefined;
   solariControl.gotoResponse = "response";
   solariControl.browserClosed = false;
   solariControl.clientClosed = false;
@@ -34,6 +36,9 @@ export class Solari {
     // fresh client per session.
     if (this.closed) {
       throw new Error("LocalProxy not started");
+    }
+    if (solariControl.launchError !== undefined) {
+      throw solariControl.launchError;
     }
     solariControl.launchOptions = options;
     return {
