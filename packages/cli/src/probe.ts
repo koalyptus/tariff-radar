@@ -19,6 +19,7 @@ try {
   const dataDir = join(projectRoot(import.meta.url), "data");
   const seeds = await loadSeeds(join(dataDir, "seeds.json"));
   const total = options.all ? seeds.length : 1;
+  const startedAt = performance.now();
   const deps = {
     ...defaultDeps(),
     logger: options.log === "json" ? consoleProbeLogger : humanProbeLogger((line) => console.error(line)),
@@ -32,7 +33,10 @@ try {
     const direct = results.filter((result) => result.method === PROBE_METHOD.DIRECT).length;
     const browser = results.filter((result) => result.method === PROBE_METHOD.BROWSER).length;
     const failed = results.length - direct - browser;
-    console.error(`Probe: COMPLETED — ${String(direct)} direct, ${String(browser)} browser, ${String(failed)} failed`);
+    const elapsed = ((performance.now() - startedAt) / 1000).toFixed(1);
+    console.error(
+      `Probe: COMPLETED — ${String(direct)} direct, ${String(browser)} browser, ${String(failed)} failed in ${elapsed}s`,
+    );
   }
   if (results.some((result) => result.method === PROBE_METHOD.FAILED)) {
     process.exitCode = 1;
