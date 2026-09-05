@@ -45,7 +45,10 @@ module + resolution, shared base in `tsconfig.base.json`.
   `PROBE_EVIDENCE` constants, not string literals.
 - `packages/workflow`: `runProbeWorkflow(seed, {browserProvider, browserOptions,
 timeoutMs})` — direct-first, browser only after direct failure, always closes
-  page + session (`finally` on both paths).
+  page + session (`finally` on both paths). `runTargets(seeds, options, deps)`
+  fans seeds out with bounded concurrency (results and log blocks in seed
+  order). Use `BROWSER_MODE` / `DEFAULT_CONCURRENCY` / `MAX_CONCURRENCY`
+  constants, not string literals.
 - `packages/providers/solari` (package `@tariff-radar/provider-solari`): the ONLY place that may import
   `@solarisdk/browser`. Adapts to `BrowserProbeProvider` (`name: "solari"`).
   `probe-core`, `workflow`, `registry` must compile without the Solari SDK.
@@ -56,12 +59,11 @@ timeoutMs})` — direct-first, browser only after direct failure, always closes
   `projectRoot(metaUrl)` and `projectDataDir(metaUrl)` (workspace layout
   resolution for entry scripts).
 - `packages/cli`: composition root (arg parsing via `yargs`, one parser per
-  command). The ONLY place (with `run.ts` seams) allowed to read
-  `SOLARI_API_KEY` and construct `SolariBrowserProvider`. `probe` entry:
-  `runCli` (`parseProbeArgs` → `loadSeeds`/`findSeed` → `runTargets` →
+  command). The ONLY place allowed to read `SOLARI_API_KEY` and construct
+  `SolariBrowserProvider` (both in `run-cli.ts` `defaultDeps`). `probe` entry:
+  `runCli` (`parseProbeArgs` → `loadSeeds` → `runTargets` →
   `formatTable`) returns the exit code; exit 1 on any `failed` result, 2 on
-  usage errors, 0 on `--help`. String literals for flag values live in
-  `BROWSER_MODE` / `DEFAULT_CONCURRENCY` / `MAX_CONCURRENCY`, not inline.
+  usage errors, 0 on `--help`.
 - `examples/`: upstream Solari cookbook, standalone per-example projects with
   their own `package.json` (`tsx index.ts`). Not workspace members — leave alone.
 - `doc/ROADMAP.md` owns phase scope and done-criteria; `README.md` owns the

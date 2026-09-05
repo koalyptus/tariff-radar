@@ -2,21 +2,9 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import type { BrowserProbeProvider } from "@tariff-radar/probe-core";
-import type { ProbeLogger, WorkflowResult } from "@tariff-radar/probe-core";
-import { PROBE_LOG_EVENT, noopProbeLogger } from "@tariff-radar/probe-core";
+import type { WorkflowResult } from "@tariff-radar/probe-core";
 import type { Seed } from "@tariff-radar/registry";
-import type { ProbeWorkflowOptions } from "@tariff-radar/workflow";
-import {
-  defaultDeps,
-  findSeed,
-  formatTable,
-  loadSeeds,
-  parseProbeArgs,
-  runTargets,
-  HelpRequested,
-} from "@tariff-radar/cli";
-import type { RunDeps } from "@tariff-radar/cli";
+import { defaultDeps, formatTable, loadSeeds, parseProbeArgs, HelpRequested } from "@tariff-radar/cli";
 
 const seedUS: Seed = {
   isoCode: "US",
@@ -59,46 +47,6 @@ function workflowResult(partial: Partial<WorkflowResult> & { seed: WorkflowResul
     error: null,
     ...partial,
   };
-}
-
-interface RecordedCall {
-  isoCode: string;
-  provider: unknown;
-  timeoutMs: unknown;
-  browserOptions: unknown;
-}
-
-function stubDeps(
-  results: WorkflowResult[],
-  opts: { apiKey?: string; logger?: ProbeLogger } = {},
-): {
-  deps: RunDeps;
-  calls: RecordedCall[];
-} {
-  const calls: RecordedCall[] = [];
-  const fakeProvider: BrowserProbeProvider = {
-    name: "fake",
-    launch: async () => {
-      throw new Error("unused");
-    },
-  };
-  let index = 0;
-  const deps: RunDeps = {
-    runWorkflow: (async (seed: Seed, options?: ProbeWorkflowOptions) => {
-      calls.push({
-        isoCode: seed.isoCode,
-        provider: options?.browserProvider,
-        timeoutMs: options?.timeoutMs,
-        browserOptions: options?.browserOptions,
-      });
-      options?.logger?.info("probe", { isoCode: seed.isoCode });
-      return results[index++];
-    }) as RunDeps["runWorkflow"],
-    createSolariProvider: () => fakeProvider,
-    readApiKey: () => ("apiKey" in opts ? opts.apiKey : "test-key"),
-    logger: opts.logger ?? noopProbeLogger,
-  };
-  return { deps, calls };
 }
 
 describe("parseProbeArgs", () => {
@@ -181,15 +129,7 @@ describe("parseProbeArgs", () => {
   });
 });
 
-describe("findSeed and loadSeeds", () => {
-  it("matches ISO codes case-insensitively", () => {
-    expect(findSeed([seedUS, seedMX], "mx")).toBe(seedMX);
-  });
-
-  it("throws for unknown ISO codes", () => {
-    expect(() => findSeed([seedUS], "ZZ")).toThrow('Unknown ISO code "ZZ".');
-  });
-
+describe("loadSeeds", () => {
   it("loads seeds from a JSON file", async () => {
     const dir = mkdtempSync(join(tmpdir(), "cli-test-"));
     try {
@@ -269,192 +209,6 @@ describe("formatTable", () => {
   it("renders an unknown failure without a recorded error", () => {
     const text = formatTable([workflowResult({ seed: seedUS, method: "failed", direct: directFailed(null) })]);
     expect(text).toContain("unknown error");
-  });
-});
-
-describe("runTargets", () => {
-  it("builds the default Solari provider", async () => {
-    const expected = workflowResult({ seed: seedUS });
-    const { deps, calls } = stubDeps([expected]);
-    const results = await runTargets([seedUS, seedMX], parseProbeArgs(["us"]), deps);
-    expect(results).toEqual([expected]);
-    expect(calls).toEqual([
-      {
-        isoCode: "US",
-        provider: calls[0]?.provider,
-        timeoutMs: undefined,
-        browserOptions: { stealth: undefined, proxyCountry: undefined, captcha: undefined },
-      },
-    ]);
-    expect(calls[0]?.provider).toMatchObject({ name: "fake" });
-  });
-
-  it("builds the Solari provider and forwards flags when requested", async () => {
-    const expected = workflowResult({ seed: seedUS, method: "browser", provider: "fake" });
-    const { deps, calls } = stubDeps([expected]);
-    const results = await runTargets(
-      [seedUS],
-      parseProbeArgs(["US", "--browser=solari", "--timeout-ms=2500", "--stealth", "--proxy-country=mx", "--captcha"]),
-      deps,
-    );
-    expect(results).toEqual([expected]);
-    expect(calls[0]?.provider).toMatchObject({ name: "fake" });
-    expect(calls[0]?.timeoutMs).toBe(2500);
-    expect(calls[0]?.browserOptions).toEqual({ stealth: true, proxyCountry: "MX", captcha: true });
-  });
-
-  it("throws when the Solari key is missing", async () => {
-    const { deps } = stubDeps([], { apiKey: undefined });
-    await expect(runTargets([seedUS], parseProbeArgs(["US", "--browser=solari"]), deps)).rejects.toThrow(
-      "SOLARI_API_KEY is not set.",
-    );
-  });
-
-  it("warns and continues direct-only when the default browser lacks a key", async () => {
-    const expected = workflowResult({ seed: seedUS });
-    const warnings: string[] = [];
-    const { deps, calls } = stubDeps([expected], {
-      apiKey: undefined,
-      logger: { debug: () => {}, info: () => {}, warn: (message) => warnings.push(message), error: () => {} },
-    });
-    const results = await runTargets([seedUS], parseProbeArgs(["US"]), deps);
-    expect(results).toEqual([expected]);
-    expect(calls[0]?.provider).toBeUndefined();
-    expect(warnings).toEqual(["SOLARI_API_KEY is not set — continuing direct-only."]);
-  });
-
-  it("skips the browser entirely with --browser=direct", async () => {
-    const expected = workflowResult({ seed: seedUS });
-    const { deps, calls } = stubDeps([expected]);
-    const results = await runTargets([seedUS], parseProbeArgs(["US", "--browser=direct"]), deps);
-    expect(results).toEqual([expected]);
-    expect(calls[0]?.provider).toBeUndefined();
-  });
-
-  it("probes every seed without an ISO in file order", async () => {
-    const first = workflowResult({ seed: seedUS });
-    const second = workflowResult({ seed: seedMX });
-    const { deps, calls } = stubDeps([first, second]);
-    const results = await runTargets([seedUS, seedMX], parseProbeArgs([]), deps);
-    expect(results).toEqual([first, second]);
-    expect(calls.map((call) => call.isoCode)).toEqual(["US", "MX"]);
-  });
-
-  it("runs up to concurrency probes at once, keeping seed order", async () => {
-    const first = workflowResult({ seed: seedUS });
-    const second = workflowResult({ seed: seedMX });
-    let inFlight = 0;
-    let maxInFlight = 0;
-    const runWorkflow = (async (seed: Seed) => {
-      inFlight += 1;
-      maxInFlight = Math.max(maxInFlight, inFlight);
-      await Promise.resolve();
-      inFlight -= 1;
-      return seed.isoCode === "US" ? first : second;
-    }) as RunDeps["runWorkflow"];
-    const fakeProvider: BrowserProbeProvider = {
-      name: "fake",
-      launch: async () => {
-        throw new Error("unused");
-      },
-    };
-    const deps: RunDeps = {
-      runWorkflow,
-      createSolariProvider: () => fakeProvider,
-      readApiKey: () => "test-key",
-      logger: noopProbeLogger,
-    };
-    const results = await runTargets([seedUS, seedMX], { ...parseProbeArgs([]), concurrency: 2 }, deps);
-    expect(maxInFlight).toBe(2);
-    expect(results).toEqual([first, second]);
-  });
-
-  it("prints each seed's lines as one block in completion order", async () => {
-    const first = workflowResult({ seed: seedUS });
-    const second = workflowResult({ seed: seedMX });
-    const lines: string[] = [];
-    let releaseUS!: () => void;
-    const gate = new Promise<void>((resolve) => {
-      releaseUS = resolve;
-    });
-    const runWorkflow = (async (seed: Seed, options?: ProbeWorkflowOptions) => {
-      options?.logger?.info(PROBE_LOG_EVENT.START, { isoCode: seed.isoCode });
-      if (seed.isoCode === "US") {
-        await gate;
-      }
-      options?.logger?.info(`end-${seed.isoCode}`);
-      return seed.isoCode === "US" ? first : second;
-    }) as RunDeps["runWorkflow"];
-    const deps: RunDeps = {
-      runWorkflow,
-      createSolariProvider: () => ({
-        name: "fake",
-        launch: async () => {
-          throw new Error("unused");
-        },
-      }),
-      readApiKey: () => "test-key",
-      logger: {
-        debug: () => {},
-        info: (message: string) => {
-          lines.push(message);
-        },
-        warn: () => {},
-        error: () => {},
-      },
-    };
-    const pending = runTargets([seedUS, seedMX], { ...parseProbeArgs([]), concurrency: 2 }, deps);
-    await new Promise((resolve) => setImmediate(resolve));
-    releaseUS();
-    const results = await pending;
-    expect(results).toEqual([first, second]);
-    expect(lines).toEqual([PROBE_LOG_EVENT.START, "end-MX", PROBE_LOG_EVENT.START, "end-US"]);
-  });
-
-  it("throws for unknown ISO codes", async () => {
-    const { deps } = stubDeps([]);
-    await expect(runTargets([seedUS], parseProbeArgs(["ZZ"]), deps)).rejects.toThrow('Unknown ISO code "ZZ".');
-  });
-
-  it("forwards every log level through the buffer", async () => {
-    const expected = workflowResult({ seed: seedUS });
-    const forwarded: Array<{ level: string; message: string }> = [];
-    const runWorkflow = (async (_seed: Seed, options?: ProbeWorkflowOptions) => {
-      options?.logger?.debug("d");
-      options?.logger?.info("i");
-      options?.logger?.warn("w");
-      options?.logger?.error("e");
-      return expected;
-    }) as RunDeps["runWorkflow"];
-    const deps: RunDeps = {
-      runWorkflow,
-      createSolariProvider: () => {
-        throw new Error("unused");
-      },
-      readApiKey: () => undefined,
-      logger: {
-        debug: (message: string) => {
-          forwarded.push({ level: "debug", message });
-        },
-        info: (message: string) => {
-          forwarded.push({ level: "info", message });
-        },
-        warn: (message: string) => {
-          forwarded.push({ level: "warn", message });
-        },
-        error: (message: string) => {
-          forwarded.push({ level: "error", message });
-        },
-      },
-    };
-    const results = await runTargets([seedUS], parseProbeArgs(["US", "--browser=direct"]), deps);
-    expect(results).toEqual([expected]);
-    expect(forwarded).toEqual([
-      { level: "debug", message: "d" },
-      { level: "info", message: "i" },
-      { level: "warn", message: "w" },
-      { level: "error", message: "e" },
-    ]);
   });
 });
 

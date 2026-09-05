@@ -13,7 +13,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@tariff-radar/probe-core": "workspace:*"
+    "@tariff-radar/probe-core": "workspace:*",
+    "p-limit": "^7.3.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

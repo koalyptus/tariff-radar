@@ -1,4 +1,6 @@
 import yargs from "yargs";
+import { BROWSER_MODE, MAX_CONCURRENCY } from "@tariff-radar/workflow";
+import type { BrowserMode } from "@tariff-radar/workflow";
 
 /**
  * CLI argument parsing via yargs. The framework owns tokenizing, types,
@@ -26,24 +28,6 @@ export interface CliOptions {
   /** Max parallel seed probes (default `DEFAULT_CONCURRENCY`). */
   concurrency?: number;
 }
-
-/**
- * Browser fallback vocabulary for the probe command. Use these constants,
- * never string literals, so a rename breaks the build instead of behavior.
- */
-export const BROWSER_MODE = {
-  DIRECT: "direct",
-  SOLARI: "solari",
-} as const;
-
-/** One of the {@link BROWSER_MODE} values. */
-export type BrowserMode = (typeof BROWSER_MODE)[keyof typeof BROWSER_MODE];
-
-/** Default parallel seed probes. */
-export const DEFAULT_CONCURRENCY = 6;
-
-/** Upper bound for `--concurrency`: one in-flight probe per demo seed. */
-export const MAX_CONCURRENCY = 8;
 
 export const CLI_USAGE =
   "Usage: pnpm probe [ISO] [--browser=solari] [--timeout-ms=N] [--stealth] [--proxy-country=XX] [--captcha] [--log=json] [--concurrency=N]";

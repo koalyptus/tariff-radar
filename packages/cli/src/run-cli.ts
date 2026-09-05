@@ -1,13 +1,29 @@
 import { join } from "node:path";
 import { PROBE_METHOD, consoleProbeLogger } from "@tariff-radar/probe-core";
+import { SolariBrowserProvider } from "@tariff-radar/provider-solari";
 import { projectDataDir } from "@tariff-radar/shared";
+import { runTargets } from "@tariff-radar/workflow";
+import type { RunDeps } from "@tariff-radar/workflow";
+import { runProbeWorkflow } from "@tariff-radar/workflow";
 import { parseProbeArgs, HelpRequested } from "./args.js";
 import { progressLogger, stdioOutput } from "./progress.js";
 import type { RunCliOutput } from "./progress.js";
-import { defaultDeps, runTargets } from "./run.js";
-import type { RunDeps } from "./run.js";
 import { loadSeeds } from "./seeds.js";
 import { formatTable } from "./summary.js";
+
+/**
+ * Build the production seams. The ONLY place that reads `SOLARI_API_KEY`;
+ * packages never touch it directly.
+ * @returns Production dependency implementations.
+ */
+export function defaultDeps(): RunDeps {
+  return {
+    runWorkflow: runProbeWorkflow,
+    createSolariProvider: (apiKey) => new SolariBrowserProvider({ apiKey }),
+    readApiKey: () => process.env.SOLARI_API_KEY,
+    logger: consoleProbeLogger,
+  };
+}
 
 /**
  * Run the probe command and report the exit code. All command output flows

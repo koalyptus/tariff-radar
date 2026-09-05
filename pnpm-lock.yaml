@@ -53,9 +53,6 @@ importers:
       cli-table3:
         specifier: ^0.6.5
         version: 0.6.5
-      p-limit:
-        specifier: ^7.3.2
-        version: 7.3.2
       yargs:
         specifier: ^18.1.0
         version: 18.1.0
@@ -122,6 +119,9 @@ importers:
       '@tariff-radar/probe-core':
         specifier: workspace:*
         version: link:../probe-core
+      p-limit:
+        specifier: ^7.3.2
+        version: 7.3.2
     devDependencies:
       '@types/node':
         specifier: ^22.10.2
