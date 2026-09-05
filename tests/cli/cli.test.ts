@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { BrowserProbeProvider } from "@tariff-radar/probe-core";
 import type { ProbeLogger, WorkflowResult } from "@tariff-radar/probe-core";
-import { noopProbeLogger } from "@tariff-radar/probe-core";
+import { PROBE_LOG_EVENT, noopProbeLogger } from "@tariff-radar/probe-core";
 import type { Seed } from "@tariff-radar/registry";
 import type { ProbeWorkflowOptions } from "@tariff-radar/workflow";
 import {
@@ -364,7 +364,7 @@ describe("runTargets", () => {
     expect(results).toEqual([first, second]);
   });
 
-  it("prints each seed's lines as one block in completion order", async () => {
+  it("prints headers live and details as one block in completion order", async () => {
     const first = workflowResult({ seed: seedUS });
     const second = workflowResult({ seed: seedMX });
     const lines: string[] = [];
@@ -373,7 +373,7 @@ describe("runTargets", () => {
       releaseUS = resolve;
     });
     const runWorkflow = (async (seed: Seed, options?: ProbeWorkflowOptions) => {
-      options?.logger?.info(`start-${seed.isoCode}`);
+      options?.logger?.info(PROBE_LOG_EVENT.START, { isoCode: seed.isoCode });
       if (seed.isoCode === "US") {
         await gate;
       }
@@ -403,7 +403,7 @@ describe("runTargets", () => {
     releaseUS();
     const results = await pending;
     expect(results).toEqual([first, second]);
-    expect(lines).toEqual(["start-MX", "end-MX", "start-US", "end-US"]);
+    expect(lines).toEqual([PROBE_LOG_EVENT.START, PROBE_LOG_EVENT.START, "end-MX", "end-US"]);
   });
 
   it("throws for unknown ISO codes", async () => {
