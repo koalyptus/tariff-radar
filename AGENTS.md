@@ -27,7 +27,7 @@ module + resolution, shared base in `tsconfig.base.json`.
 - `pnpm generate-registry` → runs `node packages/registry/dist/generate-registry.js`
   (build first: `pnpm build`), writes `data/customs_registry.json`
 - `pnpm probe [ISO] [--browser=solari] [--timeout-ms=N] [--stealth]
-[--proxy-country=XX] [--captcha]` → runs
+[--proxy-country=XX] [--captcha] [--log=json]` → runs
   `node --env-file-if-exists=.env packages/cli/dist/probe.js` (build first:
   `pnpm build`). Direct-only by default (no credentials);
   `--browser=solari` requires `SOLARI_API_KEY`.

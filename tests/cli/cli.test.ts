@@ -102,11 +102,11 @@ function stubDeps(
 
 describe("parseArgs", () => {
   it("accepts one ISO code direct-only by default", () => {
-    expect(parseArgs(["us"])).toEqual({ target: "US", all: false, browser: null });
+    expect(parseArgs(["us"])).toEqual({ target: "US", all: false, browser: null, log: "human" });
   });
 
   it("probes all seeds when no ISO is given", () => {
-    expect(parseArgs([])).toEqual({ target: "all", all: true, browser: null });
+    expect(parseArgs([])).toEqual({ target: "all", all: true, browser: null, log: "human" });
   });
 
   it("accepts browser, timeout, and opt-in provider flags", () => {
@@ -120,7 +120,16 @@ describe("parseArgs", () => {
       stealth: true,
       proxyCountry: "MX",
       captcha: true,
+      log: "human",
     });
+  });
+
+  it("accepts JSON log rendering", () => {
+    expect(parseArgs(["US", "--log=json"])).toMatchObject({ log: "json" });
+  });
+
+  it("rejects unknown log renderers", () => {
+    expect(() => parseArgs(["US", "--log=yaml"])).toThrow('Argument: log, Given: "yaml"');
   });
 
   it("rejects a removed --all flag", () => {

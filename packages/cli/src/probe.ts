@@ -1,7 +1,8 @@
 import { join } from "node:path";
-import { PROBE_METHOD } from "@tariff-radar/probe-core";
+import { PROBE_METHOD, consoleProbeLogger } from "@tariff-radar/probe-core";
 import { projectRoot } from "@tariff-radar/shared";
 import { parseArgs, HelpRequested } from "./args.js";
+import { humanProbeLogger } from "./progress.js";
 import { defaultDeps, runTargets } from "./run.js";
 import { loadSeeds } from "./seeds.js";
 import { formatSummary } from "./summary.js";
@@ -16,7 +17,11 @@ import { formatSummary } from "./summary.js";
 try {
   const options = parseArgs(process.argv.slice(2));
   const dataDir = join(projectRoot(import.meta.url), "data");
-  const results = await runTargets(await loadSeeds(join(dataDir, "seeds.json")), options, defaultDeps());
+  const deps = {
+    ...defaultDeps(),
+    logger: options.log === "json" ? consoleProbeLogger : humanProbeLogger((line) => console.error(line)),
+  };
+  const results = await runTargets(await loadSeeds(join(dataDir, "seeds.json")), options, deps);
   for (const result of results) {
     console.log(formatSummary(result));
   }

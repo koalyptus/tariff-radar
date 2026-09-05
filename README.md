@@ -175,6 +175,20 @@ only required with `--browser=solari`. Opt-in browser capabilities are flags,
 never defaults: `--stealth`, `--proxy-country=MX`, `--captcha`. Exit code is
 `1` when any seed ends `failed`, `2` on usage errors.
 
+Progress renders as one human-readable stage line per seed on stderr while
+the per-seed summaries print on stdout, so the run is easy to follow live:
+
+```text
+── US https://hts.usitc.gov/
+   direct: HTTP 200 in 533ms
+── CN http://english.customs.gov.cn/service/query
+   direct: failed (fetch failed)
+   browser via solari…
+   browser: HTTP 200
+```
+
+Pass `--log=json` for the original machine-readable JSON lines.
+
 The CLI prints a per-seed summary to stdout and writes no registry file yet:
 the seed-only scaffold in `packages/registry` still emits `unverified`
 placeholders. A `200` below means the portal answered HTTP, not that tariff

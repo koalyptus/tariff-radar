@@ -21,10 +21,12 @@ export interface CliOptions {
   proxyCountry?: string;
   /** Opt-in provider CAPTCHA handling where the target's terms permit it. */
   captcha?: boolean;
+  /** Progress rendering: human stage lines (default) or JSON lines. */
+  log: "human" | "json";
 }
 
 export const CLI_USAGE =
-  "Usage: pnpm probe [ISO] [--browser=solari] [--timeout-ms=N] [--stealth] [--proxy-country=XX] [--captcha]";
+  "Usage: pnpm probe [ISO] [--browser=solari] [--timeout-ms=N] [--stealth] [--proxy-country=XX] [--captcha] [--log=json]";
 
 /**
  * Narrow yargs result to the flags this CLI declares. The `@types/yargs`
@@ -37,6 +39,7 @@ interface ParsedFlags {
   stealth?: boolean;
   proxyCountry?: string;
   captcha?: boolean;
+  log: "human" | "json";
   iso?: string;
   help?: boolean;
 }
@@ -78,6 +81,11 @@ export function parseArgs(argv: string[]): CliOptions {
       type: "boolean",
       describe: "Opt-in provider CAPTCHA handling where the target's terms permit it.",
     })
+    .option("log", {
+      choices: ["human", "json"] as const,
+      default: "human",
+      describe: "Progress rendering: human stage lines on stderr, or JSON lines.",
+    })
     .strict()
     .help()
     .version(false)
@@ -100,7 +108,12 @@ export function parseArgs(argv: string[]): CliOptions {
     throw new Error(`Invalid --proxy-country value. ${CLI_USAGE}`);
   }
   const proxyCountry = rawProxy?.toUpperCase();
-  const options: CliOptions = { target: all ? "all" : iso, all, browser: parsed.browser ?? null };
+  const options: CliOptions = {
+    target: all ? "all" : iso,
+    all,
+    browser: parsed.browser ?? null,
+    log: parsed.log,
+  };
   if (timeoutMs !== undefined) {
     options.timeoutMs = timeoutMs;
   }
