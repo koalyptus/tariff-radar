@@ -8,7 +8,8 @@ module + resolution, shared base in `tsconfig.base.json`.
 - `pnpm install`
 - `pnpm typecheck` (`pnpm -r typecheck`) and `pnpm build` (`pnpm -r build`)
 - `pnpm test` (`vitest run --coverage`) and `pnpm test:watch` (`vitest`).
-  Tests live in root `tests/`, alias workspace sources (no prior build needed).
+  Tests live in root `tests/<package>/`, mirroring `packages/` (plus shared
+  `tests/fakes/`), aliasing workspace sources (no prior build needed).
   Coverage thresholds are 100% lines/functions/branches/statements over
   `packages/*/src/**` (only the `generate-registry` and `cli/probe` entry
   scripts are excluded — they have top-level side effects: argv, fs, network,
@@ -40,7 +41,7 @@ module + resolution, shared base in `tsconfig.base.json`.
 - `packages/workflow`: `runProbeWorkflow(seed, {browserProvider, browserOptions,
 timeoutMs})` — direct-first, browser only after direct failure, always closes
   page + session (`finally` on both paths).
-- `packages/provider-solari`: the ONLY place that may import
+- `packages/providers/solari` (package `@tariff-radar/provider-solari`): the ONLY place that may import
   `@solarisdk/browser`. Adapts to `BrowserProbeProvider` (`name: "solari"`).
   `probe-core`, `workflow`, `registry` must compile without the Solari SDK.
 - `packages/registry`: `Seed` / `RegistryEntry` / `CustomsRegistry` types +

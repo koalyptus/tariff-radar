@@ -10,7 +10,7 @@ export default defineConfig({
       "@tariff-radar/probe-core": `${root}packages/probe-core/src/index.ts`,
       "@tariff-radar/workflow": `${root}packages/workflow/src/index.ts`,
       "@tariff-radar/shared": `${root}packages/shared/src/index.ts`,
-      "@tariff-radar/provider-solari": `${root}packages/provider-solari/src/index.ts`,
+      "@tariff-radar/provider-solari": `${root}packages/providers/solari/src/index.ts`,
       // Never load the real browser SDK in tests (it performs network I/O);
       // the provider adapter is exercised against tests/fakes/solari-browser.ts.
       "@solarisdk/browser": `${root}tests/fakes/solari-browser.ts`,

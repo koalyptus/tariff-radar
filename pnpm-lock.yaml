@@ -40,7 +40,7 @@ importers:
         version: link:../probe-core
       '@tariff-radar/provider-solari':
         specifier: workspace:*
-        version: link:../provider-solari
+        version: link:../providers/solari
       '@tariff-radar/registry':
         specifier: workspace:*
         version: link:../registry
@@ -73,14 +73,14 @@ importers:
         specifier: ^5.7.2
         version: 5.9.3
 
-  packages/provider-solari:
+  packages/providers/solari:
     dependencies:
       '@solarisdk/browser':
         specifier: ^0.1.1
         version: 0.1.2
       '@tariff-radar/probe-core':
         specifier: workspace:*
-        version: link:../probe-core
+        version: link:../../probe-core
     devDependencies:
       '@types/node':
         specifier: ^22.10.2

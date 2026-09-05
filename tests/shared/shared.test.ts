@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
-import { projectRoot } from "../packages/shared/src/index.js";
+import { projectRoot } from "../../packages/shared/src/index.js";
 
 describe("projectRoot", () => {
   it("resolves the parent of the packages directory", () => {

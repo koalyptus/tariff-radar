@@ -15,8 +15,8 @@ import {
   parseArgs,
   runTargets,
   HelpRequested,
-} from "../packages/cli/src/index.js";
-import type { RunDeps } from "../packages/cli/src/index.js";
+} from "../../packages/cli/src/index.js";
+import type { RunDeps } from "../../packages/cli/src/index.js";
 
 const seedUS: Seed = {
   isoCode: "US",

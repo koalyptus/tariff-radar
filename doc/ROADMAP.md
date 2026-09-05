@@ -38,7 +38,7 @@ Responsibilities:
 - `probe-core`: reusable probe capabilities, contracts, and result types.
 - `workflow`: sequencing, fallback, timeouts, retries, evidence assembly, and
   workflow logging.
-- `provider-solari`: Solari-specific browser implementation.
+- `providers/solari`: Solari-specific browser implementation.
 - `registry`: seed and registry models plus eventual output handling.
 - `data`: manually curated inputs and generated artifacts.
 
@@ -107,7 +107,7 @@ URL, and source URL, while remaining explicitly unverified.
 - [x] Define the `BrowserProbeProvider` interface.
 - [x] Define shared direct-probe and workflow result types.
 - [x] Implement the Solari browser adapter behind the provider contract.
-- [x] Keep Solari SDK imports inside `packages/provider-solari`.
+- [x] Keep Solari SDK imports inside `packages/providers/solari`.
 - [x] Replace probe magic values with named constants.
 
 **Done when:** The core and workflow layers compile without importing the

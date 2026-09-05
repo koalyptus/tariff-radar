@@ -119,10 +119,10 @@ workflow orchestrator
 BrowserProbeProvider
   /             \
   v               v
-provider-solari   another provider
+providers/solari   another provider
 ```
 
-`packages/provider-solari` adapts Solari's browser client to that contract. This
+`packages/providers/solari` adapts Solari's browser client to that contract. This
 keeps the registry model and verification logic independent from provider-
 specific APIs and capabilities. The same principle should be applied later to
 document extraction and LLM-backed normalization: those should be injected

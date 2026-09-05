@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { SolariBrowserProvider } from "../packages/provider-solari/src/index.js";
-import { resetSolariControl, solariControl } from "./fakes/solari-browser.js";
+import { SolariBrowserProvider } from "../../../packages/providers/solari/src/index.js";
+import { resetSolariControl, solariControl } from "../../fakes/solari-browser.js";
 
 describe("SolariBrowserProvider", () => {
   it("maps probe options and returns page observations", async () => {
