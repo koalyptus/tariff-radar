@@ -179,12 +179,14 @@ Progress renders as one human-readable stage line per seed on stderr while
 the per-seed summaries print on stdout, so the run is easy to follow live:
 
 ```text
+Direct probe: STARTING — 8 portals
 ── US https://hts.usitc.gov/
    direct: HTTP 200 in 533ms
 ── CN http://english.customs.gov.cn/service/query
    direct: failed (fetch failed)
-   browser via solari…
+   browser via solari
    browser: HTTP 200
+Direct probe: COMPLETED — 5 direct, 3 browser, 0 failed
 ```
 
 With opt-in capabilities the fallback line names them exactly, e.g.

@@ -68,7 +68,7 @@ export function formatStage(message: string, fields: LogFields): string {
       }
       return `   direct: HTTP ${String(fields.status)} in ${String(fields.latencyMs)}ms`;
     case PROBE_LOG_EVENT.BROWSER_FALLBACK:
-      return `   browser via ${String(fields.provider)}${describeOptions(fields)}…`;
+      return `   browser via ${String(fields.provider)}${describeOptions(fields)}`;
     case PROBE_LOG_EVENT.BROWSER_COMPLETE:
       if (fields.status === null || fields.status === undefined) {
         return "   browser: no response";

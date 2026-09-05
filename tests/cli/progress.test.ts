@@ -46,7 +46,7 @@ describe("formatStage", () => {
       portalUrl: "http://english.customs.gov.cn/service/query",
       provider: "solari",
     };
-    expect(formatStage(PROBE_LOG_EVENT.BROWSER_FALLBACK, fallback)).toBe("   browser via solari…");
+    expect(formatStage(PROBE_LOG_EVENT.BROWSER_FALLBACK, fallback)).toBe("   browser via solari");
     expect(
       formatStage(PROBE_LOG_EVENT.BROWSER_FALLBACK, {
         ...fallback,
@@ -54,7 +54,7 @@ describe("formatStage", () => {
         proxyCountry: "MX",
         captcha: true,
       }),
-    ).toBe("   browser via solari (stealth, proxy MX, captcha)…");
+    ).toBe("   browser via solari (stealth, proxy MX, captcha)");
   });
 
   it("reports the browser observation with and without a response", () => {

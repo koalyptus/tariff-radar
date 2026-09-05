@@ -10,7 +10,7 @@ import type { ProbeWorkflowOptions } from "@tariff-radar/workflow";
 import {
   defaultDeps,
   findSeed,
-  formatSummary,
+  formatTable,
   loadSeeds,
   parseArgs,
   runTargets,
@@ -182,17 +182,10 @@ describe("findSeed and loadSeeds", () => {
   });
 });
 
-describe("formatSummary", () => {
-  it("summarizes a direct success", () => {
-    const text = formatSummary(workflowResult({ seed: seedUS }));
-    expect(text).toContain("US United States <https://hts.usitc.gov/>");
-    expect(text).toContain("method: direct");
-    expect(text).toContain("direct: HTTP 200 in 42ms");
-    expect(text).toContain("evidence: direct_response");
-  });
-
-  it("summarizes a browser fallback with provider and title", () => {
-    const text = formatSummary(
+describe("formatTable", () => {
+  it("renders one aligned row per seed with title and error details", () => {
+    const text = formatTable([
+      workflowResult({ seed: seedUS }),
       workflowResult({
         seed: seedMX,
         method: "browser",
@@ -201,15 +194,6 @@ describe("formatSummary", () => {
         browser: { status: 200, finalUrl: "https://www.snice.gob.mx/final", title: "SNICE", text: "arancel" },
         evidence: ["browser_response", "browser_text"],
       }),
-    );
-    expect(text).toContain("method: browser provider: solari");
-    expect(text).toContain("direct: failed (connection refused)");
-    expect(text).toContain("browser: HTTP 200 at https://www.snice.gob.mx/final");
-    expect(text).toContain("title: SNICE");
-  });
-
-  it("summarizes a failure without browser or evidence", () => {
-    const text = formatSummary(
       workflowResult({
         seed: seedUS,
         method: "failed",
@@ -217,14 +201,21 @@ describe("formatSummary", () => {
         evidence: [],
         error: "direct probe failed and no browser provider was configured",
       }),
+    ]);
+    expect(text).toBe(
+      [
+        "ISO  METHOD   PROVIDER  OUTCOME                                                     EVIDENCE",
+        "US   direct   -         HTTP 200 in 42ms                                            direct_response",
+        "MX   browser  solari    HTTP 200                                                    browser_response, browser_text",
+        "    title: SNICE",
+        "US   failed   -         direct probe failed and no browser provider was configured  none",
+        "    error: direct probe failed and no browser provider was configured",
+      ].join("\n"),
     );
-    expect(text).toContain("direct: failed (unknown error)");
-    expect(text).toContain("evidence: none");
-    expect(text).toContain("error: direct probe failed");
   });
 
-  it("summarizes a browser run with no observed response", () => {
-    const text = formatSummary(
+  it("renders a browser run with no observed response and no title", () => {
+    const text = formatTable([
       workflowResult({
         seed: seedUS,
         method: "browser",
@@ -233,9 +224,14 @@ describe("formatSummary", () => {
         browser: { status: null, finalUrl: null, title: null, text: "body" },
         evidence: ["browser_text"],
       }),
-    );
-    expect(text).toContain("browser: no response at unknown url");
+    ]);
+    expect(text).toContain("no response");
     expect(text).not.toContain("title:");
+  });
+
+  it("renders an unknown failure without a recorded error", () => {
+    const text = formatTable([workflowResult({ seed: seedUS, method: "failed", direct: directFailed(null) })]);
+    expect(text).toContain("unknown error");
   });
 });
 
