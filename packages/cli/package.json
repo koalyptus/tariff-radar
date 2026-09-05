@@ -9,9 +9,10 @@
   "dependencies": {
     "@tariff-radar/probe-core": "workspace:*",
     "@tariff-radar/provider-solari": "workspace:*",
-    "@tariff-radar/shared": "workspace:*",
     "@tariff-radar/registry": "workspace:*",
+    "@tariff-radar/shared": "workspace:*",
     "@tariff-radar/workflow": "workspace:*",
+    "cli-table3": "^0.6.5",
     "yargs": "^18.1.0"
   },
   "devDependencies": {

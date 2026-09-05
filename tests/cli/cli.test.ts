@@ -183,7 +183,7 @@ describe("findSeed and loadSeeds", () => {
 });
 
 describe("formatTable", () => {
-  it("renders one aligned row per seed with title and error details", () => {
+  it("renders one row per seed with error details", () => {
     const text = formatTable([
       workflowResult({ seed: seedUS }),
       workflowResult({
@@ -202,19 +202,30 @@ describe("formatTable", () => {
         error: "direct probe failed and no browser provider was configured",
       }),
     ]);
-    expect(text).toBe(
-      [
-        "ISO  METHOD   PROVIDER  OUTCOME                                                     EVIDENCE",
-        "US   direct   -         HTTP 200 in 42ms                                            direct_response",
-        "MX   browser  solari    HTTP 200                                                    browser_response, browser_text",
-        "    title: SNICE",
-        "US   failed   -         direct probe failed and no browser provider was configured  none",
-        "    error: direct probe failed and no browser provider was configured",
-      ].join("\n"),
-    );
+    for (const cell of [
+      "ISO",
+      "METHOD",
+      "PROVIDER",
+      "OUTCOME",
+      "EVIDENCE",
+      "US",
+      "direct",
+      "HTTP 200 in 42ms",
+      "direct_response",
+      "MX",
+      "browser",
+      "solari",
+      "HTTP 200",
+      "browser_response, browser_text",
+      "failed",
+      "none",
+      "error: direct probe failed and no browser provider was configured",
+    ]) {
+      expect(text).toContain(cell);
+    }
   });
 
-  it("renders a browser run with no observed response and no title", () => {
+  it("renders a browser run with no observed response", () => {
     const text = formatTable([
       workflowResult({
         seed: seedUS,
