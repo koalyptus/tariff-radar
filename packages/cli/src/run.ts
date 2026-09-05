@@ -1,5 +1,5 @@
 import pLimit from "p-limit";
-import { PROBE_LOG_EVENT, consoleProbeLogger } from "@tariff-radar/probe-core";
+import { consoleProbeLogger } from "@tariff-radar/probe-core";
 import type { BrowserProbeProvider, LogFields, ProbeLogger, WorkflowResult } from "@tariff-radar/probe-core";
 
 /** Log levels the scoped per-seed logger records. */
@@ -72,18 +72,13 @@ export async function runTargets(seeds: Seed[], options: CliOptions, deps: RunDe
   const limit = pLimit(options.concurrency ?? 3);
   const tasks = targets.map((seed) =>
     limit(async () => {
-      // Buffer one seed's detail lines and print them as a block on
-      // completion; the START header passes through live so concurrent
-      // seeds are visible while they run.
+      // Buffer one seed's lines and print them as a block on completion:
+      // concurrent seeds must not interleave mid-story.
       const recorded: Array<{ level: LogLevel; message: string; fields?: LogFields }> = [];
       const scoped = {} as ProbeLogger;
       for (const level of ["debug", "info", "warn", "error"] as const) {
         scoped[level] = (message, fields) => {
-          if (message === PROBE_LOG_EVENT.START) {
-            deps.logger[level](message, fields);
-          } else {
-            recorded.push({ level, message, fields });
-          }
+          recorded.push({ level, message, fields });
         };
       }
       const result = await deps.runWorkflow(seed, {

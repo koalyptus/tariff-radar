@@ -26,6 +26,7 @@ try {
   };
   if (options.log !== "json") {
     console.error(`Probe: STARTING — ${String(total)} portal${total === 1 ? "" : "s"}`);
+    console.error("");
   }
   const results = await runTargets(seeds, options, deps);
   console.log(formatTable(results));

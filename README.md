@@ -181,14 +181,18 @@ the per-seed summaries print on stdout, so the run is easy to follow live:
 
 ```text
 Probe: STARTING — 8 portals
+
 ── US https://hts.usitc.gov/
 [US] direct: HTTP 200 in 533ms
 ── CN http://english.customs.gov.cn/service/query
 [CN] direct: failed (fetch failed)
 [CN] browser via solari
 [CN] browser: HTTP 200 in 812ms
-Probe: COMPLETED — 5 direct, 3 browser, 0 failed
+Probe: COMPLETED in 24.3s — 5 direct, 3 browser, 0 failed
 ```
+
+Each seed prints as one block when it finishes (concurrent seeds never
+interleave mid-story); the table at the end stays in seed order.
 
 With opt-in capabilities the fallback line names them exactly, e.g.
 `[CN] browser via solari (stealth, proxy MX)` for
