@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
-import { projectRoot } from "../../packages/shared/src/index.js";
+import { projectDataDir, projectRoot } from "@tariff-radar/shared";
 
 describe("projectRoot", () => {
   it("resolves the parent of the packages directory", () => {
@@ -25,6 +25,21 @@ describe("projectRoot", () => {
       const entry = join(root, "lonely.ts");
       writeFileSync(entry, "");
       expect(() => projectRoot(pathToFileURL(entry).href)).toThrow("Could not determine project root");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("projectDataDir", () => {
+  it("resolves the data directory under the workspace root", () => {
+    const root = mkdtempSync(join(tmpdir(), "shared-test-"));
+    try {
+      const nested = join(root, "packages", "some-pkg", "src");
+      mkdirSync(nested, { recursive: true });
+      const entry = join(nested, "index.ts");
+      writeFileSync(entry, "");
+      expect(projectDataDir(pathToFileURL(entry).href)).toBe(join(root, "data"));
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

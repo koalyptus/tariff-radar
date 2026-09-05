@@ -1,5 +1,5 @@
 import { realpathSync } from "node:fs";
-import { basename, dirname } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /**
@@ -22,4 +22,14 @@ export function projectRoot(metaUrl: string): string {
     }
     dir = parent;
   }
+}
+
+/**
+ * Resolve the workspace `data/` directory from a module URL.
+ * @param metaUrl - `import.meta.url` of the calling module.
+ * @returns The workspace `data/` directory.
+ * @throws When no `packages/` ancestor exists.
+ */
+export function projectDataDir(metaUrl: string): string {
+  return join(projectRoot(metaUrl), "data");
 }

@@ -11,9 +11,9 @@ module + resolution, shared base in `tsconfig.base.json`.
   Tests live in root `tests/<package>/`, mirroring `packages/` (plus shared
   `tests/fakes/`), aliasing workspace sources (no prior build needed).
   Coverage thresholds are 100% lines/functions/branches/statements over
-  `packages/*/src/**` (only the `generate-registry` and `cli/probe` entry
-  scripts are excluded — they have top-level side effects: argv, fs, network,
-  exit codes). Keep the suite hermetic: stub `fetch`, fake
+  `packages/**/src/**` with no exclusions: entry scripts stay thin and
+  delegate to tested mains (`runCli`, `runGenerateRegistry`), exercised by
+  dynamic-import entry tests. Keep the suite hermetic: stub `fetch`, fake
   providers, never touch portals or the Solari API (`@solarisdk/browser` is
   aliased to `tests/fakes/`).
 - `pnpm format` (write) and `pnpm format:check` (CI gate). Prettier defaults
@@ -48,13 +48,16 @@ timeoutMs})` — direct-first, browser only after direct failure, always closes
 - `packages/registry`: `Seed` / `RegistryEntry` / `CustomsRegistry` types +
   generator. `data/seeds.json` (8 countries) holds unverified input hypotheses;
   `portalUrl` (candidate tariff page) ≠ `sourceUrl` (authority provenance).
-- `packages/shared`: cross-cutting helpers with no domain. First export:
-  `projectRoot(metaUrl)` (workspace root resolution for entry scripts).
-- `packages/cli`: composition root (arg parsing via `yargs`). The ONLY place
-  (with `run.ts` seams) allowed to read `SOLARI_API_KEY` and construct
-  `SolariBrowserProvider`. `probe-one` entry: `parseArgs` → `loadSeeds`/
-  `findSeed` → `runTargets` → `formatSummary` to stdout; exit 1 on any
-  `failed` result, 2 on usage errors, 0 on `--help`.
+- `packages/shared`: cross-cutting helpers with no domain. First exports:
+  `projectRoot(metaUrl)` and `projectDataDir(metaUrl)` (workspace layout
+  resolution for entry scripts).
+- `packages/cli`: composition root (arg parsing via `yargs`, one parser per
+  command). The ONLY place (with `run.ts` seams) allowed to read
+  `SOLARI_API_KEY` and construct `SolariBrowserProvider`. `probe` entry:
+  `runCli` (`parseProbeArgs` → `loadSeeds`/`findSeed` → `runTargets` →
+  `formatTable`) returns the exit code; exit 1 on any `failed` result, 2 on
+  usage errors, 0 on `--help`. String literals for flag values live in
+  `BROWSER_MODE` / `DEFAULT_CONCURRENCY` / `MAX_CONCURRENCY`, not inline.
 - `examples/`: upstream Solari cookbook, standalone per-example projects with
   their own `package.json` (`tsx index.ts`). Not workspace members — leave alone.
 - `doc/ROADMAP.md` owns phase scope and done-criteria; `README.md` owns the

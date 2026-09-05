@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SolariBrowserProvider } from "../../../packages/providers/solari/src/index.js";
+import { SolariBrowserProvider } from "@tariff-radar/provider-solari";
 import { resetSolariControl, solariControl } from "../../fakes/solari-browser.js";
 
 describe("SolariBrowserProvider", () => {

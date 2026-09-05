@@ -8,6 +8,7 @@ import { SolariBrowserProvider } from "@tariff-radar/provider-solari";
 import type { Seed } from "@tariff-radar/registry";
 import { runProbeWorkflow } from "@tariff-radar/workflow";
 import type { CliOptions } from "./args.js";
+import { BROWSER_MODE, DEFAULT_CONCURRENCY } from "./args.js";
 import { findSeed } from "./seeds.js";
 
 /**
@@ -56,9 +57,9 @@ export async function runTargets(seeds: Seed[], options: CliOptions, deps: RunDe
   // Bare `pnpm probe` defaults to the Solari fallback; `--browser=direct`
   // forces direct-only. A missing key is fatal only when explicitly asked
   // for — by default we warn loudly and continue direct-only.
-  const browser = options.browser ?? "solari";
+  const browser = options.browser ?? BROWSER_MODE.SOLARI;
   let browserProvider: BrowserProbeProvider | undefined;
-  if (browser === "solari") {
+  if (browser === BROWSER_MODE.SOLARI) {
     const apiKey = deps.readApiKey();
     if (!apiKey) {
       if (options.browser !== null) {
@@ -69,7 +70,7 @@ export async function runTargets(seeds: Seed[], options: CliOptions, deps: RunDe
       browserProvider = deps.createSolariProvider(apiKey);
     }
   }
-  const limit = pLimit(options.concurrency ?? 6);
+  const limit = pLimit(options.concurrency ?? DEFAULT_CONCURRENCY);
   const tasks = targets.map((seed) =>
     limit(async () => {
       // Buffer one seed's lines and print them as a block on completion:

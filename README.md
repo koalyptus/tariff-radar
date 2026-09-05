@@ -156,47 +156,30 @@ only where the run and the target's terms permit it.
 
 ## Quickstart
 
-Probe one portal candidate (Solari fallback when `SOLARI_API_KEY` is set,
-direct-only otherwise) or all eight:
-
 ```bash
 pnpm install
-pnpm probe US
-```
-
-```bash
+pnpm build
 pnpm probe
-SOLARI_API_KEY=... pnpm probe MX
-pnpm probe MX --browser=direct
 ```
 
-`SOLARI_API_KEY` can also live in a local `.env` (see `.env.example`).
-Without a key the run warns once and continues direct-only; an explicit
-`--browser=solari` without a key fails fast. Opt-in browser capabilities
-are flags, never defaults: `--stealth`, `--proxy-country=MX`, `--captcha`.
-Exit code is `1` when any seed ends `failed`, `2` on usage errors.
+`pnpm probe` checks all eight portal candidates: direct first, Solari
+browser fallback where direct fails. `SOLARI_API_KEY` can be exported or live
+in a local `.env` (see `.env.example`); without a key the run warns once and
+continues direct-only. Exit code is `1` when any seed ends `failed`, `2` on
+usage errors. Per-seed progress prints on stderr, the result table on stdout.
 
-Progress renders as one human-readable stage line per seed on stderr while
-the per-seed summaries print on stdout, so the run is easy to follow live:
+### probe
 
-```text
-Probe: STARTING — 8 portals
-
-── US https://hts.usitc.gov/
-[US] direct: HTTP 200 in 533ms
-── CN http://english.customs.gov.cn/service/query
-[CN] direct: failed (fetch failed)
-[CN] browser via solari
-[CN] browser: HTTP 200 in 812ms
-Probe: COMPLETED in 24.3s — 5 direct, 3 browser, 0 failed
-```
-
-Each seed prints as one block when it finishes (concurrent seeds never
-interleave mid-story); the table at the end stays in seed order.
-
-With opt-in capabilities the fallback line names them exactly, e.g.
-`[CN] browser via solari (stealth, proxy MX)` for
-`--stealth --proxy-country=MX`. Unset options mean provider defaults.
+| Flag                       | Default   | Description                                                          |
+| -------------------------- | --------- | -------------------------------------------------------------------- |
+| `[ISO]`                    | all seeds | Probe one portal candidate by ISO code.                              |
+| `--browser=direct\|solari` | `solari`  | Browser fallback after direct failure; `direct` disables it.         |
+| `--timeout-ms=N`           | `10000`   | Direct-probe timeout in milliseconds.                                |
+| `--stealth`                | off       | Opt-in provider stealth/anti-detection measures.                     |
+| `--proxy-country=XX`       | off       | Opt-in two-letter proxy egress country code.                         |
+| `--captcha`                | off       | Opt-in provider CAPTCHA handling where the target's terms permit it. |
+| `--log=pretty\|json`       | `pretty`  | Progress rendering: stage lines on stderr, or JSON lines.            |
+| `--concurrency=N`          | `6`       | Max parallel seed probes (1–8).                                      |
 
 Pass `--log=json` for the original machine-readable JSON lines.
 

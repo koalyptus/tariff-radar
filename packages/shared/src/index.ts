@@ -1,1 +1,1 @@
-export { projectRoot } from "./paths.js";
+export { projectDataDir, projectRoot } from "./paths.js";

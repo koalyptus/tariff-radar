@@ -11,8 +11,8 @@ export interface CliOptions {
   target: string;
   /** Probe every seed in `data/seeds.json` instead of one. */
   all: boolean;
-  /** Browser provider name, `direct` disables the browser fallback, null means default. */
-  browser: "direct" | "solari" | null;
+  /** Browser fallback mode, `direct` disables it, null means default. */
+  browser: BrowserMode | null;
   /** Direct-probe timeout override in milliseconds. */
   timeoutMs?: number;
   /** Opt-in provider stealth/anti-detection measures. */
@@ -21,11 +21,29 @@ export interface CliOptions {
   proxyCountry?: string;
   /** Opt-in provider CAPTCHA handling where the target's terms permit it. */
   captcha?: boolean;
-  /** Progress rendering: human stage lines (default) or JSON lines. */
-  log: "human" | "json";
-  /** Max parallel seed probes (default 6). */
+  /** Progress rendering: pretty stage lines (default) or JSON lines. */
+  log: "pretty" | "json";
+  /** Max parallel seed probes (default `DEFAULT_CONCURRENCY`). */
   concurrency?: number;
 }
+
+/**
+ * Browser fallback vocabulary for the probe command. Use these constants,
+ * never string literals, so a rename breaks the build instead of behavior.
+ */
+export const BROWSER_MODE = {
+  DIRECT: "direct",
+  SOLARI: "solari",
+} as const;
+
+/** One of the {@link BROWSER_MODE} values. */
+export type BrowserMode = (typeof BROWSER_MODE)[keyof typeof BROWSER_MODE];
+
+/** Default parallel seed probes. */
+export const DEFAULT_CONCURRENCY = 6;
+
+/** Upper bound for `--concurrency`: one in-flight probe per demo seed. */
+export const MAX_CONCURRENCY = 8;
 
 export const CLI_USAGE =
   "Usage: pnpm probe [ISO] [--browser=solari] [--timeout-ms=N] [--stealth] [--proxy-country=XX] [--captcha] [--log=json] [--concurrency=N]";
@@ -36,12 +54,12 @@ export const CLI_USAGE =
  * instead of narrowing at every use site.
  */
 interface ParsedFlags {
-  browser?: "direct" | "solari";
+  browser?: BrowserMode;
   timeoutMs?: number;
   stealth?: boolean;
   proxyCountry?: string;
   captcha?: boolean;
-  log: "human" | "json";
+  log: "pretty" | "json";
   concurrency?: number;
   iso?: string;
   help?: boolean;
@@ -58,13 +76,15 @@ export class HelpRequested extends Error {
 }
 
 /**
- * Parse CLI arguments into structured options.
+ * Parse the probe command's arguments into structured options. One parser
+ * per command: a future command adds its own `parseXArgs` beside this one
+ * instead of growing a shared flag bag.
  * @param argv - Raw arguments (without node/script prefix).
  * @returns The parsed options with the ISO target uppercased.
  * @throws When the target or any flag value is missing or invalid, or when
  * `--help` is passed ({@link HelpRequested}).
  */
-export function parseArgs(argv: string[]): CliOptions {
+export function parseProbeArgs(argv: string[]): CliOptions {
   const parsed = yargs(argv)
     .scriptName("probe")
     .usage("Usage: pnpm probe [ISO] [options]")
@@ -74,7 +94,7 @@ export function parseArgs(argv: string[]): CliOptions {
       (cmd) => cmd.positional("iso", { describe: "ISO country code of one seed.", type: "string" }),
     )
     .option("browser", {
-      choices: ["direct", "solari"] as const,
+      choices: [BROWSER_MODE.DIRECT, BROWSER_MODE.SOLARI],
       describe: "Browser fallback after direct failure (default solari); direct disables it.",
     })
     .option("timeout-ms", { type: "number", describe: "Direct-probe timeout in milliseconds." })
@@ -85,9 +105,9 @@ export function parseArgs(argv: string[]): CliOptions {
       describe: "Opt-in provider CAPTCHA handling where the target's terms permit it.",
     })
     .option("log", {
-      choices: ["human", "json"] as const,
-      default: "human",
-      describe: "Progress rendering: human stage lines on stderr, or JSON lines.",
+      choices: ["pretty", "json"] as const,
+      default: "pretty",
+      describe: "Progress rendering: pretty stage lines on stderr, or JSON lines.",
     })
     .option("concurrency", { type: "number", describe: "Max parallel seed probes (default 6)." })
     .strict()
@@ -113,8 +133,11 @@ export function parseArgs(argv: string[]): CliOptions {
   }
   const proxyCountry = rawProxy?.toUpperCase();
   const concurrency = parsed.concurrency;
-  if (concurrency !== undefined && (!Number.isInteger(concurrency) || concurrency <= 0)) {
-    throw new Error(`Invalid --concurrency value. ${CLI_USAGE}`);
+  if (
+    concurrency !== undefined &&
+    (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > MAX_CONCURRENCY)
+  ) {
+    throw new Error(`Invalid --concurrency value (1-${String(MAX_CONCURRENCY)}). ${CLI_USAGE}`);
   }
   const options: CliOptions = {
     target: all ? "all" : iso,

@@ -1,0 +1,82 @@
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { afterEach, describe, expect, it } from "vitest";
+import { runGenerateRegistry } from "../../packages/registry/src/index.js";
+
+const seed = {
+  isoCode: "US",
+  countryName: "United States",
+  authority: "USITC",
+  portalUrl: "https://hts.usitc.gov/",
+  sourceUrl: "https://www.usitc.gov/tariff_affairs",
+};
+
+const savedArgv = process.argv;
+
+afterEach(() => {
+  process.argv = savedArgv;
+});
+
+function writeSeeds(dir: string): string {
+  const seedsFile = join(dir, "seeds.json");
+  writeFileSync(seedsFile, JSON.stringify([seed]));
+  return seedsFile;
+}
+
+describe("runGenerateRegistry", () => {
+  it("writes unverified entries to an explicit path", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "generate-test-"));
+    try {
+      const out = join(dir, "registry.json");
+      await expect(runGenerateRegistry([writeSeeds(dir), out])).resolves.toBe(1);
+      const written = JSON.parse(readFileSync(out, "utf8")) as {
+        entries: Array<{ verification: { status: string } }>;
+      };
+      expect(written.entries).toHaveLength(1);
+      expect(written.entries[0]?.verification.status).toBe("unverified");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("defaults to the workspace data directory", async () => {
+    const out = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "data", "customs_registry.json");
+    let existed = false;
+    let backup = "";
+    try {
+      try {
+        backup = readFileSync(out, "utf8");
+        existed = true;
+      } catch {
+        existed = false;
+      }
+      await expect(runGenerateRegistry([])).resolves.toBe(8);
+      const written = JSON.parse(readFileSync(out, "utf8")) as { entries: unknown[] };
+      expect(written.entries).toHaveLength(8);
+    } finally {
+      if (existed) {
+        writeFileSync(out, backup);
+      } else {
+        rmSync(out, { force: true });
+      }
+    }
+  });
+});
+
+describe("generate-registry entry", () => {
+  it("generates from explicit argv paths", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "generate-entry-test-"));
+    try {
+      const out = join(dir, "registry.json");
+      process.argv = ["node", "generate-registry.js", writeSeeds(dir), out];
+      // Relative import on purpose: this imports the entry module itself.
+      await import("../../packages/registry/src/generate-registry.js");
+      const written = JSON.parse(readFileSync(out, "utf8")) as { entries: unknown[] };
+      expect(written.entries).toHaveLength(1);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});

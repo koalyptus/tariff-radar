@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PROBE_LOG_EVENT } from "@tariff-radar/probe-core";
-import { formatStage, humanProbeLogger } from "../../packages/cli/src/index.js";
+import { formatStage, progressLogger } from "@tariff-radar/cli";
 
 describe("formatStage", () => {
   it("announces each seed run", () => {
@@ -87,10 +87,10 @@ describe("formatStage", () => {
   });
 });
 
-describe("humanProbeLogger", () => {
+describe("progressLogger", () => {
   it("writes one line per level without touching the console", () => {
     const lines: string[] = [];
-    const logger = humanProbeLogger((line) => lines.push(line));
+    const logger = progressLogger((line) => lines.push(line));
     logger.debug("probe.unknown", {});
     logger.info(PROBE_LOG_EVENT.START, { isoCode: "US", portalUrl: "https://hts.usitc.gov/" });
     logger.warn("probe.unknown");

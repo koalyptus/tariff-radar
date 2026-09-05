@@ -13,7 +13,7 @@ import type { LogFields, ProbeLogger } from "@tariff-radar/probe-core";
  * @param write - Line sink (stderr in production, an array push in tests).
  * @returns A {@link ProbeLogger} rendering one stage line per event.
  */
-export function humanProbeLogger(write: (line: string) => void): ProbeLogger {
+export function progressLogger(write: (line: string) => void): ProbeLogger {
   const render = (message: string, fields?: LogFields): void => {
     write(formatStage(message, fields ?? {}));
   };

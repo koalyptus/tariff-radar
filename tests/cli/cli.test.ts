@@ -12,11 +12,11 @@ import {
   findSeed,
   formatTable,
   loadSeeds,
-  parseArgs,
+  parseProbeArgs,
   runTargets,
   HelpRequested,
-} from "../../packages/cli/src/index.js";
-import type { RunDeps } from "../../packages/cli/src/index.js";
+} from "@tariff-radar/cli";
+import type { RunDeps } from "@tariff-radar/cli";
 
 const seedUS: Seed = {
   isoCode: "US",
@@ -101,18 +101,18 @@ function stubDeps(
   return { deps, calls };
 }
 
-describe("parseArgs", () => {
+describe("parseProbeArgs", () => {
   it("accepts one ISO code direct-only by default", () => {
-    expect(parseArgs(["us"])).toEqual({ target: "US", all: false, browser: null, log: "human" });
+    expect(parseProbeArgs(["us"])).toEqual({ target: "US", all: false, browser: null, log: "pretty" });
   });
 
   it("probes all seeds when no ISO is given", () => {
-    expect(parseArgs([])).toEqual({ target: "all", all: true, browser: null, log: "human" });
+    expect(parseProbeArgs([])).toEqual({ target: "all", all: true, browser: null, log: "pretty" });
   });
 
   it("accepts browser, timeout, and opt-in provider flags", () => {
     expect(
-      parseArgs(["US", "--browser=solari", "--timeout-ms=2500", "--stealth", "--proxy-country=mx", "--captcha"]),
+      parseProbeArgs(["US", "--browser=solari", "--timeout-ms=2500", "--stealth", "--proxy-country=mx", "--captcha"]),
     ).toEqual({
       target: "US",
       all: false,
@@ -121,58 +121,63 @@ describe("parseArgs", () => {
       stealth: true,
       proxyCountry: "MX",
       captcha: true,
-      log: "human",
+      log: "pretty",
     });
   });
 
   it("accepts JSON log rendering", () => {
-    expect(parseArgs(["US", "--log=json"])).toMatchObject({ log: "json" });
+    expect(parseProbeArgs(["US", "--log=json"])).toMatchObject({ log: "json" });
   });
 
   it("rejects unknown log renderers", () => {
-    expect(() => parseArgs(["US", "--log=yaml"])).toThrow('Argument: log, Given: "yaml"');
+    expect(() => parseProbeArgs(["US", "--log=yaml"])).toThrow('Argument: log, Given: "yaml"');
   });
 
   it("accepts a concurrency limit", () => {
-    expect(parseArgs(["--concurrency=3"])).toMatchObject({ target: "all", all: true, concurrency: 3 });
+    expect(parseProbeArgs(["--concurrency=3"])).toMatchObject({ target: "all", all: true, concurrency: 3 });
   });
 
   it("rejects invalid concurrency values", () => {
-    expect(() => parseArgs(["US", "--concurrency=0"])).toThrow("Invalid --concurrency value.");
-    expect(() => parseArgs(["US", "--concurrency=nope"])).toThrow("Invalid --concurrency value.");
-    expect(() => parseArgs(["US", "--concurrency=1.5"])).toThrow("Invalid --concurrency value.");
+    expect(() => parseProbeArgs(["US", "--concurrency=0"])).toThrow("Invalid --concurrency value (1-8).");
+    expect(() => parseProbeArgs(["US", "--concurrency=nope"])).toThrow("Invalid --concurrency value (1-8).");
+    expect(() => parseProbeArgs(["US", "--concurrency=1.5"])).toThrow("Invalid --concurrency value (1-8).");
+    expect(() => parseProbeArgs(["US", "--concurrency=9"])).toThrow("Invalid --concurrency value (1-8).");
+  });
+
+  it("accepts the maximum concurrency", () => {
+    expect(parseProbeArgs(["--concurrency=8"])).toMatchObject({ concurrency: 8 });
   });
 
   it("rejects a removed --all flag", () => {
-    expect(() => parseArgs(["--all"])).toThrow("Unknown argument: all");
+    expect(() => parseProbeArgs(["--all"])).toThrow("Unknown argument: all");
   });
 
   it("rejects unknown browser providers", () => {
-    expect(() => parseArgs(["US", "--browser=other"])).toThrow('Argument: browser, Given: "other"');
+    expect(() => parseProbeArgs(["US", "--browser=other"])).toThrow('Argument: browser, Given: "other"');
   });
 
   it("accepts direct to disable the browser fallback", () => {
-    expect(parseArgs(["US", "--browser=direct"])).toMatchObject({ browser: "direct" });
+    expect(parseProbeArgs(["US", "--browser=direct"])).toMatchObject({ browser: "direct" });
   });
 
   it("rejects invalid timeout values", () => {
-    expect(() => parseArgs(["US", "--timeout-ms=0"])).toThrow("Invalid --timeout-ms value.");
-    expect(() => parseArgs(["US", "--timeout-ms=nope"])).toThrow("Invalid --timeout-ms value.");
-    expect(() => parseArgs(["US", "--timeout-ms=1.5"])).toThrow("Invalid --timeout-ms value.");
+    expect(() => parseProbeArgs(["US", "--timeout-ms=0"])).toThrow("Invalid --timeout-ms value.");
+    expect(() => parseProbeArgs(["US", "--timeout-ms=nope"])).toThrow("Invalid --timeout-ms value.");
+    expect(() => parseProbeArgs(["US", "--timeout-ms=1.5"])).toThrow("Invalid --timeout-ms value.");
   });
 
   it("rejects invalid proxy countries", () => {
-    expect(() => parseArgs(["US", "--proxy-country=MEX"])).toThrow("Invalid --proxy-country value.");
-    expect(() => parseArgs(["US", "--proxy-country="])).toThrow("Invalid --proxy-country value.");
+    expect(() => parseProbeArgs(["US", "--proxy-country=MEX"])).toThrow("Invalid --proxy-country value.");
+    expect(() => parseProbeArgs(["US", "--proxy-country="])).toThrow("Invalid --proxy-country value.");
   });
 
   it("rejects unknown flags and extra positionals", () => {
-    expect(() => parseArgs(["US", "--nope"])).toThrow("Unknown argument: nope");
-    expect(() => parseArgs(["US", "MX"])).toThrow("Unknown argument: MX");
+    expect(() => parseProbeArgs(["US", "--nope"])).toThrow("Unknown argument: nope");
+    expect(() => parseProbeArgs(["US", "MX"])).toThrow("Unknown argument: MX");
   });
 
   it("requests help instead of options for --help", () => {
-    expect(() => parseArgs(["--help"])).toThrow(HelpRequested);
+    expect(() => parseProbeArgs(["--help"])).toThrow(HelpRequested);
   });
 });
 
@@ -271,7 +276,7 @@ describe("runTargets", () => {
   it("builds the default Solari provider", async () => {
     const expected = workflowResult({ seed: seedUS });
     const { deps, calls } = stubDeps([expected]);
-    const results = await runTargets([seedUS, seedMX], parseArgs(["us"]), deps);
+    const results = await runTargets([seedUS, seedMX], parseProbeArgs(["us"]), deps);
     expect(results).toEqual([expected]);
     expect(calls).toEqual([
       {
@@ -289,7 +294,7 @@ describe("runTargets", () => {
     const { deps, calls } = stubDeps([expected]);
     const results = await runTargets(
       [seedUS],
-      parseArgs(["US", "--browser=solari", "--timeout-ms=2500", "--stealth", "--proxy-country=mx", "--captcha"]),
+      parseProbeArgs(["US", "--browser=solari", "--timeout-ms=2500", "--stealth", "--proxy-country=mx", "--captcha"]),
       deps,
     );
     expect(results).toEqual([expected]);
@@ -300,7 +305,7 @@ describe("runTargets", () => {
 
   it("throws when the Solari key is missing", async () => {
     const { deps } = stubDeps([], { apiKey: undefined });
-    await expect(runTargets([seedUS], parseArgs(["US", "--browser=solari"]), deps)).rejects.toThrow(
+    await expect(runTargets([seedUS], parseProbeArgs(["US", "--browser=solari"]), deps)).rejects.toThrow(
       "SOLARI_API_KEY is not set.",
     );
   });
@@ -312,7 +317,7 @@ describe("runTargets", () => {
       apiKey: undefined,
       logger: { debug: () => {}, info: () => {}, warn: (message) => warnings.push(message), error: () => {} },
     });
-    const results = await runTargets([seedUS], parseArgs(["US"]), deps);
+    const results = await runTargets([seedUS], parseProbeArgs(["US"]), deps);
     expect(results).toEqual([expected]);
     expect(calls[0]?.provider).toBeUndefined();
     expect(warnings).toEqual(["SOLARI_API_KEY is not set — continuing direct-only."]);
@@ -321,7 +326,7 @@ describe("runTargets", () => {
   it("skips the browser entirely with --browser=direct", async () => {
     const expected = workflowResult({ seed: seedUS });
     const { deps, calls } = stubDeps([expected]);
-    const results = await runTargets([seedUS], parseArgs(["US", "--browser=direct"]), deps);
+    const results = await runTargets([seedUS], parseProbeArgs(["US", "--browser=direct"]), deps);
     expect(results).toEqual([expected]);
     expect(calls[0]?.provider).toBeUndefined();
   });
@@ -330,7 +335,7 @@ describe("runTargets", () => {
     const first = workflowResult({ seed: seedUS });
     const second = workflowResult({ seed: seedMX });
     const { deps, calls } = stubDeps([first, second]);
-    const results = await runTargets([seedUS, seedMX], parseArgs([]), deps);
+    const results = await runTargets([seedUS, seedMX], parseProbeArgs([]), deps);
     expect(results).toEqual([first, second]);
     expect(calls.map((call) => call.isoCode)).toEqual(["US", "MX"]);
   });
@@ -359,7 +364,7 @@ describe("runTargets", () => {
       readApiKey: () => "test-key",
       logger: noopProbeLogger,
     };
-    const results = await runTargets([seedUS, seedMX], { ...parseArgs([]), concurrency: 2 }, deps);
+    const results = await runTargets([seedUS, seedMX], { ...parseProbeArgs([]), concurrency: 2 }, deps);
     expect(maxInFlight).toBe(2);
     expect(results).toEqual([first, second]);
   });
@@ -398,7 +403,7 @@ describe("runTargets", () => {
         error: () => {},
       },
     };
-    const pending = runTargets([seedUS, seedMX], { ...parseArgs([]), concurrency: 2 }, deps);
+    const pending = runTargets([seedUS, seedMX], { ...parseProbeArgs([]), concurrency: 2 }, deps);
     await new Promise((resolve) => setImmediate(resolve));
     releaseUS();
     const results = await pending;
@@ -408,7 +413,7 @@ describe("runTargets", () => {
 
   it("throws for unknown ISO codes", async () => {
     const { deps } = stubDeps([]);
-    await expect(runTargets([seedUS], parseArgs(["ZZ"]), deps)).rejects.toThrow('Unknown ISO code "ZZ".');
+    await expect(runTargets([seedUS], parseProbeArgs(["ZZ"]), deps)).rejects.toThrow('Unknown ISO code "ZZ".');
   });
 
   it("forwards every log level through the buffer", async () => {
@@ -442,7 +447,7 @@ describe("runTargets", () => {
         },
       },
     };
-    const results = await runTargets([seedUS], parseArgs(["US", "--browser=direct"]), deps);
+    const results = await runTargets([seedUS], parseProbeArgs(["US", "--browser=direct"]), deps);
     expect(results).toEqual([expected]);
     expect(forwarded).toEqual([
       { level: "debug", message: "d" },
