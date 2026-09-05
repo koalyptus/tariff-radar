@@ -1,5 +1,5 @@
 import { PROBE_METHOD } from "./constants.js";
-import type { DirectProbeResult, ProbeMethod } from "./index.js";
+import type { BrowserProbeOptions, DirectProbeResult, ProbeMethod } from "./index.js";
 
 /**
  * Flat, JSON-safe fields any structured logger can render. The transport
@@ -62,6 +62,12 @@ export type ProbeBrowserFallbackFields = {
   isoCode: string;
   portalUrl: string;
   provider: string;
+  /** Effective stealth flag, when the run opted in. */
+  stealth?: boolean;
+  /** Effective proxy egress country, when the run opted in. */
+  proxyCountry?: string;
+  /** Effective CAPTCHA flag, when the run opted in. */
+  captcha?: boolean;
 };
 
 /**
@@ -144,12 +150,17 @@ export class ProbeRunLogger {
   /**
    * Log escalation to the browser after direct failure.
    * @param provider - Provider name taking over the run.
+   * @param options - Effective opt-in capabilities, so the run record shows
+   * exactly what the browser used.
    */
-  browserFallback(provider: string): void {
+  browserFallback(provider: string, options?: BrowserProbeOptions): void {
     const fields: ProbeBrowserFallbackFields = {
       isoCode: this.isoCode,
       portalUrl: this.portalUrl,
       provider,
+      stealth: options?.stealth,
+      proxyCountry: options?.proxyCountry,
+      captcha: options?.captcha,
     };
     this.logger.info(PROBE_LOG_EVENT.BROWSER_FALLBACK, fields);
   }

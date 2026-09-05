@@ -34,6 +34,25 @@ export function humanProbeLogger(write: (line: string) => void): ProbeLogger {
 }
 
 /**
+ * Render the effective opt-in browser capabilities, if any.
+ * @param fields - Fallback event fields.
+ * @returns ` (stealth, proxy MX, captcha)`-style suffix, or empty.
+ */
+function describeOptions(fields: LogFields): string {
+  const used: string[] = [];
+  if (fields.stealth === true) {
+    used.push("stealth");
+  }
+  if (fields.proxyCountry) {
+    used.push(`proxy ${String(fields.proxyCountry)}`);
+  }
+  if (fields.captcha === true) {
+    used.push("captcha");
+  }
+  return used.length > 0 ? ` (${used.join(", ")})` : "";
+}
+
+/**
  * Format one workflow event as a single followable line.
  * @param message - Event name from {@link PROBE_LOG_EVENT}.
  * @param fields - Flat event fields.
@@ -49,7 +68,7 @@ export function formatStage(message: string, fields: LogFields): string {
       }
       return `   direct: HTTP ${String(fields.status)} in ${String(fields.latencyMs)}ms`;
     case PROBE_LOG_EVENT.BROWSER_FALLBACK:
-      return `   browser via ${String(fields.provider)}…`;
+      return `   browser via ${String(fields.provider)}${describeOptions(fields)}…`;
     case PROBE_LOG_EVENT.BROWSER_COMPLETE:
       if (fields.status === null || fields.status === undefined) {
         return "   browser: no response";

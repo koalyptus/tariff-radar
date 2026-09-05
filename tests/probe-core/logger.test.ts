@@ -243,7 +243,11 @@ describe("runProbeWorkflow logger", () => {
   it("logs fallback and browser completion and never logs page contents", async () => {
     fetchFail();
     const { logger, calls } = createRecordingLogger();
-    const result = await runProbeWorkflow(seed, { logger, browserProvider: fakeProvider() });
+    const result = await runProbeWorkflow(seed, {
+      logger,
+      browserProvider: fakeProvider(),
+      browserOptions: { stealth: true, proxyCountry: "MX", captcha: true },
+    });
     expect(result.method).toBe("browser");
     expect(calls.map((call) => call.message)).toEqual([
       PROBE_LOG_EVENT.START,
@@ -256,6 +260,7 @@ describe("runProbeWorkflow logger", () => {
     expect(serialized).not.toContain("cookies");
     const fallback = calls[2]?.fields;
     expect(fallback).toMatchObject({ isoCode: "T1", provider: "fake" });
+    expect(fallback).toMatchObject({ stealth: true, proxyCountry: "MX", captcha: true });
     const complete = calls[3]?.fields;
     expect(complete).toMatchObject({ isoCode: "T1", provider: "fake", status: 200 });
   });

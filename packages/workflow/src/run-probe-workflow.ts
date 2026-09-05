@@ -76,7 +76,7 @@ export async function runProbeWorkflow(
     };
   }
 
-  log.browserFallback(options.browserProvider.name);
+  log.browserFallback(options.browserProvider.name, options.browserOptions);
 
   try {
     const session = await options.browserProvider.launch(options.browserOptions);

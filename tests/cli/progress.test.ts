@@ -40,14 +40,21 @@ describe("formatStage", () => {
     );
   });
 
-  it("announces the browser fallback", () => {
+  it("announces the browser fallback with the effective options", () => {
+    const fallback = {
+      isoCode: "CN",
+      portalUrl: "http://english.customs.gov.cn/service/query",
+      provider: "solari",
+    };
+    expect(formatStage(PROBE_LOG_EVENT.BROWSER_FALLBACK, fallback)).toBe("   browser via solari…");
     expect(
       formatStage(PROBE_LOG_EVENT.BROWSER_FALLBACK, {
-        isoCode: "CN",
-        portalUrl: "http://english.customs.gov.cn/service/query",
-        provider: "solari",
+        ...fallback,
+        stealth: true,
+        proxyCountry: "MX",
+        captcha: true,
       }),
-    ).toBe("   browser via solari…");
+    ).toBe("   browser via solari (stealth, proxy MX, captcha)…");
   });
 
   it("reports the browser observation with and without a response", () => {

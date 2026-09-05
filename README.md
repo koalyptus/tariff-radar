@@ -187,6 +187,10 @@ the per-seed summaries print on stdout, so the run is easy to follow live:
    browser: HTTP 200
 ```
 
+With opt-in capabilities the fallback line names them exactly, e.g.
+`browser via solari (stealth, proxy MX)…` for
+`--stealth --proxy-country=MX`. Unset options mean provider defaults.
+
 Pass `--log=json` for the original machine-readable JSON lines.
 
 The CLI prints a per-seed summary to stdout and writes no registry file yet:
