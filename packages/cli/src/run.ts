@@ -69,7 +69,7 @@ export async function runTargets(seeds: Seed[], options: CliOptions, deps: RunDe
       browserProvider = deps.createSolariProvider(apiKey);
     }
   }
-  const limit = pLimit(options.concurrency ?? 3);
+  const limit = pLimit(options.concurrency ?? 6);
   const tasks = targets.map((seed) =>
     limit(async () => {
       // Buffer one seed's lines and print them as a block on completion:

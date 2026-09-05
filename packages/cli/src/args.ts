@@ -23,7 +23,7 @@ export interface CliOptions {
   captcha?: boolean;
   /** Progress rendering: human stage lines (default) or JSON lines. */
   log: "human" | "json";
-  /** Max parallel seed probes (default 3). */
+  /** Max parallel seed probes (default 6). */
   concurrency?: number;
 }
 
@@ -89,7 +89,7 @@ export function parseArgs(argv: string[]): CliOptions {
       default: "human",
       describe: "Progress rendering: human stage lines on stderr, or JSON lines.",
     })
-    .option("concurrency", { type: "number", describe: "Max parallel seed probes (default 3)." })
+    .option("concurrency", { type: "number", describe: "Max parallel seed probes (default 6)." })
     .strict()
     .help()
     .version(false)
