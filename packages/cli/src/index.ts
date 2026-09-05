@@ -9,8 +9,8 @@ export {
 export type { BrowserMode, CliOptions } from "./args.js";
 export { defaultDeps, runTargets } from "./run.js";
 export type { RunDeps } from "./run.js";
-export { runCli, stdioOutput } from "./run-cli.js";
-export type { RunCliOutput } from "./run-cli.js";
+export { runCli } from "./run-cli.js";
 export { findSeed, loadSeeds } from "./seeds.js";
 export { formatTable } from "./summary.js";
-export { formatStage, progressLogger } from "./progress.js";
+export { formatStage, progressLogger, stdioOutput } from "./progress.js";
+export type { RunCliOutput } from "./progress.js";

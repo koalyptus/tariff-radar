@@ -2,34 +2,12 @@ import { join } from "node:path";
 import { PROBE_METHOD, consoleProbeLogger } from "@tariff-radar/probe-core";
 import { projectDataDir } from "@tariff-radar/shared";
 import { parseProbeArgs, HelpRequested } from "./args.js";
-import { progressLogger } from "./progress.js";
+import { progressLogger, stdioOutput } from "./progress.js";
+import type { RunCliOutput } from "./progress.js";
 import { defaultDeps, runTargets } from "./run.js";
 import type { RunDeps } from "./run.js";
 import { loadSeeds } from "./seeds.js";
 import { formatTable } from "./summary.js";
-
-/**
- * Output sinks for the probe command. Production writes stdio; tests record.
- * The results table goes to stdout so it stays pipeable
- * (`pnpm probe > results.txt`); progress chrome goes to stderr. Genuine
- * failures still use `console.error` directly — they are errors, not output.
- */
-export interface RunCliOutput {
-  /** Print the final results table (stdout in production). */
-  printTable: (text: string) => void;
-  /** Print one progress line (stderr in production). */
-  printProgress: (line: string) => void;
-}
-
-/** Production output sinks. */
-export function stdioOutput(): RunCliOutput {
-  return {
-    printTable: (text) => console.log(text),
-    printProgress: (line) => {
-      process.stderr.write(`${line}\n`);
-    },
-  };
-}
 
 /**
  * Run the probe command and report the exit code. All command output flows

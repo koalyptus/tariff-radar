@@ -9,6 +9,28 @@ import type { LogFields, ProbeLogger } from "@tariff-radar/probe-core";
  */
 
 /**
+ * Output sinks for the probe command. Production writes stdio; tests record.
+ * The results table goes to stdout so it stays pipeable
+ * (`pnpm probe > results.txt`); progress lines go to stderr.
+ */
+export interface RunCliOutput {
+  /** Print the final results table (stdout in production). */
+  printTable: (text: string) => void;
+  /** Print one progress line (stderr in production). */
+  printProgress: (line: string) => void;
+}
+
+/** Production output sinks. */
+export function stdioOutput(): RunCliOutput {
+  return {
+    printTable: (text) => console.log(text),
+    printProgress: (line) => {
+      process.stderr.write(`${line}\n`);
+    },
+  };
+}
+
+/**
  * Build a progress logger.
  * @param write - Line sink (stderr in production, an array push in tests).
  * @returns A {@link ProbeLogger} rendering one stage line per event.
