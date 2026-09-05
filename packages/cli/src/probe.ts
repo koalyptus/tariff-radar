@@ -35,7 +35,7 @@ try {
     const failed = results.length - direct - browser;
     const elapsed = ((performance.now() - startedAt) / 1000).toFixed(1);
     console.error(
-      `Probe: COMPLETED — ${String(direct)} direct, ${String(browser)} browser, ${String(failed)} failed in ${elapsed}s`,
+      `Probe: COMPLETED in ${elapsed}s — ${String(direct)} direct, ${String(browser)} browser, ${String(failed)} failed`,
     );
   }
   if (results.some((result) => result.method === PROBE_METHOD.FAILED)) {
