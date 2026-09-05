@@ -9,38 +9,63 @@ import { loadSeeds } from "./seeds.js";
 import { formatTable } from "./summary.js";
 
 /**
- * Run the probe command and report the exit code. All CLI output routing
- * lives here, in one place: the results table goes to stdout so it stays
- * pipeable (`pnpm probe > results.txt`), while human progress chrome
- * (STARTING/COMPLETED brackets, stage lines) and usage errors go to stderr.
- * The injected {@link ProbeLogger} only ever carries probe events, never
- * this chrome — `--log=json` therefore stays machine-readable.
+ * Output sinks for the probe command. Production writes stdio; tests record.
+ * The results table goes to stdout so it stays pipeable
+ * (`pnpm probe > results.txt`); progress chrome goes to stderr. Genuine
+ * failures still use `console.error` directly — they are errors, not output.
+ */
+export interface RunCliOutput {
+  /** Print the final results table (stdout in production). */
+  printTable: (text: string) => void;
+  /** Print one progress line (stderr in production). */
+  printProgress: (line: string) => void;
+}
+
+/** Production output sinks. */
+export function stdioOutput(): RunCliOutput {
+  return {
+    printTable: (text) => console.log(text),
+    printProgress: (line) => {
+      process.stderr.write(`${line}\n`);
+    },
+  };
+}
+
+/**
+ * Run the probe command and report the exit code. All command output flows
+ * through the injected {@link RunCliOutput}: the table, the progress
+ * brackets, and the per-seed stage blocks. The injected {@link ProbeLogger}
+ * only ever carries probe events, never this chrome — `--log=json`
+ * therefore stays machine-readable.
  * @param argv - Raw arguments (without node/script prefix).
  * @param deps - Injectable seams; production defaults read env and network.
  * @param seedsFile - Seeds path override for tests; defaults to workspace data.
+ * @param output - Injectable sinks; production defaults write stdio.
  * @returns Process exit code: 0 ok, 1 on any failed result, 2 on usage errors.
  */
-export async function runCli(argv: string[], deps: RunDeps = defaultDeps(), seedsFile?: string): Promise<number> {
+export async function runCli(
+  argv: string[],
+  deps: RunDeps = defaultDeps(),
+  seedsFile?: string,
+  output: RunCliOutput = stdioOutput(),
+): Promise<number> {
   try {
     const options = parseProbeArgs(argv);
     const seeds = await loadSeeds(seedsFile ?? join(projectDataDir(import.meta.url), "seeds.json"));
     const total = options.all ? seeds.length : 1;
     const startedAt = performance.now();
-    const writeProgress = (line: string): void => {
-      process.stderr.write(`${line}\n`);
-    };
-    const logger = options.log === "pretty" ? progressLogger(writeProgress) : consoleProbeLogger;
+    const logger = options.log === "pretty" ? progressLogger(output.printProgress) : consoleProbeLogger;
     if (options.log === "pretty") {
-      writeProgress(`Probe: STARTING — ${String(total)} portal${total === 1 ? "" : "s"}`);
+      output.printProgress(`Probe: STARTING — ${String(total)} portal${total === 1 ? "" : "s"}`);
     }
     const results = await runTargets(seeds, options, { ...deps, logger });
-    console.log(formatTable(results));
+    output.printTable(formatTable(results));
     if (options.log === "pretty") {
       const direct = results.filter((result) => result.method === PROBE_METHOD.DIRECT).length;
       const browser = results.filter((result) => result.method === PROBE_METHOD.BROWSER).length;
       const failed = results.length - direct - browser;
       const elapsed = ((performance.now() - startedAt) / 1000).toFixed(1);
-      writeProgress(
+      output.printProgress(
         `Probe: COMPLETED in ${elapsed}s — ${String(direct)} direct, ${String(browser)} browser, ${String(failed)} failed`,
       );
     }

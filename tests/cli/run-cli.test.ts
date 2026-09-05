@@ -6,7 +6,7 @@ import type { BrowserProbeProvider, WorkflowResult } from "@tariff-radar/probe-c
 import { noopProbeLogger } from "@tariff-radar/probe-core";
 import type { Seed } from "@tariff-radar/registry";
 import { runCli } from "@tariff-radar/cli";
-import type { RunDeps } from "@tariff-radar/cli";
+import type { RunCliOutput, RunDeps } from "@tariff-radar/cli";
 
 const seed: Seed = {
   isoCode: "US",
@@ -55,11 +55,33 @@ function writeSeeds(): { dir: string; seedsFile: string } {
   return { dir, seedsFile };
 }
 
+function recordOutput(): { output: RunCliOutput; tables: string[]; progress: string[] } {
+  const tables: string[] = [];
+  const progress: string[] = [];
+  return {
+    tables,
+    progress,
+    output: {
+      printTable: (text) => {
+        tables.push(text);
+      },
+      printProgress: (line) => {
+        progress.push(line);
+      },
+    },
+  };
+}
+
 describe("runCli", () => {
   it("returns 0 for one successful seed", async () => {
     const { dir, seedsFile } = writeSeeds();
+    const recorded = recordOutput();
     try {
-      await expect(runCli(["US"], stubDeps(directResult()), seedsFile)).resolves.toBe(0);
+      await expect(runCli(["US"], stubDeps(directResult()), seedsFile, recorded.output)).resolves.toBe(0);
+      expect(recorded.tables).toHaveLength(1);
+      expect(recorded.tables[0]).toContain("US");
+      expect(recorded.progress[0]).toContain("Probe: STARTING");
+      expect(recorded.progress[recorded.progress.length - 1]).toContain("Probe: COMPLETED");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -67,8 +89,11 @@ describe("runCli", () => {
 
   it("returns 0 for JSON rendering", async () => {
     const { dir, seedsFile } = writeSeeds();
+    const recorded = recordOutput();
     try {
-      await expect(runCli(["US", "--log=json"], stubDeps(directResult()), seedsFile)).resolves.toBe(0);
+      await expect(runCli(["US", "--log=json"], stubDeps(directResult()), seedsFile, recorded.output)).resolves.toBe(0);
+      expect(recorded.tables).toHaveLength(1);
+      expect(recorded.progress).toEqual([]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
