@@ -11,8 +11,8 @@ export interface CliOptions {
   target: string;
   /** Probe every seed in `data/seeds.json` instead of one. */
   all: boolean;
-  /** Browser provider name, or null for direct-only (no credentials needed). */
-  browser: "solari" | null;
+  /** Browser provider name, `direct` disables the browser fallback, null means default. */
+  browser: "direct" | "solari" | null;
   /** Direct-probe timeout override in milliseconds. */
   timeoutMs?: number;
   /** Opt-in provider stealth/anti-detection measures. */
@@ -36,7 +36,7 @@ export const CLI_USAGE =
  * instead of narrowing at every use site.
  */
 interface ParsedFlags {
-  browser?: "solari";
+  browser?: "direct" | "solari";
   timeoutMs?: number;
   stealth?: boolean;
   proxyCountry?: string;
@@ -74,8 +74,8 @@ export function parseArgs(argv: string[]): CliOptions {
       (cmd) => cmd.positional("iso", { describe: "ISO country code of one seed.", type: "string" }),
     )
     .option("browser", {
-      choices: ["solari"] as const,
-      describe: "Browser provider for fallback after direct failure.",
+      choices: ["direct", "solari"] as const,
+      describe: "Browser fallback after direct failure (default solari); direct disables it.",
     })
     .option("timeout-ms", { type: "number", describe: "Direct-probe timeout in milliseconds." })
     .option("stealth", { type: "boolean", describe: "Opt-in provider stealth/anti-detection measures." })

@@ -156,24 +156,25 @@ only where the run and the target's terms permit it.
 
 ## Quickstart
 
-Probe one portal candidate direct-only (no secrets, no browser cost):
+Probe one portal candidate (Solari fallback when `SOLARI_API_KEY` is set,
+direct-only otherwise) or all eight:
 
 ```bash
 pnpm install
 pnpm probe US
 ```
 
-Probe all eight seeds, or escalate to Solari after direct failure:
-
 ```bash
 pnpm probe
-SOLARI_API_KEY=... pnpm probe MX --browser=solari
+SOLARI_API_KEY=... pnpm probe MX
+pnpm probe MX --browser=direct
 ```
 
-`SOLARI_API_KEY` can also live in a local `.env` (see `.env.example`); it is
-only required with `--browser=solari`. Opt-in browser capabilities are flags,
-never defaults: `--stealth`, `--proxy-country=MX`, `--captcha`. Exit code is
-`1` when any seed ends `failed`, `2` on usage errors.
+`SOLARI_API_KEY` can also live in a local `.env` (see `.env.example`).
+Without a key the run warns once and continues direct-only; an explicit
+`--browser=solari` without a key fails fast. Opt-in browser capabilities
+are flags, never defaults: `--stealth`, `--proxy-country=MX`, `--captcha`.
+Exit code is `1` when any seed ends `failed`, `2` on usage errors.
 
 Progress renders as one human-readable stage line per seed on stderr while
 the per-seed summaries print on stdout, so the run is easy to follow live:

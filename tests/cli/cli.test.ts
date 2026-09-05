@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { BrowserProbeProvider } from "@tariff-radar/probe-core";
-import type { WorkflowResult } from "@tariff-radar/probe-core";
+import type { ProbeLogger, WorkflowResult } from "@tariff-radar/probe-core";
 import { noopProbeLogger } from "@tariff-radar/probe-core";
 import type { Seed } from "@tariff-radar/registry";
 import type { ProbeWorkflowOptions } from "@tariff-radar/workflow";
@@ -70,7 +70,7 @@ interface RecordedCall {
 
 function stubDeps(
   results: WorkflowResult[],
-  opts: { apiKey?: string } = {},
+  opts: { apiKey?: string; logger?: ProbeLogger } = {},
 ): {
   deps: RunDeps;
   calls: RecordedCall[];
@@ -95,7 +95,7 @@ function stubDeps(
     }) as RunDeps["runWorkflow"],
     createSolariProvider: () => fakeProvider,
     readApiKey: () => ("apiKey" in opts ? opts.apiKey : "test-key"),
-    logger: noopProbeLogger,
+    logger: opts.logger ?? noopProbeLogger,
   };
   return { deps, calls };
 }
@@ -148,6 +148,10 @@ describe("parseArgs", () => {
 
   it("rejects unknown browser providers", () => {
     expect(() => parseArgs(["US", "--browser=other"])).toThrow('Argument: browser, Given: "other"');
+  });
+
+  it("accepts direct to disable the browser fallback", () => {
+    expect(parseArgs(["US", "--browser=direct"])).toMatchObject({ browser: "direct" });
   });
 
   it("rejects invalid timeout values", () => {
@@ -263,7 +267,7 @@ describe("formatTable", () => {
 });
 
 describe("runTargets", () => {
-  it("probes one seed direct-only by default", async () => {
+  it("builds the default Solari provider", async () => {
     const expected = workflowResult({ seed: seedUS });
     const { deps, calls } = stubDeps([expected]);
     const results = await runTargets([seedUS, seedMX], parseArgs(["us"]), deps);
@@ -271,11 +275,12 @@ describe("runTargets", () => {
     expect(calls).toEqual([
       {
         isoCode: "US",
-        provider: undefined,
+        provider: calls[0]?.provider,
         timeoutMs: undefined,
         browserOptions: { stealth: undefined, proxyCountry: undefined, captcha: undefined },
       },
     ]);
+    expect(calls[0]?.provider).toMatchObject({ name: "fake" });
   });
 
   it("builds the Solari provider and forwards flags when requested", async () => {
@@ -299,6 +304,27 @@ describe("runTargets", () => {
     );
   });
 
+  it("warns and continues direct-only when the default browser lacks a key", async () => {
+    const expected = workflowResult({ seed: seedUS });
+    const warnings: string[] = [];
+    const { deps, calls } = stubDeps([expected], {
+      apiKey: undefined,
+      logger: { debug: () => {}, info: () => {}, warn: (message) => warnings.push(message), error: () => {} },
+    });
+    const results = await runTargets([seedUS], parseArgs(["US"]), deps);
+    expect(results).toEqual([expected]);
+    expect(calls[0]?.provider).toBeUndefined();
+    expect(warnings).toEqual(["SOLARI_API_KEY is not set — continuing direct-only."]);
+  });
+
+  it("skips the browser entirely with --browser=direct", async () => {
+    const expected = workflowResult({ seed: seedUS });
+    const { deps, calls } = stubDeps([expected]);
+    const results = await runTargets([seedUS], parseArgs(["US", "--browser=direct"]), deps);
+    expect(results).toEqual([expected]);
+    expect(calls[0]?.provider).toBeUndefined();
+  });
+
   it("probes every seed without an ISO in file order", async () => {
     const first = workflowResult({ seed: seedUS });
     const second = workflowResult({ seed: seedMX });
@@ -320,11 +346,15 @@ describe("runTargets", () => {
       inFlight -= 1;
       return seed.isoCode === "US" ? first : second;
     }) as RunDeps["runWorkflow"];
-    const deps: RunDeps = {
-      runWorkflow,
-      createSolariProvider: () => {
+    const fakeProvider: BrowserProbeProvider = {
+      name: "fake",
+      launch: async () => {
         throw new Error("unused");
       },
+    };
+    const deps: RunDeps = {
+      runWorkflow,
+      createSolariProvider: () => fakeProvider,
       readApiKey: () => "test-key",
       logger: noopProbeLogger,
     };

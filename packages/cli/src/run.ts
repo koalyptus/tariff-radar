@@ -50,13 +50,21 @@ export function defaultDeps(): RunDeps {
  */
 export async function runTargets(seeds: Seed[], options: CliOptions, deps: RunDeps): Promise<WorkflowResult[]> {
   const targets = options.all ? seeds : [findSeed(seeds, options.target)];
+  // Bare `pnpm probe` defaults to the Solari fallback; `--browser=direct`
+  // forces direct-only. A missing key is fatal only when explicitly asked
+  // for — by default we warn loudly and continue direct-only.
+  const browser = options.browser ?? "solari";
   let browserProvider: BrowserProbeProvider | undefined;
-  if (options.browser === "solari") {
+  if (browser === "solari") {
     const apiKey = deps.readApiKey();
     if (!apiKey) {
-      throw new Error("SOLARI_API_KEY is not set. Export it or add it to .env (see .env.example).");
+      if (options.browser !== null) {
+        throw new Error("SOLARI_API_KEY is not set. Export it or add it to .env (see .env.example).");
+      }
+      deps.logger.warn("SOLARI_API_KEY is not set — continuing direct-only.");
+    } else {
+      browserProvider = deps.createSolariProvider(apiKey);
     }
-    browserProvider = deps.createSolariProvider(apiKey);
   }
   const limit = pLimit(options.concurrency ?? 3);
   const tasks = targets.map((seed) =>

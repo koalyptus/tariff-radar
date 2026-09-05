@@ -26,11 +26,12 @@ module + resolution, shared base in `tsconfig.base.json`.
   (same scripts `pnpm verify` chains locally). Hermetic — no secrets needed.
 - `pnpm generate-registry` → runs `node packages/registry/dist/generate-registry.js`
   (build first: `pnpm build`), writes `data/customs_registry.json`
-- `pnpm probe [ISO] [--browser=solari] [--timeout-ms=N] [--stealth]
+- `pnpm probe [ISO] [--browser=direct|solari] [--timeout-ms=N] [--stealth]
 [--proxy-country=XX] [--captcha] [--log=json] [--concurrency=N]` → runs
   `node --env-file-if-exists=.env packages/cli/dist/probe.js` (build first:
-  `pnpm build`). Direct-only by default (no credentials);
-  `--browser=solari` requires `SOLARI_API_KEY`.
+  `pnpm build`). Solari fallback by default when `SOLARI_API_KEY` is set
+  (warns and continues direct-only without it); `--browser=direct` forces
+  direct-only, explicit `--browser=solari` without a key fails fast.
 
 ## Package boundaries
 
