@@ -105,8 +105,8 @@ describe("parseArgs", () => {
     expect(parseArgs(["us"])).toEqual({ target: "US", all: false, browser: null });
   });
 
-  it("accepts --all without a positional", () => {
-    expect(parseArgs(["--all"])).toMatchObject({ target: "all", all: true });
+  it("probes all seeds when no ISO is given", () => {
+    expect(parseArgs([])).toEqual({ target: "all", all: true, browser: null });
   });
 
   it("accepts browser, timeout, and opt-in provider flags", () => {
@@ -123,12 +123,8 @@ describe("parseArgs", () => {
     });
   });
 
-  it("rejects a missing target", () => {
-    expect(() => parseArgs([])).toThrow("Missing target ISO code.");
-  });
-
-  it("rejects an ISO combined with --all", () => {
-    expect(() => parseArgs(["US", "--all"])).toThrow("either an ISO code or --all");
+  it("rejects a removed --all flag", () => {
+    expect(() => parseArgs(["--all"])).toThrow("Unknown argument: all");
   });
 
   it("rejects unknown browser providers", () => {
@@ -271,11 +267,11 @@ describe("runTargets", () => {
     );
   });
 
-  it("probes every seed with --all in file order", async () => {
+  it("probes every seed without an ISO in file order", async () => {
     const first = workflowResult({ seed: seedUS });
     const second = workflowResult({ seed: seedMX });
     const { deps, calls } = stubDeps([first, second]);
-    const results = await runTargets([seedUS, seedMX], parseArgs(["--all"]), deps);
+    const results = await runTargets([seedUS, seedMX], parseArgs([]), deps);
     expect(results).toEqual([first, second]);
     expect(calls.map((call) => call.isoCode)).toEqual(["US", "MX"]);
   });

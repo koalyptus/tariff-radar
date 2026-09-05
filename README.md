@@ -166,7 +166,7 @@ pnpm probe US
 Probe all eight seeds, or escalate to Solari after direct failure:
 
 ```bash
-pnpm probe --all
+pnpm probe
 SOLARI_API_KEY=... pnpm probe MX --browser=solari
 ```
 

@@ -7,7 +7,7 @@ import yargs from "yargs";
  * entry script prints to stderr. Pure and throwing, so tests stay hermetic.
  */
 export interface CliOptions {
-  /** Uppercase ISO code for one seed, or `"all"` when `--all` is given. */
+  /** Uppercase ISO code for one seed, or `"all"` when no ISO is given. */
   target: string;
   /** Probe every seed in `data/seeds.json` instead of one. */
   all: boolean;
@@ -24,7 +24,7 @@ export interface CliOptions {
 }
 
 export const CLI_USAGE =
-  "Usage: pnpm probe <ISO | --all> [--browser=solari] [--timeout-ms=N] [--stealth] [--proxy-country=XX] [--captcha]";
+  "Usage: pnpm probe [ISO] [--browser=solari] [--timeout-ms=N] [--stealth] [--proxy-country=XX] [--captcha]";
 
 /**
  * Narrow yargs result to the flags this CLI declares. The `@types/yargs`
@@ -32,7 +32,6 @@ export const CLI_USAGE =
  * instead of narrowing at every use site.
  */
 interface ParsedFlags {
-  all: boolean;
   browser?: "solari";
   timeoutMs?: number;
   stealth?: boolean;
@@ -62,13 +61,12 @@ export class HelpRequested extends Error {
 export function parseArgs(argv: string[]): CliOptions {
   const parsed = yargs(argv)
     .scriptName("probe")
-    .usage("Usage: pnpm probe <ISO | --all> [options]")
+    .usage("Usage: pnpm probe [ISO] [options]")
     .command(
       "$0 [iso]",
-      "Probe one portal candidate direct-first, with optional Solari fallback after direct failure.",
+      "Probe one portal candidate direct-first, with optional Solari fallback after direct failure. Without an ISO, probes every seed.",
       (cmd) => cmd.positional("iso", { describe: "ISO country code of one seed.", type: "string" }),
     )
-    .option("all", { type: "boolean", default: false, describe: "Probe every seed in data/seeds.json." })
     .option("browser", {
       choices: ["solari"] as const,
       describe: "Browser provider for fallback after direct failure.",
@@ -91,13 +89,8 @@ export function parseArgs(argv: string[]): CliOptions {
   if (parsed.help) {
     throw new HelpRequested();
   }
-  const target = parsed.iso?.toUpperCase() ?? "";
-  if (parsed.all && target !== "") {
-    throw new Error(`Pass either an ISO code or --all, not both. ${CLI_USAGE}`);
-  }
-  if (!parsed.all && target === "") {
-    throw new Error(`Missing target ISO code. ${CLI_USAGE}`);
-  }
+  const iso = parsed.iso?.toUpperCase() ?? "";
+  const all = iso === "";
   const timeoutMs = parsed.timeoutMs;
   if (timeoutMs !== undefined && (!Number.isInteger(timeoutMs) || timeoutMs <= 0)) {
     throw new Error(`Invalid --timeout-ms value. ${CLI_USAGE}`);
@@ -107,7 +100,7 @@ export function parseArgs(argv: string[]): CliOptions {
     throw new Error(`Invalid --proxy-country value. ${CLI_USAGE}`);
   }
   const proxyCountry = rawProxy?.toUpperCase();
-  const options: CliOptions = { target: parsed.all ? "all" : target, all: parsed.all, browser: parsed.browser ?? null };
+  const options: CliOptions = { target: all ? "all" : iso, all, browser: parsed.browser ?? null };
   if (timeoutMs !== undefined) {
     options.timeoutMs = timeoutMs;
   }
