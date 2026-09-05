@@ -41,8 +41,9 @@ module + resolution, shared base in `tsconfig.base.json`.
 
 - `packages/probe-core`: provider-neutral contracts (`BrowserProbeProvider`,
   page/session) + `runDirectProbe` (native `fetch` + `AbortSignal.timeout`,
-  `DEFAULT_DIRECT_PROBE_TIMEOUT_MS = 10_000`). Use `PROBE_METHOD` /
-  `PROBE_EVIDENCE` constants, not string literals.
+  `DEFAULT_DIRECT_PROBE_TIMEOUT_MS = 10_000`) + loggers (`consoleProbeLogger`
+  for machines, `progressLogger` for humans, `noopProbeLogger` for tests).
+  Use `PROBE_METHOD` / `PROBE_EVIDENCE` constants, not string literals.
 - `packages/workflow`: `runProbeWorkflow(seed, {browserProvider, browserOptions,
 timeoutMs})` — direct-first, browser only after direct failure, always closes
   page + session (`finally` on both paths). `runTargets(seeds, options, deps)`
@@ -52,8 +53,8 @@ timeoutMs})` — direct-first, browser only after direct failure, always closes
 - `packages/providers/solari` (package `@tariff-radar/provider-solari`): the ONLY place that may import
   `@solarisdk/browser`. Adapts to `BrowserProbeProvider` (`name: "solari"`).
   `probe-core`, `workflow`, `registry` must compile without the Solari SDK.
-- `packages/registry`: `Seed` / `RegistryEntry` / `CustomsRegistry` types +
-  generator. `data/seeds.json` (8 countries) holds unverified input hypotheses;
+- `packages/registry`: `Seed` / `RegistryEntry` / `CustomsRegistry` types,
+  `loadSeeds` file loader, + generator. `data/seeds.json` (8 countries) holds unverified input hypotheses;
   `portalUrl` (candidate tariff page) ≠ `sourceUrl` (authority provenance).
 - `packages/shared`: cross-cutting helpers with no domain. First exports:
   `projectRoot(metaUrl)` and `projectDataDir(metaUrl)` (workspace layout

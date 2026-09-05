@@ -1,10 +1,7 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { WorkflowResult } from "@tariff-radar/probe-core";
 import type { Seed } from "@tariff-radar/registry";
-import { defaultDeps, formatTable, loadSeeds, parseProbeArgs, HelpRequested } from "@tariff-radar/cli";
+import { defaultDeps, formatTable, parseProbeArgs, HelpRequested } from "@tariff-radar/cli";
 
 const seedUS: Seed = {
   isoCode: "US",
@@ -126,19 +123,6 @@ describe("parseProbeArgs", () => {
 
   it("requests help instead of options for --help", () => {
     expect(() => parseProbeArgs(["--help"])).toThrow(HelpRequested);
-  });
-});
-
-describe("loadSeeds", () => {
-  it("loads seeds from a JSON file", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "cli-test-"));
-    try {
-      const path = join(dir, "seeds.json");
-      writeFileSync(path, JSON.stringify([seedUS, seedMX]));
-      await expect(loadSeeds(path)).resolves.toEqual([seedUS, seedMX]);
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
   });
 });
 

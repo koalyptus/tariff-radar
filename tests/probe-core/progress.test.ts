@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PROBE_LOG_EVENT } from "@tariff-radar/probe-core";
-import { formatStage, progressLogger } from "@tariff-radar/cli";
+import { PROBE_LOG_EVENT, formatStage, progressLogger } from "@tariff-radar/probe-core";
 
 describe("formatStage", () => {
   it("announces each seed run", () => {

@@ -1,10 +1,5 @@
 import { readFile } from "node:fs/promises";
-import type { Seed } from "@tariff-radar/registry";
-
-/**
- * Seed file loading. Single-seed selection lives in the workflow
- * (`findTarget`); this module only reads files.
- */
+import type { Seed } from "./types.js";
 
 /**
  * Read and parse a seeds file.

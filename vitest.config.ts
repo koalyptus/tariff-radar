@@ -11,6 +11,7 @@ export default defineConfig({
       "@tariff-radar/workflow": `${root}packages/workflow/src/index.ts`,
       "@tariff-radar/shared": `${root}packages/shared/src/index.ts`,
       "@tariff-radar/cli": `${root}packages/cli/src/index.ts`,
+      "@tariff-radar/registry": `${root}packages/registry/src/index.ts`,
       "@tariff-radar/provider-solari": `${root}packages/providers/solari/src/index.ts`,
       // Never load the real browser SDK in tests (it performs network I/O);
       // the provider adapter is exercised against tests/fakes/solari-browser.ts.

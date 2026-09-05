@@ -1,14 +1,14 @@
 import { join } from "node:path";
-import { PROBE_METHOD, consoleProbeLogger } from "@tariff-radar/probe-core";
+import { PROBE_METHOD, consoleProbeLogger, progressLogger } from "@tariff-radar/probe-core";
 import { SolariBrowserProvider } from "@tariff-radar/provider-solari";
 import { projectDataDir } from "@tariff-radar/shared";
 import { runTargets } from "@tariff-radar/workflow";
 import type { RunDeps } from "@tariff-radar/workflow";
 import { runProbeWorkflow } from "@tariff-radar/workflow";
 import { parseProbeArgs, HelpRequested } from "./args.js";
-import { progressLogger, stdioOutput } from "./progress.js";
-import type { RunCliOutput } from "./progress.js";
-import { loadSeeds } from "./seeds.js";
+import { stdioOutput } from "./output.js";
+import type { RunCliOutput } from "./output.js";
+import { loadSeeds } from "@tariff-radar/registry";
 import { formatTable } from "./summary.js";
 
 /**

@@ -1,37 +1,12 @@
-import { PROBE_LOG_EVENT } from "@tariff-radar/probe-core";
-import type { LogFields, ProbeLogger } from "@tariff-radar/probe-core";
+import { PROBE_LOG_EVENT } from "./logger.js";
+import type { LogFields, ProbeLogger } from "./logger.js";
 
 /**
- * Human-readable progress rendering for the CLI demo. One short line per
- * workflow stage on stderr, so the run is easy to follow live while the
- * per-seed summaries stay clean on stdout. Never renders page contents —
- * the workflow only passes observable metadata.
+ * Pretty progress rendering: one short line per workflow stage. Joins
+ * {@link consoleProbeLogger} (machine lines) and {@link noopProbeLogger}
+ * (silence) as the third logger in the family. Never renders page contents
+ * — the workflow only passes observable metadata.
  */
-
-/**
- * Output sinks for the probe command. Production writes stdio; tests record.
- * The results table goes to stdout so it stays pipeable
- * (`pnpm probe > results.txt`); progress lines go to stderr.
- */
-export interface RunCliOutput {
-  /** Print the final results table (stdout in production). */
-  printTable: (text: string) => void;
-  /** Print one progress line (stderr in production). */
-  printProgress: (line: string) => void;
-  /** Print a failure message (stderr in production). */
-  printError: (message: string) => void;
-}
-
-/** Production output sinks. */
-export function stdioOutput(): RunCliOutput {
-  return {
-    printTable: (text) => console.log(text),
-    printProgress: (line) => {
-      process.stderr.write(`${line}\n`);
-    },
-    printError: (message) => console.error(message),
-  };
-}
 
 /**
  * Build a progress logger.

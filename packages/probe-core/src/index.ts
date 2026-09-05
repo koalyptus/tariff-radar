@@ -122,6 +122,7 @@ export interface WorkflowResult {
 }
 
 export { DEFAULT_DIRECT_PROBE_TIMEOUT_MS, runDirectProbe } from "./direct-probe.js";
+export { formatStage, progressLogger } from "./progress.js";
 export { consoleProbeLogger, noopProbeLogger, PROBE_LOG_EVENT, ProbeRunLogger } from "./logger.js";
 export type {
   LogFields,
