@@ -138,7 +138,7 @@ describe("runCli", () => {
         ...base,
         runWorkflow: (async () => queued[index++]) as RunDeps["runWorkflow"],
       };
-      await expect(runCli([], deps, seedsFile)).resolves.toBe(0);
+      await expect(runCli([], deps, seedsFile, recordOutput().output)).resolves.toBe(0);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -154,7 +154,9 @@ describe("runCli", () => {
       error: "nope",
     };
     try {
-      await expect(runCli(["US", "--browser=direct"], stubDeps(failed), seedsFile)).resolves.toBe(1);
+      await expect(
+        runCli(["US", "--browser=direct"], stubDeps(failed), seedsFile, recordOutput().output),
+      ).resolves.toBe(1);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -163,7 +165,7 @@ describe("runCli", () => {
   it("returns 0 for --help without probing", async () => {
     const { dir, seedsFile } = writeSeeds();
     try {
-      await expect(runCli(["--help"], stubDeps(directResult()), seedsFile)).resolves.toBe(0);
+      await expect(runCli(["--help"], stubDeps(directResult()), seedsFile, recordOutput().output)).resolves.toBe(0);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

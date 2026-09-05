@@ -21,6 +21,9 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/**/*.test.ts"],
+    // Quiet passing runs (tables, help text, progress lines); failing tests
+    // still print everything they logged.
+    silent: "passed-only",
     coverage: {
       provider: "v8",
       // Every package source is measured, including thin entry scripts:

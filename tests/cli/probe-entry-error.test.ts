@@ -14,6 +14,9 @@ afterEach(() => {
 
 describe("probe entry on usage error", () => {
   it("sets exit 2", async () => {
+    // No stderr mute needed: the failure line goes through console.error,
+    // which vitest intercepts and `silent` hides. Only raw
+    // process.stderr.write bypasses interception (see probe-entry.test.ts).
     process.argv = ["node", "probe.js", "--nope"];
     // Relative import on purpose: this imports the entry module itself,
     // not the `@tariff-radar/cli` barrel the alias points at.

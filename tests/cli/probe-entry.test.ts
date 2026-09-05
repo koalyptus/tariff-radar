@@ -10,6 +10,7 @@ const savedExit = process.exitCode;
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   process.argv = savedArgv;
   process.exitCode = savedExit;
   if (savedKey === undefined) {
@@ -25,6 +26,9 @@ describe("probe entry", () => {
       "fetch",
       vi.fn(async () => ({ ok: true, status: 200, url: "https://hts.usitc.gov/" })),
     );
+    // Production stdio writes past console interception, so mute the raw
+    // stderr sink for a quiet passing run.
+    vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     delete process.env.SOLARI_API_KEY;
     process.argv = ["node", "probe.js", "US"];
     // Relative import on purpose: this imports the entry module itself,
