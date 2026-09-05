@@ -1,3 +1,4 @@
+import pLimit from "p-limit";
 import { consoleProbeLogger } from "@tariff-radar/probe-core";
 import type { BrowserProbeProvider, ProbeLogger, WorkflowResult } from "@tariff-radar/probe-core";
 import { SolariBrowserProvider } from "@tariff-radar/provider-solari";
@@ -39,7 +40,8 @@ export function defaultDeps(): RunDeps {
 }
 
 /**
- * Probe the seeds selected by the CLI options.
+ * Probe the seeds selected by the CLI options with bounded concurrency.
+ * Results stay in seed order; progress lines may interleave above 1.
  * @param seeds - Candidate seeds in file order.
  * @param options - Parsed CLI options selecting targets and provider.
  * @param deps - Injectable runner, provider factory, key source, and logger.
@@ -56,10 +58,10 @@ export async function runTargets(seeds: Seed[], options: CliOptions, deps: RunDe
     }
     browserProvider = deps.createSolariProvider(apiKey);
   }
-  const results: WorkflowResult[] = [];
-  for (const seed of targets) {
-    results.push(
-      await deps.runWorkflow(seed, {
+  const limit = pLimit(options.concurrency ?? 3);
+  const tasks = targets.map((seed) =>
+    limit(() =>
+      deps.runWorkflow(seed, {
         browserProvider,
         browserOptions: {
           stealth: options.stealth,
@@ -69,7 +71,7 @@ export async function runTargets(seeds: Seed[], options: CliOptions, deps: RunDe
         timeoutMs: options.timeoutMs,
         logger: deps.logger,
       }),
-    );
-  }
-  return results;
+    ),
+  );
+  return Promise.all(tasks);
 }

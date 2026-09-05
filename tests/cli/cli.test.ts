@@ -132,6 +132,16 @@ describe("parseArgs", () => {
     expect(() => parseArgs(["US", "--log=yaml"])).toThrow('Argument: log, Given: "yaml"');
   });
 
+  it("accepts a concurrency limit", () => {
+    expect(parseArgs(["--concurrency=3"])).toMatchObject({ target: "all", all: true, concurrency: 3 });
+  });
+
+  it("rejects invalid concurrency values", () => {
+    expect(() => parseArgs(["US", "--concurrency=0"])).toThrow("Invalid --concurrency value.");
+    expect(() => parseArgs(["US", "--concurrency=nope"])).toThrow("Invalid --concurrency value.");
+    expect(() => parseArgs(["US", "--concurrency=1.5"])).toThrow("Invalid --concurrency value.");
+  });
+
   it("rejects a removed --all flag", () => {
     expect(() => parseArgs(["--all"])).toThrow("Unknown argument: all");
   });
@@ -296,6 +306,31 @@ describe("runTargets", () => {
     const results = await runTargets([seedUS, seedMX], parseArgs([]), deps);
     expect(results).toEqual([first, second]);
     expect(calls.map((call) => call.isoCode)).toEqual(["US", "MX"]);
+  });
+
+  it("runs up to concurrency probes at once, keeping seed order", async () => {
+    const first = workflowResult({ seed: seedUS });
+    const second = workflowResult({ seed: seedMX });
+    let inFlight = 0;
+    let maxInFlight = 0;
+    const runWorkflow = (async (seed: Seed) => {
+      inFlight += 1;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      await Promise.resolve();
+      inFlight -= 1;
+      return seed.isoCode === "US" ? first : second;
+    }) as RunDeps["runWorkflow"];
+    const deps: RunDeps = {
+      runWorkflow,
+      createSolariProvider: () => {
+        throw new Error("unused");
+      },
+      readApiKey: () => "test-key",
+      logger: noopProbeLogger,
+    };
+    const results = await runTargets([seedUS, seedMX], { ...parseArgs([]), concurrency: 2 }, deps);
+    expect(maxInFlight).toBe(2);
+    expect(results).toEqual([first, second]);
   });
 
   it("throws for unknown ISO codes", async () => {

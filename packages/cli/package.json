@@ -13,6 +13,7 @@
     "@tariff-radar/shared": "workspace:*",
     "@tariff-radar/workflow": "workspace:*",
     "cli-table3": "^0.6.5",
+    "p-limit": "^7.3.2",
     "yargs": "^18.1.0"
   },
   "devDependencies": {

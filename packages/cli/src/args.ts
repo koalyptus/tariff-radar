@@ -23,10 +23,12 @@ export interface CliOptions {
   captcha?: boolean;
   /** Progress rendering: human stage lines (default) or JSON lines. */
   log: "human" | "json";
+  /** Max parallel seed probes (default 3). */
+  concurrency?: number;
 }
 
 export const CLI_USAGE =
-  "Usage: pnpm probe [ISO] [--browser=solari] [--timeout-ms=N] [--stealth] [--proxy-country=XX] [--captcha] [--log=json]";
+  "Usage: pnpm probe [ISO] [--browser=solari] [--timeout-ms=N] [--stealth] [--proxy-country=XX] [--captcha] [--log=json] [--concurrency=N]";
 
 /**
  * Narrow yargs result to the flags this CLI declares. The `@types/yargs`
@@ -40,6 +42,7 @@ interface ParsedFlags {
   proxyCountry?: string;
   captcha?: boolean;
   log: "human" | "json";
+  concurrency?: number;
   iso?: string;
   help?: boolean;
 }
@@ -86,6 +89,7 @@ export function parseArgs(argv: string[]): CliOptions {
       default: "human",
       describe: "Progress rendering: human stage lines on stderr, or JSON lines.",
     })
+    .option("concurrency", { type: "number", describe: "Max parallel seed probes (default 3)." })
     .strict()
     .help()
     .version(false)
@@ -108,6 +112,10 @@ export function parseArgs(argv: string[]): CliOptions {
     throw new Error(`Invalid --proxy-country value. ${CLI_USAGE}`);
   }
   const proxyCountry = rawProxy?.toUpperCase();
+  const concurrency = parsed.concurrency;
+  if (concurrency !== undefined && (!Number.isInteger(concurrency) || concurrency <= 0)) {
+    throw new Error(`Invalid --concurrency value. ${CLI_USAGE}`);
+  }
   const options: CliOptions = {
     target: all ? "all" : iso,
     all,
@@ -125,6 +133,9 @@ export function parseArgs(argv: string[]): CliOptions {
   }
   if (parsed.captcha !== undefined) {
     options.captcha = parsed.captcha;
+  }
+  if (concurrency !== undefined) {
+    options.concurrency = concurrency;
   }
   return options;
 }
