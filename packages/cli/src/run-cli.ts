@@ -26,9 +26,12 @@ export async function runCli(argv: string[], deps: RunDeps = defaultDeps(), seed
     const seeds = await loadSeeds(seedsFile ?? join(projectDataDir(import.meta.url), "seeds.json"));
     const total = options.all ? seeds.length : 1;
     const startedAt = performance.now();
-    const logger = options.log === "pretty" ? progressLogger((line) => console.error(line)) : consoleProbeLogger;
+    const writeProgress = (line: string): void => {
+      process.stderr.write(`${line}\n`);
+    };
+    const logger = options.log === "pretty" ? progressLogger(writeProgress) : consoleProbeLogger;
     if (options.log === "pretty") {
-      console.error(`Probe: STARTING — ${String(total)} portal${total === 1 ? "" : "s"}`);
+      writeProgress(`Probe: STARTING — ${String(total)} portal${total === 1 ? "" : "s"}`);
     }
     const results = await runTargets(seeds, options, { ...deps, logger });
     console.log(formatTable(results));
@@ -37,7 +40,7 @@ export async function runCli(argv: string[], deps: RunDeps = defaultDeps(), seed
       const browser = results.filter((result) => result.method === PROBE_METHOD.BROWSER).length;
       const failed = results.length - direct - browser;
       const elapsed = ((performance.now() - startedAt) / 1000).toFixed(1);
-      console.error(
+      writeProgress(
         `Probe: COMPLETED in ${elapsed}s — ${String(direct)} direct, ${String(browser)} browser, ${String(failed)} failed`,
       );
     }
