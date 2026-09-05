@@ -106,12 +106,14 @@ export interface WorkflowResult {
   provider: string | null;
   /** Direct attempt outcome, always present. */
   direct: DirectProbeResult;
-  /** Browser observation (status, URLs, title, text), or null when unused. */
+  /** Browser observation (status, URLs, title, text, latency), or null when unused. */
   browser: {
     status: number | null;
     finalUrl: string | null;
     title: string | null;
     text: string | null;
+    /** Wall-clock time for the browser fallback, launch through observation. */
+    latencyMs: number;
   } | null;
   /** Observed-evidence keys; see {@link PROBE_EVIDENCE}. */
   evidence: string[];

@@ -73,7 +73,7 @@ export function formatStage(message: string, fields: LogFields): string {
       if (fields.status === null || fields.status === undefined) {
         return "   browser: no response";
       }
-      return `   browser: HTTP ${String(fields.status)}`;
+      return `   browser: HTTP ${String(fields.status)} in ${String(fields.latencyMs)}ms`;
     case PROBE_LOG_EVENT.FAILED:
       return `   failed: ${String(fields.error)}`;
     default:

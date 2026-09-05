@@ -43,7 +43,9 @@ function describeOutcome(result: WorkflowResult): string {
     return `HTTP ${String(result.direct.status)} in ${String(result.direct.latencyMs)}ms`;
   }
   if (result.browser) {
-    return result.browser.status !== null ? `HTTP ${String(result.browser.status)}` : "no response";
+    return result.browser.status !== null
+      ? `HTTP ${String(result.browser.status)} in ${String(result.browser.latencyMs)}ms`
+      : "no response";
   }
   return result.error ?? "unknown error";
 }

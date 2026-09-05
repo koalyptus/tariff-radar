@@ -81,6 +81,8 @@ export type ProbeBrowserCompleteFields = {
   provider: string;
   status: number | null;
   finalUrl: string | null;
+  /** Wall-clock time for the browser fallback, launch through observation. */
+  latencyMs: number;
 };
 
 /** Payload for {@link PROBE_LOG_EVENT.FAILED: the terminal failure. */
@@ -170,14 +172,16 @@ export class ProbeRunLogger {
    * @param provider - Provider name that ran the browser.
    * @param status - Observed HTTP status, or null when the page gave none.
    * @param finalUrl - Observed final URL, or null when the page gave none.
+   * @param latencyMs - Wall-clock time for the fallback.
    */
-  browserComplete(provider: string, status: number | null, finalUrl: string | null): void {
+  browserComplete(provider: string, status: number | null, finalUrl: string | null, latencyMs: number): void {
     const fields: ProbeBrowserCompleteFields = {
       isoCode: this.isoCode,
       portalUrl: this.portalUrl,
       provider,
       status,
       finalUrl,
+      latencyMs,
     };
     this.logger.info(PROBE_LOG_EVENT.BROWSER_COMPLETE, fields);
   }

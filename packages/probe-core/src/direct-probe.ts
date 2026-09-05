@@ -15,7 +15,9 @@ export async function runDirectProbe(
   url: string,
   timeoutMs = DEFAULT_DIRECT_PROBE_TIMEOUT_MS,
 ): Promise<DirectProbeResult> {
-  const startedAt = Date.now();
+  // Monotonic clock: wall time can jump backwards (NTP resync, VM drift),
+  // which once produced negative latencies in the evidence.
+  const startedAt = performance.now();
 
   try {
     const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
@@ -23,7 +25,7 @@ export async function runDirectProbe(
       ok: response.ok,
       status: response.status,
       finalUrl: response.url,
-      latencyMs: Date.now() - startedAt,
+      latencyMs: Math.round(performance.now() - startedAt),
       title: null,
       error: response.ok ? null : `HTTP ${response.status}`,
     };
@@ -32,7 +34,7 @@ export async function runDirectProbe(
       ok: false,
       status: null,
       finalUrl: null,
-      latencyMs: Date.now() - startedAt,
+      latencyMs: Math.round(performance.now() - startedAt),
       title: null,
       error: error instanceof Error ? error.message : String(error),
     };

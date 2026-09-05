@@ -191,7 +191,13 @@ describe("formatTable", () => {
         method: "browser",
         provider: "solari",
         direct: directFailed("connection refused"),
-        browser: { status: 200, finalUrl: "https://www.snice.gob.mx/final", title: "SNICE", text: "arancel" },
+        browser: {
+          status: 200,
+          finalUrl: "https://www.snice.gob.mx/final",
+          title: "SNICE",
+          text: "arancel",
+          latencyMs: 812,
+        },
         evidence: ["browser_response", "browser_text"],
       }),
       workflowResult({
@@ -215,7 +221,7 @@ describe("formatTable", () => {
       "MX",
       "browser",
       "solari",
-      "HTTP 200",
+      "HTTP 200 in 812ms",
       "browser_response, browser_text",
       "failed",
       "none",
@@ -232,7 +238,7 @@ describe("formatTable", () => {
         method: "browser",
         provider: "solari",
         direct: directFailed("timeout"),
-        browser: { status: null, finalUrl: null, title: null, text: "body" },
+        browser: { status: null, finalUrl: null, title: null, text: "body", latencyMs: 96 },
         evidence: ["browser_text"],
       }),
     ]);

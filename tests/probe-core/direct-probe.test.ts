@@ -23,6 +23,21 @@ describe("runDirectProbe", () => {
     expect(result.latencyMs).toBeGreaterThanOrEqual(0);
   });
 
+  it("stays non-negative when the wall clock jumps backwards", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => okResponse()),
+    );
+    const now = vi.spyOn(Date, "now").mockReturnValueOnce(1_000_000).mockReturnValueOnce(500_000);
+    try {
+      const result = await runDirectProbe("https://portal.example/tariff");
+      expect(result.ok).toBe(true);
+      expect(result.latencyMs).toBeGreaterThanOrEqual(0);
+    } finally {
+      now.mockRestore();
+    }
+  });
+
   it("reports HTTP failure statuses", async () => {
     vi.stubGlobal(
       "fetch",

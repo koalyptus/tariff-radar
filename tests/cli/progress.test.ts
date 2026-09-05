@@ -59,9 +59,9 @@ describe("formatStage", () => {
 
   it("reports the browser observation with and without a response", () => {
     const observed = { isoCode: "CN", portalUrl: "http://english.customs.gov.cn/service/query", provider: "solari" };
-    expect(formatStage(PROBE_LOG_EVENT.BROWSER_COMPLETE, { ...observed, status: 200, finalUrl: null })).toBe(
-      "   browser: HTTP 200",
-    );
+    expect(
+      formatStage(PROBE_LOG_EVENT.BROWSER_COMPLETE, { ...observed, status: 200, finalUrl: null, latencyMs: 812 }),
+    ).toBe("   browser: HTTP 200 in 812ms");
     expect(formatStage(PROBE_LOG_EVENT.BROWSER_COMPLETE, { ...observed, status: null, finalUrl: null })).toBe(
       "   browser: no response",
     );
