@@ -182,16 +182,16 @@ the per-seed summaries print on stdout, so the run is easy to follow live:
 ```text
 Probe: STARTING — 8 portals
 ── US https://hts.usitc.gov/
-   direct: HTTP 200 in 533ms
+[US] direct: HTTP 200 in 533ms
 ── CN http://english.customs.gov.cn/service/query
-   direct: failed (fetch failed)
-   browser via solari
-   browser: HTTP 200
+[CN] direct: failed (fetch failed)
+[CN] browser via solari
+[CN] browser: HTTP 200 in 812ms
 Probe: COMPLETED — 5 direct, 3 browser, 0 failed
 ```
 
 With opt-in capabilities the fallback line names them exactly, e.g.
-`browser via solari (stealth, proxy MX)…` for
+`[CN] browser via solari (stealth, proxy MX)` for
 `--stealth --proxy-country=MX`. Unset options mean provider defaults.
 
 Pass `--log=json` for the original machine-readable JSON lines.

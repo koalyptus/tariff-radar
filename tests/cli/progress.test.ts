@@ -20,7 +20,7 @@ describe("formatStage", () => {
         latencyMs: 533,
         error: null,
       }),
-    ).toBe("   direct: HTTP 200 in 533ms");
+    ).toBe("[US] direct: HTTP 200 in 533ms");
   });
 
   it("reports a direct failure with and without a reason", () => {
@@ -33,10 +33,10 @@ describe("formatStage", () => {
       latencyMs: 771,
     };
     expect(formatStage(PROBE_LOG_EVENT.DIRECT_COMPLETE, { ...failed, error: "fetch failed" })).toBe(
-      "   direct: failed (fetch failed)",
+      "[CN] direct: failed (fetch failed)",
     );
     expect(formatStage(PROBE_LOG_EVENT.DIRECT_COMPLETE, { ...failed, error: null })).toBe(
-      "   direct: failed (unknown error)",
+      "[CN] direct: failed (unknown error)",
     );
   });
 
@@ -46,7 +46,7 @@ describe("formatStage", () => {
       portalUrl: "http://english.customs.gov.cn/service/query",
       provider: "solari",
     };
-    expect(formatStage(PROBE_LOG_EVENT.BROWSER_FALLBACK, fallback)).toBe("   browser via solari");
+    expect(formatStage(PROBE_LOG_EVENT.BROWSER_FALLBACK, fallback)).toBe("[CN] browser via solari");
     expect(
       formatStage(PROBE_LOG_EVENT.BROWSER_FALLBACK, {
         ...fallback,
@@ -54,19 +54,19 @@ describe("formatStage", () => {
         proxyCountry: "MX",
         captcha: true,
       }),
-    ).toBe("   browser via solari (stealth, proxy MX, captcha)");
+    ).toBe("[CN] browser via solari (stealth, proxy MX, captcha)");
   });
 
   it("reports the browser observation with and without a response", () => {
     const observed = { isoCode: "CN", portalUrl: "http://english.customs.gov.cn/service/query", provider: "solari" };
     expect(
       formatStage(PROBE_LOG_EVENT.BROWSER_COMPLETE, { ...observed, status: 200, finalUrl: null, latencyMs: 812 }),
-    ).toBe("   browser: HTTP 200 in 812ms");
+    ).toBe("[CN] browser: HTTP 200 in 812ms");
     expect(formatStage(PROBE_LOG_EVENT.BROWSER_COMPLETE, { ...observed, status: null, finalUrl: null })).toBe(
-      "   browser: no response",
+      "[CN] browser: no response",
     );
     expect(formatStage(PROBE_LOG_EVENT.BROWSER_COMPLETE, { ...observed, finalUrl: null })).toBe(
-      "   browser: no response",
+      "[CN] browser: no response",
     );
   });
 
@@ -79,7 +79,7 @@ describe("formatStage", () => {
         method: "failed",
         error: "LocalProxy not started",
       }),
-    ).toBe("   failed: LocalProxy not started");
+    ).toBe("[BR] failed: LocalProxy not started");
   });
 
   it("passes unknown events through", () => {
@@ -101,6 +101,6 @@ describe("humanProbeLogger", () => {
       method: "failed",
       error: "nope",
     });
-    expect(lines).toEqual(["probe.unknown", "── US https://hts.usitc.gov/", "probe.unknown", "   failed: nope"]);
+    expect(lines).toEqual(["probe.unknown", "── US https://hts.usitc.gov/", "probe.unknown", "[US] failed: nope"]);
   });
 });

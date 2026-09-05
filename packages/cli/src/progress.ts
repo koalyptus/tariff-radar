@@ -59,23 +59,24 @@ function describeOptions(fields: LogFields): string {
  * @returns The rendered line.
  */
 export function formatStage(message: string, fields: LogFields): string {
+  const iso = String(fields.isoCode);
   switch (message) {
     case PROBE_LOG_EVENT.START:
-      return `── ${String(fields.isoCode)} ${String(fields.portalUrl)}`;
+      return `── ${iso} ${String(fields.portalUrl)}`;
     case PROBE_LOG_EVENT.DIRECT_COMPLETE:
       if (fields.ok !== true) {
-        return `   direct: failed (${String(fields.error ?? "unknown error")})`;
+        return `[${iso}] direct: failed (${String(fields.error ?? "unknown error")})`;
       }
-      return `   direct: HTTP ${String(fields.status)} in ${String(fields.latencyMs)}ms`;
+      return `[${iso}] direct: HTTP ${String(fields.status)} in ${String(fields.latencyMs)}ms`;
     case PROBE_LOG_EVENT.BROWSER_FALLBACK:
-      return `   browser via ${String(fields.provider)}${describeOptions(fields)}`;
+      return `[${iso}] browser via ${String(fields.provider)}${describeOptions(fields)}`;
     case PROBE_LOG_EVENT.BROWSER_COMPLETE:
       if (fields.status === null || fields.status === undefined) {
-        return "   browser: no response";
+        return `[${iso}] browser: no response`;
       }
-      return `   browser: HTTP ${String(fields.status)} in ${String(fields.latencyMs)}ms`;
+      return `[${iso}] browser: HTTP ${String(fields.status)} in ${String(fields.latencyMs)}ms`;
     case PROBE_LOG_EVENT.FAILED:
-      return `   failed: ${String(fields.error)}`;
+      return `[${iso}] failed: ${String(fields.error)}`;
     default:
       return message;
   }
