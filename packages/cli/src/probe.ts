@@ -24,7 +24,7 @@ try {
     logger: options.log === "json" ? consoleProbeLogger : humanProbeLogger((line) => console.error(line)),
   };
   if (options.log !== "json") {
-    console.error(`Direct probe: STARTING — ${String(total)} portal${total === 1 ? "" : "s"}`);
+    console.error(`Probe: STARTING — ${String(total)} portal${total === 1 ? "" : "s"}`);
   }
   const results = await runTargets(seeds, options, deps);
   console.log(formatTable(results));
