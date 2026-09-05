@@ -44,6 +44,9 @@ importers:
       '@tariff-radar/registry':
         specifier: workspace:*
         version: link:../registry
+      '@tariff-radar/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@tariff-radar/workflow':
         specifier: workspace:*
         version: link:../workflow
@@ -87,13 +90,23 @@ importers:
         version: 5.9.3
 
   packages/registry:
+    dependencies:
+      '@tariff-radar/shared':
+        specifier: workspace:*
+        version: link:../shared
     devDependencies:
       '@types/node':
         specifier: ^22.10.2
         version: 22.20.1
-      tsx:
-        specifier: ^4.19.2
-        version: 4.23.13
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/shared:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
       typescript:
         specifier: ^5.7.2
         version: 5.9.3

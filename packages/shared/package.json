@@ -1,5 +1,5 @@
 {
-  "name": "@tariff-radar/registry",
+  "name": "@tariff-radar/shared",
   "private": true,
   "type": "module",
   "exports": {
@@ -11,9 +11,6 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit"
-  },
-  "dependencies": {
-    "@tariff-radar/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

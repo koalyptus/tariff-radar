@@ -23,8 +23,9 @@ module + resolution, shared base in `tsconfig.base.json`.
 - CI (`.github/workflows/ci.yaml`, push + PR, ubuntu/node 22) runs
   install, format:check, lint, typecheck, test, build as separate steps
   (same scripts `pnpm verify` chains locally). Hermetic — no secrets needed.
-- `pnpm --filter @tariff-radar/registry generate-registry` → runs
-  `tsx src/generate-registry.ts`, writes `data/customs_registry.json`
+- `pnpm generate-registry` → builds registry deps, runs
+  `node packages/registry/dist/generate-registry.js`, writes
+  `data/customs_registry.json`
 - `pnpm probe <ISO | --all> [--browser=solari] [--timeout-ms=N] [--stealth]
 [--proxy-country=XX] [--captcha]` → builds cli deps, runs
   `node --env-file-if-exists=.env packages/cli/dist/probe.js`. Direct-only by
@@ -45,6 +46,8 @@ timeoutMs})` — direct-first, browser only after direct failure, always closes
 - `packages/registry`: `Seed` / `RegistryEntry` / `CustomsRegistry` types +
   generator. `data/seeds.json` (8 countries) holds unverified input hypotheses;
   `portalUrl` (candidate tariff page) ≠ `sourceUrl` (authority provenance).
+- `packages/shared`: cross-cutting helpers with no domain. First export:
+  `projectRoot(metaUrl)` (workspace root resolution for entry scripts).
 - `packages/cli`: composition root (arg parsing via `yargs`). The ONLY place
   (with `run.ts` seams) allowed to read `SOLARI_API_KEY` and construct
   `SolariBrowserProvider`. `probe-one` entry: `parseArgs` → `loadSeeds`/

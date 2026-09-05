@@ -1,7 +1,6 @@
-import { realpathSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { basename, dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+import { projectRoot } from "@tariff-radar/shared";
 import type { CustomsRegistry, Seed } from "./types.js";
 
 /**
@@ -12,27 +11,6 @@ import type { CustomsRegistry, Seed } from "./types.js";
 
 const SEEDS_FILE_NAME = "seeds.json";
 const REGISTRY_FILE_NAME = "customs_registry.json";
-
-// TODO: move into a shared package when a second consumer needs it.
-/**
- * Walk up from a module URL to the workspace root (the parent of `packages/`).
- * @param metaUrl - `import.meta.url` of the calling module.
- * @returns The workspace root directory.
- * @throws When no `packages/` ancestor exists.
- */
-function projectRoot(metaUrl: string): string {
-  let dir = dirname(realpathSync(fileURLToPath(metaUrl)));
-  while (true) {
-    if (basename(dir) === "packages") {
-      return dirname(dir);
-    }
-    const parent = dirname(dir);
-    if (parent === dir) {
-      throw new Error("Could not determine project root");
-    }
-    dir = parent;
-  }
-}
 
 // Pass explicit `[seedsPath] [registryPath]` arguments to point the
 // generator elsewhere; otherwise it resolves the workspace `data/`.

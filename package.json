@@ -6,7 +6,7 @@
     "build": "pnpm -r build",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "generate-registry": "pnpm --filter @tariff-radar/registry generate-registry",
+    "generate-registry": "pnpm --filter @tariff-radar/registry... build && node packages/registry/dist/generate-registry.js",
     "probe": "pnpm --filter @tariff-radar/cli... build && node --env-file-if-exists=.env packages/cli/dist/probe.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

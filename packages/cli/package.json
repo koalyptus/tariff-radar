@@ -9,6 +9,7 @@
   "dependencies": {
     "@tariff-radar/probe-core": "workspace:*",
     "@tariff-radar/provider-solari": "workspace:*",
+    "@tariff-radar/shared": "workspace:*",
     "@tariff-radar/registry": "workspace:*",
     "@tariff-radar/workflow": "workspace:*",
     "yargs": "^18.1.0"
