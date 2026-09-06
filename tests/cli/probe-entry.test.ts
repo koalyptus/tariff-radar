@@ -1,39 +1,24 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { runCli } from "../../packages/cli/src/run-cli.js";
+import "../../packages/cli/src/probe.js";
 
-// Entry-point test: importing the module executes it, so the import itself
-// is dynamic and runs after fetch is stubbed and argv is fixed. Vitest
-// isolates modules per file, so this execution happens exactly once.
+vi.mock("../../packages/cli/src/run-cli.js", () => ({
+  runCli: vi.fn(async () => 0),
+}));
 
-const savedArgv = process.argv;
-const savedKey = process.env.SOLARI_API_KEY;
+// Entry-point test: the static import above executes probe.ts with the
+// dependency mocked, so the entry line runs hermetically with no network,
+// no argv surgery, and no dynamic import.
+
 const savedExit = process.exitCode;
 
 afterEach(() => {
-  vi.unstubAllGlobals();
-  vi.restoreAllMocks();
-  process.argv = savedArgv;
   process.exitCode = savedExit;
-  if (savedKey === undefined) {
-    delete process.env.SOLARI_API_KEY;
-  } else {
-    process.env.SOLARI_API_KEY = savedKey;
-  }
 });
 
 describe("probe entry", () => {
-  it("probes one seed and sets exit 0", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => ({ ok: true, status: 200, url: "https://hts.usitc.gov/" })),
-    );
-    // Production stdio writes past console interception, so mute the raw
-    // stderr sink for a quiet passing run.
-    vi.spyOn(process.stderr, "write").mockImplementation(() => true);
-    delete process.env.SOLARI_API_KEY;
-    process.argv = ["node", "probe.js", "US"];
-    // Relative import on purpose: this imports the entry module itself,
-    // not the `@tariff-radar/cli` barrel the alias points at.
-    await import("../../packages/cli/src/probe.js");
+  it("forwards argv to runCli and sets the exit code", () => {
+    expect(vi.mocked(runCli)).toHaveBeenCalledWith(process.argv.slice(2));
     expect(process.exitCode).toBe(0);
   });
 });

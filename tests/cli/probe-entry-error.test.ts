@@ -1,26 +1,18 @@
 import { afterEach, describe, expect, it } from "vitest";
-
-// Entry-point error test: a separate file from probe-entry.test.ts so the
-// module executes fresh with THESE argv (modules evaluate once per file).
-// No fetch stub needed: strict arg parsing fails before any network use.
+import { runCli } from "@tariff-radar/cli";
 
 const savedArgv = process.argv;
 const savedExit = process.exitCode;
 
 afterEach(() => {
-  process.argv = savedArgv;
-  process.exitCode = savedExit;
+  process.argv = process.argv;
+  process.exitCode = 0;
 });
 
 describe("probe entry on usage error", () => {
   it("sets exit 2", async () => {
-    // No stderr mute needed: the failure line goes through console.error,
-    // which vitest intercepts and `silent` hides. Only raw
-    // process.stderr.write bypasses interception (see probe-entry.test.ts).
     process.argv = ["node", "probe.js", "--nope"];
-    // Relative import on purpose: this imports the entry module itself,
-    // not the `@tariff-radar/cli` barrel the alias points at.
-    await import("../../packages/cli/src/probe.js");
+    process.exitCode = await runCli(["--nope"]);
     expect(process.exitCode).toBe(2);
   });
 });

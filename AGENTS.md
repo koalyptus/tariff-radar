@@ -13,7 +13,7 @@ module + resolution, shared base in `tsconfig.base.json`.
   Coverage thresholds are 100% lines/functions/branches/statements over
   `packages/**/src/**` with no exclusions: entry scripts stay thin and
   delegate to tested mains (`runCli`, `runGenerateRegistry`), exercised by
-  dynamic-import entry tests. Keep the suite hermetic: stub `fetch`, fake
+  mocked-dependency entry tests. Keep the suite hermetic: stub `fetch`, fake
   providers, never touch portals or the Solari API (`@solarisdk/browser` is
   aliased to `tests/fakes/`).
 - `pnpm format` (write) and `pnpm format:check` (CI gate). Prettier defaults

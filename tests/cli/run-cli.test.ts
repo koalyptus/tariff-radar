@@ -97,6 +97,12 @@ describe("runCli", () => {
     }
   });
 
+  it("defaults to the workspace seeds file", async () => {
+    const recorded = recordOutput();
+    await expect(runCli(["US"], stubDeps(directResult()), undefined, recorded.output)).resolves.toBe(0);
+    expect(recorded.tables).toHaveLength(1);
+  });
+
   it("returns 0 for JSON rendering", async () => {
     const { dir, seedsFile } = writeSeeds();
     const recorded = recordOutput();

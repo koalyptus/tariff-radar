@@ -185,8 +185,8 @@ Pass `--log=json` for the original machine-readable JSON lines.
 
 The CLI prints a per-seed summary to stdout and writes no registry file yet:
 the seed-only scaffold in `packages/registry` still emits `unverified`
-placeholders. A `200` below means the portal answered HTTP, not that tariff
-content was verified.
+placeholders. In the results above, `HTTP 200` means the portal answered
+HTTP, not that tariff content was verified (see _Evidence and Limitations_).
 
 ## Evidence and Limitations
 

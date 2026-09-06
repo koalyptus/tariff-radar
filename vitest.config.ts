@@ -23,6 +23,7 @@ export default defineConfig({
     include: ["tests/**/*.test.ts"],
     // Quiet passing runs (tables, help text, progress lines); failing tests
     // still print everything they logged.
+    // See https://vitest.dev/api/#silent
     silent: "passed-only",
     coverage: {
       provider: "v8",
