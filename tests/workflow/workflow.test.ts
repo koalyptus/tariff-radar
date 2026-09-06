@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PROBE_EVIDENCE, PROBE_METHOD } from "@tariff-radar/probe-core";
 import type { BrowserProbeProvider } from "@tariff-radar/probe-core";
-import { runProbeWorkflow } from "@tariff-radar/workflow";
+import { probeWorkflow } from "@tariff-radar/workflow";
 import type { WorkflowSeed } from "@tariff-radar/workflow";
 
 const seed: WorkflowSeed = {
@@ -67,10 +67,10 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("runProbeWorkflow", () => {
+describe("probeWorkflow", () => {
   it("returns the direct result when the direct probe succeeds", async () => {
     fetchOk();
-    const result = await runProbeWorkflow(seed);
+    const result = await probeWorkflow(seed);
     expect(result.method).toBe(PROBE_METHOD.DIRECT);
     expect(result.provider).toBeNull();
     expect(result.browser).toBeNull();
@@ -81,7 +81,7 @@ describe("runProbeWorkflow", () => {
 
   it("fails without a browser provider after direct failure", async () => {
     fetchFail();
-    const result = await runProbeWorkflow(seed);
+    const result = await probeWorkflow(seed);
     expect(result.method).toBe(PROBE_METHOD.FAILED);
     expect(result.provider).toBeNull();
     expect(result.browser).toBeNull();
@@ -93,7 +93,7 @@ describe("runProbeWorkflow", () => {
     fetchFail();
     let pageClosed = false;
     let sessionClosed = false;
-    const result = await runProbeWorkflow(seed, {
+    const result = await probeWorkflow(seed, {
       browserProvider: fakeProvider({
         response: { status: 200, url: "https://portal.example/final" },
         onPageClose: () => {
@@ -117,7 +117,7 @@ describe("runProbeWorkflow", () => {
 
   it("records null browser location when the page reports no response", async () => {
     fetchFail();
-    const result = await runProbeWorkflow(seed, {
+    const result = await probeWorkflow(seed, {
       browserProvider: fakeProvider({ response: null }),
     });
     expect(result.method).toBe(PROBE_METHOD.BROWSER);
@@ -129,7 +129,7 @@ describe("runProbeWorkflow", () => {
 
   it("fails with the launch error when the browser provider throws", async () => {
     fetchFail();
-    const result = await runProbeWorkflow(seed, {
+    const result = await probeWorkflow(seed, {
       browserProvider: fakeProvider({
         response: { status: 200, url: "https://portal.example/final" },
         launchError: new Error("browser unavailable"),
@@ -143,7 +143,7 @@ describe("runProbeWorkflow", () => {
 
   it("stringifies non-Error browser failures", async () => {
     fetchFail();
-    const result = await runProbeWorkflow(seed, {
+    const result = await probeWorkflow(seed, {
       browserProvider: fakeProvider({
         response: { status: 200, url: "https://portal.example/final" },
         launchError: "plain failure",
@@ -157,7 +157,7 @@ describe("runProbeWorkflow", () => {
     fetchFail();
     let pageClosed = false;
     let sessionClosed = false;
-    const result = await runProbeWorkflow(seed, {
+    const result = await probeWorkflow(seed, {
       browserProvider: fakeProvider({
         response: { status: 200, url: "https://portal.example/final" },
         gotoError: new Error("navigation failed"),

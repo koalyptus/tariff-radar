@@ -38,7 +38,7 @@ Responsibilities:
 - `probe-core`: reusable probe capabilities, contracts, and result types.
 - `workflow`: sequencing, fallback, timeouts, retries, evidence assembly, and
   workflow logging.
-- `provider-solari`: Solari-specific browser implementation.
+- `providers/solari`: Solari-specific browser implementation.
 - `registry`: seed and registry models plus eventual output handling.
 - `data`: manually curated inputs and generated artifacts.
 
@@ -107,7 +107,7 @@ URL, and source URL, while remaining explicitly unverified.
 - [x] Define the `BrowserProbeProvider` interface.
 - [x] Define shared direct-probe and workflow result types.
 - [x] Implement the Solari browser adapter behind the provider contract.
-- [x] Keep Solari SDK imports inside `packages/provider-solari`.
+- [x] Keep Solari SDK imports inside `packages/providers/solari`.
 - [x] Replace probe magic values with named constants.
 
 **Done when:** The core and workflow layers compile without importing the
@@ -131,18 +131,18 @@ logs without exposing secrets or requiring a logging framework.
 
 ## Phase 5: Unit Test Foundation
 
-- [ ] Adopt Vitest as the workspace test runner.
-- [ ] Add Vitest as a root development dependency.
-- [ ] Add tests for direct probe success, HTTP failure, timeout, and network
+- [x] Adopt Vitest as the workspace test runner.
+- [x] Add Vitest as a root development dependency.
+- [x] Add tests for direct probe success, HTTP failure, timeout, and network
       error.
-- [ ] Add fake browser provider and fake session/page implementations.
-- [ ] Test direct-first workflow behavior.
-- [ ] Test browser fallback after direct failure.
-- [ ] Test behavior when no browser provider is configured.
-- [ ] Test page and session cleanup on success and failure.
-- [ ] Test logger calls using a recording logger without network access.
-- [ ] Keep unit tests deterministic and independent of `SOLARI_API_KEY`.
-- [ ] Keep live portal and Solari checks separate from unit tests.
+- [x] Add fake browser provider and fake session/page implementations.
+- [x] Test direct-first workflow behavior.
+- [x] Test browser fallback after direct failure.
+- [x] Test behavior when no browser provider is configured.
+- [x] Test page and session cleanup on success and failure.
+- [x] Test logger calls using a recording logger without network access.
+- [x] Keep unit tests deterministic and independent of `SOLARI_API_KEY`.
+- [x] Keep live portal and Solari checks separate from unit tests.
 
 **Done when:** The core workflow behavior is covered by fast local tests that
 do not contact government portals or external provider services, and `pnpm test`
@@ -153,12 +153,16 @@ passes locally.
 - [x] Move native `fetch` probing into `packages/probe-core`.
 - [x] Record HTTP status, final URL, latency, and errors.
 - [x] Apply a bounded request timeout.
-- [ ] Add focused tests for success, HTTP failure, timeout, and network error.
-- [ ] Decide whether an HTTP 200 response is sufficient or requires content
+- [x] Add focused tests for success, HTTP failure, timeout, and network error.
+- [x] Decide whether an HTTP 200 response is sufficient or requires content
       checks before workflow success.
 
 **Done when:** Direct probing is independently testable and returns stable,
 provider-neutral results for all expected failure modes.
+
+Decision: HTTP 200 means transport reachable only (`direct.ok`), never
+verified tariff content. Content relevance checks belong to Phase 10; the
+registry stays `unverified` until then.
 
 ## Phase 7: Workflow Orchestration
 
@@ -190,16 +194,20 @@ workflow result and can be reviewed without reading application logs.
 
 ## Phase 9: CLI and Single-Portal Demo
 
-- [ ] Add a TypeScript CLI for one seed by ISO code.
-- [ ] Add a CLI mode for all eight seeds.
-- [ ] Make the provider selection explicit.
-- [ ] Require `SOLARI_API_KEY` only when the Solari provider is selected.
+- [x] Add a TypeScript CLI for one seed by ISO code.
+- [x] Add a CLI mode for all eight seeds.
+- [x] Make the provider selection explicit.
+- [x] Require `SOLARI_API_KEY` only when the Solari provider is selected.
 - [ ] Print a concise result summary and output path.
-- [ ] Add a dry-run or direct-only mode that needs no Solari credentials.
-- [ ] Document the real commands in the README.
+- [x] Add a dry-run or direct-only mode that needs no Solari credentials.
+- [x] Document the real commands in the README.
 
 **Done when:** A contributor can run one direct-only example without secrets,
 and one Solari-backed example with `SOLARI_API_KEY`.
+
+Note: `pnpm probe` prints a concise per-seed summary to stdout but writes no
+registry file yet, so the summary half of the checkbox is done and the output
+path half (Phase 8) stays open.
 
 ## Phase 10: Verification Quality
 

@@ -41,10 +41,7 @@ export interface ProbeWorkflowOptions {
  * @param options - Browser provider, timeouts, and logger overrides.
  * @returns The workflow result; failures carry the error, never guesses.
  */
-export async function runProbeWorkflow(
-  seed: WorkflowSeed,
-  options: ProbeWorkflowOptions = {},
-): Promise<WorkflowResult> {
+export async function probeWorkflow(seed: WorkflowSeed, options: ProbeWorkflowOptions = {}): Promise<WorkflowResult> {
   const log = new ProbeRunLogger(options.logger ?? noopProbeLogger, seed);
   log.start();
 
@@ -76,7 +73,8 @@ export async function runProbeWorkflow(
     };
   }
 
-  log.browserFallback(options.browserProvider.name);
+  log.browserFallback(options.browserProvider.name, options.browserOptions);
+  const browserStartedAt = performance.now();
 
   try {
     const session = await options.browserProvider.launch(options.browserOptions);
@@ -87,7 +85,8 @@ export async function runProbeWorkflow(
         const text = await page.text();
         const status = response?.status() ?? null;
         const finalUrl = response?.url() ?? null;
-        log.browserComplete(options.browserProvider.name, status, finalUrl);
+        const latencyMs = Math.round(performance.now() - browserStartedAt);
+        log.browserComplete(options.browserProvider.name, status, finalUrl, latencyMs);
         return {
           seed,
           method: PROBE_METHOD.BROWSER,
@@ -98,6 +97,7 @@ export async function runProbeWorkflow(
             finalUrl,
             title: await page.title(),
             text,
+            latencyMs,
           },
           // Claim only what was observed: a null response yields no
           // browser_response evidence, even though the page rendered.

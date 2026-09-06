@@ -4,6 +4,7 @@
 export const solariControl = {
   apiKey: "",
   launchOptions: {} as Record<string, unknown>,
+  launchError: undefined as unknown,
   gotoResponse: "response" as "response" | "none",
   browserClosed: false,
   clientClosed: false,
@@ -14,6 +15,7 @@ export const solariControl = {
 export function resetSolariControl() {
   solariControl.apiKey = "";
   solariControl.launchOptions = {};
+  solariControl.launchError = undefined;
   solariControl.gotoResponse = "response";
   solariControl.browserClosed = false;
   solariControl.clientClosed = false;
@@ -22,11 +24,22 @@ export function resetSolariControl() {
 }
 
 export class Solari {
+  private closed = false;
+
   constructor(options: { apiKey: string }) {
     solariControl.apiKey = options.apiKey;
   }
 
   async launch(options: Record<string, unknown>) {
+    // Mirror the SDK: closing the client shuts its loopback proxy down, so
+    // launching again on the same client fails. The adapter must open a
+    // fresh client per session.
+    if (this.closed) {
+      throw new Error("LocalProxy not started");
+    }
+    if (solariControl.launchError !== undefined) {
+      throw solariControl.launchError;
+    }
     solariControl.launchOptions = options;
     return {
       newPage: async () => ({
@@ -57,6 +70,7 @@ export class Solari {
   }
 
   async close() {
+    this.closed = true;
     solariControl.clientClosed = true;
   }
 }

@@ -7,7 +7,7 @@ import {
   noopProbeLogger,
 } from "@tariff-radar/probe-core";
 import type { BrowserProbeProvider, LogFields, ProbeLogger } from "@tariff-radar/probe-core";
-import { runProbeWorkflow } from "@tariff-radar/workflow";
+import { probeWorkflow } from "@tariff-radar/workflow";
 import type { WorkflowSeed } from "@tariff-radar/workflow";
 
 const seed: WorkflowSeed = {
@@ -215,11 +215,11 @@ describe("ProbeRunLogger", () => {
   });
 });
 
-describe("runProbeWorkflow logger", () => {
+describe("probeWorkflow logger", () => {
   it("logs start and direct completion on direct success", async () => {
     fetchOk();
     const { logger, calls } = createRecordingLogger();
-    const result = await runProbeWorkflow(seed, { logger });
+    const result = await probeWorkflow(seed, { logger });
     expect(result.method).toBe("direct");
     expect(calls.map((call) => call.message)).toEqual([PROBE_LOG_EVENT.START, PROBE_LOG_EVENT.DIRECT_COMPLETE]);
     expect(calls[0]?.fields).toMatchObject({ isoCode: "T1", portalUrl: seed.portalUrl });
@@ -229,7 +229,7 @@ describe("runProbeWorkflow logger", () => {
   it("logs start, direct completion, and failure without a browser provider", async () => {
     fetchFail();
     const { logger, calls } = createRecordingLogger();
-    const result = await runProbeWorkflow(seed, { logger });
+    const result = await probeWorkflow(seed, { logger });
     expect(result.method).toBe("failed");
     expect(calls.map((call) => call.message)).toEqual([
       PROBE_LOG_EVENT.START,
@@ -243,7 +243,11 @@ describe("runProbeWorkflow logger", () => {
   it("logs fallback and browser completion and never logs page contents", async () => {
     fetchFail();
     const { logger, calls } = createRecordingLogger();
-    const result = await runProbeWorkflow(seed, { logger, browserProvider: fakeProvider() });
+    const result = await probeWorkflow(seed, {
+      logger,
+      browserProvider: fakeProvider(),
+      browserOptions: { stealth: true, proxyCountry: "MX", captcha: true },
+    });
     expect(result.method).toBe("browser");
     expect(calls.map((call) => call.message)).toEqual([
       PROBE_LOG_EVENT.START,
@@ -256,6 +260,7 @@ describe("runProbeWorkflow logger", () => {
     expect(serialized).not.toContain("cookies");
     const fallback = calls[2]?.fields;
     expect(fallback).toMatchObject({ isoCode: "T1", provider: "fake" });
+    expect(fallback).toMatchObject({ stealth: true, proxyCountry: "MX", captcha: true });
     const complete = calls[3]?.fields;
     expect(complete).toMatchObject({ isoCode: "T1", provider: "fake", status: 200 });
   });
@@ -263,7 +268,7 @@ describe("runProbeWorkflow logger", () => {
   it("logs failure when the browser provider throws", async () => {
     fetchFail();
     const { logger, calls } = createRecordingLogger();
-    const result = await runProbeWorkflow(seed, {
+    const result = await probeWorkflow(seed, {
       logger,
       browserProvider: fakeProvider(new Error("browser unavailable")),
     });

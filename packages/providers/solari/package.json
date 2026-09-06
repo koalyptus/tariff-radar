@@ -1,5 +1,5 @@
 {
-  "name": "@tariff-radar/registry",
+  "name": "@tariff-radar/provider-solari",
   "private": true,
   "type": "module",
   "exports": {
@@ -13,7 +13,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@tariff-radar/shared": "workspace:*"
+    "@solarisdk/browser": "^0.1.1",
+    "@tariff-radar/probe-core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

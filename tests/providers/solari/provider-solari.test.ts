@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { SolariBrowserProvider } from "../packages/provider-solari/src/index.js";
-import { resetSolariControl, solariControl } from "./fakes/solari-browser.js";
+import { SolariBrowserProvider } from "@tariff-radar/provider-solari";
+import { resetSolariControl, solariControl } from "../../fakes/solari-browser.js";
 
 describe("SolariBrowserProvider", () => {
   it("maps probe options and returns page observations", async () => {
@@ -57,6 +57,28 @@ describe("SolariBrowserProvider", () => {
     const session = await provider.launch();
     await expect(session.close()).rejects.toThrow("browser crashed");
     expect(solariControl.browserClosed).toBe(false);
+    expect(solariControl.clientClosed).toBe(true);
+  });
+
+  it("supports sequential launches from one provider instance", async () => {
+    resetSolariControl();
+    const provider = new SolariBrowserProvider({ apiKey: "test-key" });
+    const first = await provider.launch();
+    await (await first.newPage()).close();
+    await first.close();
+    expect(solariControl.clientClosed).toBe(true);
+    // A second launch on the same provider must open a fresh client: the
+    // first session's close shut the previous loopback proxy down.
+    const second = await provider.launch();
+    await (await second.newPage()).close();
+    await expect(second.close()).resolves.toBeUndefined();
+  });
+
+  it("releases the client when the browser fails to start", async () => {
+    resetSolariControl();
+    solariControl.launchError = new Error("browser unavailable");
+    const provider = new SolariBrowserProvider({ apiKey: "test-key" });
+    await expect(provider.launch()).rejects.toThrow("browser unavailable");
     expect(solariControl.clientClosed).toBe(true);
   });
 });

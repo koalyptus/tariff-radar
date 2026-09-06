@@ -119,10 +119,10 @@ workflow orchestrator
 BrowserProbeProvider
   /             \
   v               v
-provider-solari   another provider
+providers/solari   another provider
 ```
 
-`packages/provider-solari` adapts Solari's browser client to that contract. This
+`packages/providers/solari` adapts Solari's browser client to that contract. This
 keeps the registry model and verification logic independent from provider-
 specific APIs and capabilities. The same principle should be applied later to
 document extraction and LLM-backed normalization: those should be injected
@@ -154,20 +154,39 @@ option as necessary. Open portals should not incur proxy or browser cost
 without a reason. CAPTCHA solving, proxy routing, and stealth should be enabled
 only where the run and the target's terms permit it.
 
-## Planned Quickstart
-
-The seed-only scaffold is not yet a registry generator. It has no network or
-Solari probing logic and must not be presented as verified data. The next step
-is to implement the probe before generating the registry:
+## Quickstart
 
 ```bash
 pnpm install
-pnpm typecheck
+pnpm build
+pnpm probe
 ```
 
-The eventual probe command will write `data/customs_registry.json` from direct
-and Solari-backed observations. It will require a `SOLARI_API_KEY`; the current
-seed-only scaffold does not contact Solari and does not generate a registry.
+`pnpm probe` checks all eight portal candidates: direct first, Solari
+browser fallback where direct fails. `SOLARI_API_KEY` can be exported or live
+in a local `.env` (see `.env.example`); without a key the run warns once and
+continues direct-only. Exit code is `1` when any seed ends `failed`, `2` on
+usage errors. Per-seed progress prints on stderr, the result table on stdout.
+
+### probe
+
+| Flag                       | Default   | Description                                                          |
+| -------------------------- | --------- | -------------------------------------------------------------------- |
+| `[ISO]`                    | all seeds | Probe one portal candidate by ISO code.                              |
+| `--browser=direct\|solari` | `solari`  | Browser fallback after direct failure; `direct` disables it.         |
+| `--timeout-ms=N`           | `10000`   | Direct-probe timeout in milliseconds.                                |
+| `--stealth`                | off       | Opt-in provider stealth/anti-detection measures.                     |
+| `--proxy-country=XX`       | off       | Opt-in two-letter proxy egress country code.                         |
+| `--captcha`                | off       | Opt-in provider CAPTCHA handling where the target's terms permit it. |
+| `--log=pretty\|json`       | `pretty`  | Progress rendering: stage lines on stderr, or JSON lines.            |
+| `--concurrency=N`          | `6`       | Max parallel seed probes (1–8).                                      |
+
+Pass `--log=json` for the original machine-readable JSON lines.
+
+The CLI prints a per-seed summary to stdout and writes no registry file yet:
+the seed-only scaffold in `packages/registry` still emits `unverified`
+placeholders. In the results above, `HTTP 200` means the portal answered
+HTTP, not that tariff content was verified (see _Evidence and Limitations_).
 
 ## Evidence and Limitations
 

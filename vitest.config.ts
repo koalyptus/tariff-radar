@@ -9,6 +9,10 @@ export default defineConfig({
       // Run tests against package sources so `pnpm test` needs no prior build.
       "@tariff-radar/probe-core": `${root}packages/probe-core/src/index.ts`,
       "@tariff-radar/workflow": `${root}packages/workflow/src/index.ts`,
+      "@tariff-radar/shared": `${root}packages/shared/src/index.ts`,
+      "@tariff-radar/cli": `${root}packages/cli/src/index.ts`,
+      "@tariff-radar/registry": `${root}packages/registry/src/index.ts`,
+      "@tariff-radar/provider-solari": `${root}packages/providers/solari/src/index.ts`,
       // Never load the real browser SDK in tests (it performs network I/O);
       // the provider adapter is exercised against tests/fakes/solari-browser.ts.
       "@solarisdk/browser": `${root}tests/fakes/solari-browser.ts`,
@@ -17,15 +21,15 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/**/*.test.ts"],
+    // Quiet passing runs (tables, help text, progress lines); failing tests
+    // still print everything they logged.
+    // See https://vitest.dev/api/#silent
+    silent: "passed-only",
     coverage: {
       provider: "v8",
-      include: ["packages/*/src/**/*.ts"],
-      exclude: [
-        // Executable entry script with top-level filesystem side effects
-        // (writes data/customs_registry.json); covered by real runs, not unit
-        // coverage. Everything else must stay at 100%.
-        "packages/registry/src/generate-registry.ts",
-      ],
+      // Every package source is measured, including thin entry scripts:
+      // entries delegate to tested mains, so no exclusions are needed.
+      include: ["packages/**/src/**/*.ts"],
       thresholds: {
         lines: 100,
         functions: 100,
