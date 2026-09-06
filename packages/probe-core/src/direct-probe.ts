@@ -36,7 +36,29 @@ export async function runDirectProbe(
       finalUrl: null,
       latencyMs: Math.round(performance.now() - startedAt),
       title: null,
-      error: error instanceof Error ? error.message : String(error),
+      error: describeError(error, timeoutMs),
     };
   }
+}
+
+/**
+ * Render a fetch failure specifically. Undici wraps network failures in a
+ * generic `fetch failed` TypeError and hides the cause (DNS, refused,
+ * timeout) in `error.cause` — surfacing it is the difference between
+ * `direct: failed (fetch failed)` and knowing the portal never resolved.
+ * @param error - Rejection reason from `fetch`.
+ * @param timeoutMs - Abort threshold, for naming timeouts honestly.
+ * @returns The specific failure reason.
+ */
+function describeError(error: unknown, timeoutMs: number): string {
+  if (error instanceof Error) {
+    if (error.name === "TimeoutError") {
+      return `timeout after ${String(timeoutMs)}ms`;
+    }
+    if (error.cause instanceof Error) {
+      return error.cause.message;
+    }
+    return error.message;
+  }
+  return String(error);
 }

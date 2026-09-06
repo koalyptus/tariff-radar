@@ -89,6 +89,18 @@ describe("runDirectProbe", () => {
     const result = await runDirectProbe("https://portal.example/", 5);
     expect(result.ok).toBe(false);
     expect(result.status).toBeNull();
-    expect(result.error).not.toBeNull();
+    expect(result.error).toBe("timeout after 5ms");
+  });
+
+  it("surfaces the underlying cause behind fetch failures", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("fetch failed", { cause: new Error("getaddrinfo ENOTFOUND portal.example") });
+      }),
+    );
+    const result = await runDirectProbe("https://portal.example/");
+    expect(result.ok).toBe(false);
+    expect(result.error).toBe("getaddrinfo ENOTFOUND portal.example");
   });
 });
