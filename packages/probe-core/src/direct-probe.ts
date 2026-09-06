@@ -44,9 +44,11 @@ export async function runDirectProbe(
 /**
  * Render a fetch failure specifically. Undici wraps network failures in a
  * generic `fetch failed` TypeError and hides the cause (DNS, refused,
- * timeout) in `error.cause` — surfacing it is the difference between
- * `direct: failed (fetch failed)` and knowing the portal never resolved.
- * Never returns empty: an anonymous failure still names itself.
+ * timeout) behind `cause` chains and `AggregateError` attempt lists (one
+ * entry per happy-eyeballs try) — surfacing the first specific message is
+ * the difference between `direct: failed (fetch failed)` and knowing the
+ * portal never resolved. Never returns empty: an anonymous failure still
+ * names itself.
  * @param error - Rejection reason from `fetch`.
  * @param timeoutMs - Abort threshold, for naming timeouts honestly.
  * @returns The specific failure reason.
@@ -56,13 +58,28 @@ function describeError(error: unknown, timeoutMs: number): string {
     if (error.name === "TimeoutError") {
       return `timeout after ${String(timeoutMs)}ms`;
     }
-    if (error.cause instanceof Error && error.cause.message) {
-      return error.cause.message;
-    }
-    if (error.message) {
-      return error.message;
+    const specific = specificMessage(error);
+    if (specific) {
+      return specific;
     }
     return `fetch failed (${String(error.cause ?? "unknown reason")})`;
   }
   return String(error);
+}
+
+/**
+ * Find the first non-empty message walking `AggregateError` attempt lists
+ * and `cause` chains.
+ * @param error - Error to look inside.
+ * @returns The specific message, or null when nothing names the failure.
+ */
+function specificMessage(error: Error): string | null {
+  const nested = error instanceof AggregateError ? error.errors : error.cause === undefined ? [] : [error.cause];
+  for (const sub of nested) {
+    const inner = sub instanceof Error ? specificMessage(sub) : String(sub);
+    if (inner) {
+      return inner;
+    }
+  }
+  return error.message || null;
 }

@@ -115,7 +115,7 @@ describe("runDirectProbe", () => {
     expect(anonymous.error).toBe("fetch failed (unknown reason)");
   });
 
-  it("stringifies a non-Error cause behind an empty message", async () => {
+  it("surfaces a non-Error cause behind an empty message", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => {
@@ -125,7 +125,7 @@ describe("runDirectProbe", () => {
       }),
     );
     const result = await runDirectProbe("https://portal.example/");
-    expect(result.error).toBe("fetch failed (socket hung up)");
+    expect(result.error).toBe("socket hung up");
   });
 
   it("ignores an empty cause message in favor of a reason", async () => {
@@ -139,5 +139,40 @@ describe("runDirectProbe", () => {
     );
     const result = await runDirectProbe("https://portal.example/");
     expect(result.error).toBe("fetch failed (Error)");
+  });
+
+  it("unwraps AggregateError attempt lists behind fetch failures", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("fetch failed", {
+          cause: new AggregateError([new Error("connect ETIMEDOUT 161.148.164.31:443")], ""),
+        });
+      }),
+    );
+    const result = await runDirectProbe("https://portal.example/");
+    expect(result.error).toBe("connect ETIMEDOUT 161.148.164.31:443");
+  });
+
+  it("unwraps a bare AggregateError rejection", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new AggregateError([new Error("connect ENETUNREACH ::1:443")], "");
+      }),
+    );
+    const result = await runDirectProbe("https://portal.example/");
+    expect(result.error).toBe("connect ENETUNREACH ::1:443");
+  });
+
+  it("skips empty entries inside AggregateError lists", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("fetch failed", { cause: new AggregateError([new Error()], "") });
+      }),
+    );
+    const result = await runDirectProbe("https://portal.example/");
+    expect(result.error).toBe("fetch failed");
   });
 });
