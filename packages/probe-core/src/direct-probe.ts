@@ -50,11 +50,10 @@ export async function runDirectProbe(
   // Monotonic clock: wall time can jump backwards (NTP resync, VM drift),
   // which once produced negative latencies in the evidence.
   const startedAt = performance.now();
-  const allowed = Math.max(0, Math.floor(maxAttempts));
   let attempts = 0;
   let lastError: string | null = null;
 
-  while (attempts < allowed) {
+  while (attempts < maxAttempts) {
     attempts += 1;
     try {
       const response = await fetch(url, {
@@ -72,7 +71,7 @@ export async function runDirectProbe(
       };
     } catch (error) {
       lastError = describeError(error, timeoutMs);
-      if (attempts < allowed) {
+      if (attempts < maxAttempts) {
         await new Promise((resolve) => setTimeout(resolve, DIRECT_PROBE_RETRY_DELAY_MS));
       }
     }
