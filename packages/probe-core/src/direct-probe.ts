@@ -6,9 +6,6 @@ export const DEFAULT_DIRECT_PROBE_TIMEOUT_MS = 10_000;
 /** Direct attempts per probe: one try plus two retries for flaky edges. */
 export const DEFAULT_DIRECT_PROBE_ATTEMPTS = 3;
 
-/** Quiet wait between direct attempts, letting transient flaps settle. */
-export const DIRECT_PROBE_RETRY_DELAY_MS = 1_000;
-
 /** Error message when probing is disabled before any attempt. */
 export const NO_ATTEMPTS_MESSAGE = "no attempts made";
 
@@ -71,9 +68,6 @@ export async function runDirectProbe(
       };
     } catch (error) {
       lastError = describeError(error, timeoutMs);
-      if (attempts < maxAttempts) {
-        await new Promise((resolve) => setTimeout(resolve, DIRECT_PROBE_RETRY_DELAY_MS));
-      }
     }
   }
 
