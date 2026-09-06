@@ -25,7 +25,7 @@ describe("runDirectProbe", () => {
     expect(result.finalUrl).toBe("https://portal.example/tariff");
     expect(result.error).toBeNull();
     expect(result.latencyMs).toBeGreaterThanOrEqual(0);
-    expect(seen[0]?.init?.headers?.["User-Agent"]).toContain("Mozilla/5.0");
+    expect(seen[0]?.init?.headers?.["User-Agent"]).toContain("TariffRadar/");
   });
 
   it("stays non-negative when the wall clock jumps backwards", async () => {

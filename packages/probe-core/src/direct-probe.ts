@@ -4,13 +4,13 @@ import type { DirectProbeResult } from "./index.js";
 export const DEFAULT_DIRECT_PROBE_TIMEOUT_MS = 10_000;
 
 /**
- * Browser-like User-Agent for direct probes. Portal bot-mitigation often
- * drops bare HTTP clients silently (surfacing as ETIMEDOUT); sending what a
- * real browser sends isolates network reachability from client filtering,
- * matching what the Solari browser path presents.
+ * Bot User-Agent for direct probes, identifying the project with a contact
+ * URL per crawler convention. Unlike a browser-impersonating string, this
+ * is honest about what is calling — at the cost that UA-filtering portals
+ * may refuse it, which then shows up as an observable failure rather than
+ * silent mimicry.
  */
-export const DIRECT_PROBE_USER_AGENT =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+export const DIRECT_PROBE_USER_AGENT = "TariffRadar/1.0 (+https://github.com/koalyptus/tariff-radar)";
 
 /**
  * Probe a URL with a single native `fetch` under a bounded timeout. Never
