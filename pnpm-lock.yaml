@@ -98,6 +98,9 @@ importers:
         specifier: workspace:*
         version: link:../shared
     devDependencies:
+      '@tariff-radar/probe-core':
+        specifier: workspace:*
+        version: link:../probe-core
       '@types/node':
         specifier: ^22.10.2
         version: 22.20.1
