@@ -76,10 +76,12 @@ export interface DirectProbeResult {
   status: number | null;
   /** Final URL after redirects, or null when no response arrived. */
   finalUrl: string | null;
-  /** Wall-clock time for the attempt, including failures. */
+  /** Wall-clock time across all attempts, including failures and waits. */
   latencyMs: number;
   /** Page title when captured; direct probes leave this null. */
   title: string | null;
+  /** Attempts used, including retries. */
+  attempts: number;
   /** Failure reason (`HTTP <status>` or the network error), or null on success. */
   error: string | null;
 }

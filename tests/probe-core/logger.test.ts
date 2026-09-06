@@ -191,6 +191,7 @@ describe("ProbeRunLogger", () => {
       finalUrl: seed.portalUrl,
       latencyMs: 3,
       title: null,
+      attempts: 2,
       error: null,
     });
     log.browserFallback("fake");
@@ -206,7 +207,7 @@ describe("ProbeRunLogger", () => {
     for (const call of calls) {
       expect(call.fields).toMatchObject({ isoCode: "T1", portalUrl: seed.portalUrl });
     }
-    expect(calls[1]?.fields).toMatchObject({ ok: true, status: 200, latencyMs: 3 });
+    expect(calls[1]?.fields).toMatchObject({ ok: true, status: 200, latencyMs: 3, attempts: 2 });
     expect(calls[4]?.fields).toMatchObject({
       provider: "fake",
       method: PROBE_METHOD.FAILED,

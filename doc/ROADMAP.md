@@ -171,11 +171,13 @@ registry stays `unverified` until then.
 - [x] Use a browser provider only after direct access fails.
 - [x] Return a failed result when no browser provider is configured.
 - [x] Close browser pages and sessions on success and failure.
-- [ ] Inject the direct probe rather than importing the default implementation
-      directly, if tests or alternate direct transports require it.
-- [ ] Add retry and timeout policy at the workflow boundary.
-- [ ] Add focused tests with fake direct and browser providers.
-- [ ] Add content relevance checks for customs, tariff, or HS-code evidence.
+- [x] Direct-transport seam settled: global `fetch` stubbing keeps tests
+      hermetic, so no direct-probe injection is needed.
+- [x] Add retry and timeout policy at the workflow boundary.
+- [x] Add focused tests with fake direct and browser providers.
+- [x] Retry lives in the direct transport: up to `DEFAULT_DIRECT_PROBE_ATTEMPTS`
+      attempts with a quiet wait between them, attempt count and total latency
+      in the result. Content relevance checks live in Phase 10, not here.
 
 **Done when:** A deterministic test suite proves the direct-first fallback
 sequence and verifies cleanup on every path.

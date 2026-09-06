@@ -54,6 +54,7 @@ export type ProbeDirectCompleteFields = {
   status: number | null;
   finalUrl: string | null;
   latencyMs: number;
+  attempts: number;
   error: string | null;
 };
 
@@ -144,6 +145,7 @@ export class ProbeRunLogger {
       status: direct.status,
       finalUrl: direct.finalUrl,
       latencyMs: direct.latencyMs,
+      attempts: direct.attempts,
       error: direct.error,
     };
     this.logger.info(PROBE_LOG_EVENT.DIRECT_COMPLETE, fields);
