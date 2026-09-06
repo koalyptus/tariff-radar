@@ -22,7 +22,7 @@ function directResult(): WorkflowResult {
     seed: { isoCode: "US", countryName: "United States", portalUrl: seed.portalUrl, sourceUrl: seed.sourceUrl },
     method: "direct",
     provider: null,
-    direct: { ok: true, status: 200, finalUrl: seed.portalUrl, latencyMs: 9, title: null, error: null },
+    direct: { ok: true, status: 200, finalUrl: seed.portalUrl, latencyMs: 9, title: null, attempts: 1, error: null },
     browser: null,
     evidence: ["direct_response"],
     error: null,
@@ -158,7 +158,7 @@ describe("runProbeCommand", () => {
     const failed: WorkflowResult = {
       ...directResult(),
       method: "failed",
-      direct: { ok: false, status: null, finalUrl: null, latencyMs: 9, title: null, error: "nope" },
+      direct: { ok: false, status: null, finalUrl: null, latencyMs: 9, title: null, attempts: 1, error: "nope" },
       evidence: [],
       error: "nope",
     };

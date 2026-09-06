@@ -3,6 +3,12 @@ import type { DirectProbeResult } from "./index.js";
 /** Bounded wait for one direct HTTP attempt. */
 export const DEFAULT_DIRECT_PROBE_TIMEOUT_MS = 10_000;
 
+/** Direct attempts per probe: one try plus two retries for flaky edges. */
+export const DEFAULT_DIRECT_PROBE_ATTEMPTS = 3;
+
+/** Quiet wait between direct attempts, letting transient flaps settle. */
+export const DIRECT_PROBE_RETRY_DELAY_MS = 1_000;
+
 /**
  * Bot User-Agent for direct probes, identifying the client honestly rather
  * than impersonating a browser. Kept bare on purpose: no contact URL to
@@ -11,44 +17,61 @@ export const DEFAULT_DIRECT_PROBE_TIMEOUT_MS = 10_000;
 export const DIRECT_PROBE_USER_AGENT = "TariffRadar/1.0";
 
 /**
- * Probe a URL with a single native `fetch` under a bounded timeout. Never
- * throws: timeouts, network errors, and non-2xx statuses fold into the
- * returned result. A 2xx response alone never means verified.
+ * Probe a URL with native `fetch` under a bounded timeout, retrying failed
+ * attempts for flaky edges. Never throws: timeouts, network errors, and
+ * non-2xx statuses fold into the returned result. A 2xx response alone never
+ * means verified.
  * @param url - Candidate portal URL to request.
- * @param timeoutMs - Abort threshold; defaults to {@link DEFAULT_DIRECT_PROBE_TIMEOUT_MS}.
- * @returns The observed outcome, including latency on every path.
+ * @param timeoutMs - Abort threshold per attempt; defaults to
+ * {@link DEFAULT_DIRECT_PROBE_TIMEOUT_MS}.
+ * @param maxAttempts - Total attempts including retries; defaults to
+ * {@link DEFAULT_DIRECT_PROBE_ATTEMPTS}.
+ * @returns The observed outcome, including total latency and attempt count.
  */
 export async function runDirectProbe(
   url: string,
   timeoutMs = DEFAULT_DIRECT_PROBE_TIMEOUT_MS,
+  maxAttempts = DEFAULT_DIRECT_PROBE_ATTEMPTS,
 ): Promise<DirectProbeResult> {
   // Monotonic clock: wall time can jump backwards (NTP resync, VM drift),
   // which once produced negative latencies in the evidence.
   const startedAt = performance.now();
+  let attempts = 0;
+  let lastError: string | null = "no attempts made";
 
-  try {
-    const response = await fetch(url, {
-      signal: AbortSignal.timeout(timeoutMs),
-      headers: { "User-Agent": DIRECT_PROBE_USER_AGENT },
-    });
-    return {
-      ok: response.ok,
-      status: response.status,
-      finalUrl: response.url,
-      latencyMs: Math.round(performance.now() - startedAt),
-      title: null,
-      error: response.ok ? null : `HTTP ${response.status}`,
-    };
-  } catch (error) {
-    return {
-      ok: false,
-      status: null,
-      finalUrl: null,
-      latencyMs: Math.round(performance.now() - startedAt),
-      title: null,
-      error: describeError(error, timeoutMs),
-    };
+  while (attempts < maxAttempts) {
+    attempts += 1;
+    try {
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(timeoutMs),
+        headers: { "User-Agent": DIRECT_PROBE_USER_AGENT },
+      });
+      return {
+        ok: response.ok,
+        status: response.status,
+        finalUrl: response.url,
+        latencyMs: Math.round(performance.now() - startedAt),
+        title: null,
+        attempts,
+        error: response.ok ? null : `HTTP ${response.status}`,
+      };
+    } catch (error) {
+      lastError = describeError(error, timeoutMs);
+      if (attempts < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, DIRECT_PROBE_RETRY_DELAY_MS));
+      }
+    }
   }
+
+  return {
+    ok: false,
+    status: null,
+    finalUrl: null,
+    latencyMs: Math.round(performance.now() - startedAt),
+    title: null,
+    attempts,
+    error: lastError,
+  };
 }
 
 /**

@@ -25,13 +25,14 @@ function directOk() {
     status: 200,
     finalUrl: "https://hts.usitc.gov/",
     latencyMs: 42,
+    attempts: 1,
     title: null,
     error: null,
   };
 }
 
 function directFailed(error: string | null) {
-  return { ok: false, status: null, finalUrl: null, latencyMs: 7, title: null, error };
+  return { ok: false, status: null, finalUrl: null, latencyMs: 7, title: null, attempts: 1, error };
 }
 
 function workflowResult(partial: Partial<WorkflowResult> & { seed: WorkflowResult["seed"] }): WorkflowResult {
