@@ -5,8 +5,9 @@ import { describe, expect, it } from "vitest";
 import type { BrowserProbeProvider, WorkflowResult } from "@tariff-radar/probe-core";
 import { noopProbeLogger } from "@tariff-radar/probe-core";
 import type { Seed } from "@tariff-radar/registry";
-import { runCli } from "@tariff-radar/cli";
-import type { RunCliOutput, RunDeps } from "@tariff-radar/cli";
+import { runProbeCommand, defaultDeps } from "@tariff-radar/cli";
+import type { RunCliOutput } from "@tariff-radar/cli";
+import type { RunDeps } from "@tariff-radar/workflow";
 
 const seed: Seed = {
   isoCode: "US",
@@ -82,12 +83,12 @@ function recordOutput(): {
   };
 }
 
-describe("runCli", () => {
+describe("runProbeCommand", () => {
   it("returns 0 for one successful seed", async () => {
     const { dir, seedsFile } = writeSeeds();
     const recorded = recordOutput();
     try {
-      await expect(runCli(["US"], stubDeps(directResult()), seedsFile, recorded.output)).resolves.toBe(0);
+      await expect(runProbeCommand(["US"], stubDeps(directResult()), seedsFile, recorded.output)).resolves.toBe(0);
       expect(recorded.tables).toHaveLength(1);
       expect(recorded.tables[0]).toContain("US");
       expect(recorded.progress[0]).toContain("Probe: STARTING");
@@ -99,7 +100,7 @@ describe("runCli", () => {
 
   it("defaults to the workspace seeds file", async () => {
     const recorded = recordOutput();
-    await expect(runCli(["US"], stubDeps(directResult()), undefined, recorded.output)).resolves.toBe(0);
+    await expect(runProbeCommand(["US"], stubDeps(directResult()), undefined, recorded.output)).resolves.toBe(0);
     expect(recorded.tables).toHaveLength(1);
   });
 
@@ -107,7 +108,9 @@ describe("runCli", () => {
     const { dir, seedsFile } = writeSeeds();
     const recorded = recordOutput();
     try {
-      await expect(runCli(["US", "--log=json"], stubDeps(directResult()), seedsFile, recorded.output)).resolves.toBe(0);
+      await expect(
+        runProbeCommand(["US", "--log=json"], stubDeps(directResult()), seedsFile, recorded.output),
+      ).resolves.toBe(0);
       expect(recorded.tables).toHaveLength(1);
       expect(recorded.progress).toEqual([]);
     } finally {
@@ -144,7 +147,7 @@ describe("runCli", () => {
         ...base,
         runWorkflow: (async () => queued[index++]) as RunDeps["runWorkflow"],
       };
-      await expect(runCli([], deps, seedsFile, recordOutput().output)).resolves.toBe(0);
+      await expect(runProbeCommand([], deps, seedsFile, recordOutput().output)).resolves.toBe(0);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -161,7 +164,7 @@ describe("runCli", () => {
     };
     try {
       await expect(
-        runCli(["US", "--browser=direct"], stubDeps(failed), seedsFile, recordOutput().output),
+        runProbeCommand(["US", "--browser=direct"], stubDeps(failed), seedsFile, recordOutput().output),
       ).resolves.toBe(1);
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -171,7 +174,9 @@ describe("runCli", () => {
   it("returns 0 for --help without probing", async () => {
     const { dir, seedsFile } = writeSeeds();
     try {
-      await expect(runCli(["--help"], stubDeps(directResult()), seedsFile, recordOutput().output)).resolves.toBe(0);
+      await expect(
+        runProbeCommand(["--help"], stubDeps(directResult()), seedsFile, recordOutput().output),
+      ).resolves.toBe(0);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -181,7 +186,7 @@ describe("runCli", () => {
     const { dir, seedsFile } = writeSeeds();
     const recorded = recordOutput();
     try {
-      await expect(runCli(["--nope"], stubDeps(directResult()), seedsFile, recorded.output)).resolves.toBe(2);
+      await expect(runProbeCommand(["--nope"], stubDeps(directResult()), seedsFile, recorded.output)).resolves.toBe(2);
       expect(recorded.errors).toEqual(["Unknown argument: nope"]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -193,11 +198,37 @@ describe("runCli", () => {
     const recorded = recordOutput();
     try {
       await expect(
-        runCli(["US", "--browser=direct"], stubDeps("plain failure"), seedsFile, recorded.output),
+        runProbeCommand(["US", "--browser=direct"], stubDeps("plain failure"), seedsFile, recorded.output),
       ).resolves.toBe(2);
       expect(recorded.errors).toEqual(["plain failure"]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe("defaultDeps", () => {
+  it("reads SOLARI_API_KEY from the environment", () => {
+    const saved = process.env.SOLARI_API_KEY;
+    try {
+      process.env.SOLARI_API_KEY = "env-key";
+      expect(defaultDeps().readApiKey()).toBe("env-key");
+      delete process.env.SOLARI_API_KEY;
+      expect(defaultDeps().readApiKey()).toBeUndefined();
+    } finally {
+      if (saved === undefined) {
+        delete process.env.SOLARI_API_KEY;
+      } else {
+        process.env.SOLARI_API_KEY = saved;
+      }
+    }
+  });
+
+  it("builds a Solari provider session without network access", async () => {
+    const provider = defaultDeps().createSolariProvider("test-key");
+    expect(provider.name).toBe("solari");
+    const session = await provider.launch({ stealth: true, proxyCountry: "mx", captcha: true });
+    await (await session.newPage()).close();
+    await session.close();
   });
 });

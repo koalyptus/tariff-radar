@@ -12,7 +12,7 @@ module + resolution, shared base in `tsconfig.base.json`.
   `tests/fakes/`), aliasing workspace sources (no prior build needed).
   Coverage thresholds are 100% lines/functions/branches/statements over
   `packages/**/src/**` with no exclusions: entry scripts stay thin and
-  delegate to tested mains (`runCli`, `runGenerateRegistry`), exercised by
+  delegate to tested mains (`runProbeCommand`, `runGenerateRegistry`), exercised by
   mocked-dependency entry tests. Keep the suite hermetic: stub `fetch`, fake
   providers, never touch portals or the Solari API (`@solarisdk/browser` is
   aliased to `tests/fakes/`).
@@ -59,12 +59,13 @@ timeoutMs})` — direct-first, browser only after direct failure, always closes
 - `packages/shared`: cross-cutting helpers with no domain. First exports:
   `projectRoot(metaUrl)` and `projectDataDir(metaUrl)` (workspace layout
   resolution for entry scripts).
-- `packages/cli`: composition root (arg parsing via `yargs`, one parser per
-  command). The ONLY place allowed to read `SOLARI_API_KEY` and construct
-  `SolariBrowserProvider` (both in `run-cli.ts` `defaultDeps`). `probe` entry:
-  `runCli` (`parseProbeArgs` → `loadSeeds` → `runTargets` →
-  `formatTable`) returns the exit code; exit 1 on any `failed` result, 2 on
-  usage errors, 0 on `--help`.
+- `packages/cli`: composition root (arg parsing via `yargs`, one command
+  module per command under `src/commands/`). The ONLY place allowed to read
+  `SOLARI_API_KEY` and construct `SolariBrowserProvider` (both in
+  `commands/probe.ts` `defaultDeps`). `probe` entry: `runProbeCommand`
+  (`parseProbeArgs` → `loadSeeds` → `runTargets` → `formatTable`) returns
+  the exit code; exit 1 on any `failed` result, 2 on usage errors, 0 on
+  `--help`.
 - `examples/`: upstream Solari cookbook, standalone per-example projects with
   their own `package.json` (`tsx index.ts`). Not workspace members — leave alone.
 - `doc/ROADMAP.md` owns phase scope and done-criteria; `README.md` owns the

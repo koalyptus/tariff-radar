@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { runCli } from "../../packages/cli/src/run-cli.js";
+import { runProbeCommand } from "../../packages/cli/src/commands/probe.js";
 import "../../packages/cli/src/probe.js";
 
-vi.mock("../../packages/cli/src/run-cli.js", () => ({
-  runCli: vi.fn(async () => 0),
+vi.mock("../../packages/cli/src/commands/probe.js", () => ({
+  runProbeCommand: vi.fn(async () => 0),
 }));
 
 // Entry-point test: the static import above executes probe.ts with the
@@ -17,8 +17,8 @@ afterEach(() => {
 });
 
 describe("probe entry", () => {
-  it("forwards argv to runCli and sets the exit code", () => {
-    expect(vi.mocked(runCli)).toHaveBeenCalledWith(process.argv.slice(2));
+  it("forwards argv to runProbeCommand and sets the exit code", () => {
+    expect(vi.mocked(runProbeCommand)).toHaveBeenCalledWith(process.argv.slice(2));
     expect(process.exitCode).toBe(0);
   });
 });
