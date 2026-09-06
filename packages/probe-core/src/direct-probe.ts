@@ -9,6 +9,9 @@ export const DEFAULT_DIRECT_PROBE_ATTEMPTS = 3;
 /** Quiet wait between direct attempts, letting transient flaps settle. */
 export const DIRECT_PROBE_RETRY_DELAY_MS = 1_000;
 
+/** Error message when probing is disabled before any attempt. */
+export const NO_ATTEMPTS_MESSAGE = "no attempts made";
+
 /**
  * Bot User-Agent for direct probes, identifying the client honestly rather
  * than impersonating a browser. Kept bare on purpose: no contact URL to
@@ -80,7 +83,7 @@ export async function runDirectProbe(
       ...initialProbeResult,
       latencyMs: Math.round(performance.now() - startedAt),
       attempts,
-      error: "no attempts made",
+      error: NO_ATTEMPTS_MESSAGE,
     };
   }
 
