@@ -47,12 +47,15 @@ export async function runDirectProbe(
         signal: AbortSignal.timeout(timeoutMs),
         headers: { "User-Agent": DIRECT_PROBE_USER_AGENT },
       });
-      return buildDirectResult(startedAt, attempts, {
+      return {
+        ...initialProbeResult,
         ok: response.ok,
         status: response.status,
         finalUrl: response.url,
+        latencyMs: Math.round(performance.now() - startedAt),
+        attempts,
         error: response.ok ? null : `HTTP ${response.status}`,
-      });
+      };
     } catch (error) {
       lastError = describeError(error, timeoutMs);
       if (attempts < allowed) {
@@ -62,43 +65,32 @@ export async function runDirectProbe(
   }
 
   if (attempts === 0) {
-    return buildDirectResult(startedAt, attempts, {
-      ok: false,
-      status: null,
-      finalUrl: null,
+    return {
+      ...initialProbeResult,
+      latencyMs: Math.round(performance.now() - startedAt),
+      attempts,
       error: "no attempts made",
-    });
+    };
   }
 
-  return buildDirectResult(startedAt, attempts, {
-    ok: false,
-    status: null,
-    finalUrl: null,
-    error: lastError,
-  });
-}
-
-/**
- * Assemble a direct-probe result with measured fields filled in. Single
- * construction site so the shape cannot drift between success, exhausted,
- * and zero-attempt paths.
- * @param startedAt - Monotonic start of the whole operation.
- * @param attempts - Attempts used.
- * @param outcome - Observed per-attempt outcome.
- * @returns The complete result record.
- */
-function buildDirectResult(
-  startedAt: number,
-  attempts: number,
-  outcome: { ok: boolean; status: number | null; finalUrl: string | null; error: string | null },
-): DirectProbeResult {
   return {
-    ...outcome,
+    ...initialProbeResult,
     latencyMs: Math.round(performance.now() - startedAt),
-    title: null,
     attempts,
+    error: lastError,
   };
 }
+
+/** Shared defaults for every direct-probe outcome; call sites spread and override. */
+const initialProbeResult: DirectProbeResult = {
+  ok: false,
+  status: null,
+  finalUrl: null,
+  latencyMs: 0,
+  title: null,
+  attempts: 0,
+  error: null,
+};
 
 /**
  * Render a fetch failure specifically. Undici wraps network failures in a
