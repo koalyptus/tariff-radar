@@ -2,7 +2,7 @@ import { join } from "node:path";
 import yargs from "yargs";
 import { PROBE_METHOD, consoleProbeLogger, progressLogger } from "@tariff-radar/probe-core";
 import { SolariBrowserProvider } from "@tariff-radar/provider-solari";
-import { loadSeeds } from "@tariff-radar/registry";
+import { loadSeeds, mapWorkflowResultsToEntries, runWriteRegistry } from "@tariff-radar/registry";
 import { projectDataDir } from "@tariff-radar/shared";
 import { probeTargets, probeWorkflow } from "@tariff-radar/workflow";
 import type { RunDeps } from "@tariff-radar/workflow";
@@ -180,6 +180,7 @@ export function defaultDeps(): RunDeps {
  * @param argv - Raw arguments (without node/script prefix).
  * @param deps - Injectable seams; production defaults read env and network.
  * @param seedsFile - Seeds path override for tests; defaults to workspace data.
+ * @param registryFile - Registry path override for tests; defaults to workspace `data/customs_registry.json`.
  * @param output - Injectable sinks; production defaults write stdio.
  * @returns Process exit code: 0 ok, 1 on any failed result, 2 on usage errors.
  */
@@ -187,6 +188,7 @@ export async function runProbeCommand(
   argv: string[],
   deps: RunDeps = defaultDeps(),
   seedsFile?: string,
+  registryFile?: string,
   output: RunCliOutput = stdioOutput(),
 ): Promise<number> {
   try {
@@ -208,6 +210,13 @@ export async function runProbeCommand(
       output.printProgress(
         `Probe: COMPLETED in ${elapsed}s — ${String(direct)} direct, ${String(browser)} browser, ${String(failed)} failed`,
       );
+    }
+    const registryPath = await runWriteRegistry(
+      mapWorkflowResultsToEntries(results, new Date().toISOString()),
+      registryFile ?? join(projectDataDir(import.meta.url), "customs_registry.json"),
+    );
+    if (options.log === "pretty") {
+      output.printProgress(`Registry: wrote ${String(results.length)} entries at ${registryPath}`);
     }
     return results.some((result) => result.method === PROBE_METHOD.FAILED) ? 1 : 0;
   } catch (error) {

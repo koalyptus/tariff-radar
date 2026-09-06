@@ -17,16 +17,27 @@ export interface Seed {
   sourceUrl: string;
 }
 
-/**
- * Seed plus placeholder verification. The seed-only generator stamps every
- * record `unverified`; only a completed workflow result may upgrade this.
- */
+export type VerificationStatus = "unverified" | "http_ok" | "http_failed" | "browser_ok" | "browser_failed";
+
+export interface RegistryVerification {
+  status: VerificationStatus;
+  checkedAt: string;
+  method: string;
+  provider: string | null;
+  directStatus: number | null;
+  directLatencyMs: number;
+  directAttempts: number;
+  directError: string | null;
+  browserStatus: number | null;
+  browserFinalUrl: string | null;
+  browserTitle: string | null;
+  browserLatencyMs: number | null;
+  evidence: string[];
+  error: string | null;
+}
+
 export interface RegistryEntry extends Seed {
-  verification: {
-    status: "unverified";
-    checkedAt: null;
-    evidence: [];
-  };
+  verification: RegistryVerification;
 }
 
 /** Versioned set of registry records written to `data/customs_registry.json`. */

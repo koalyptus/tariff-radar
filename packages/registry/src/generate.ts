@@ -1,45 +1,38 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { projectDataDir } from "@tariff-radar/shared";
-import type { CustomsRegistry, Seed } from "./types.js";
+import type { RegistryEntry, CustomsRegistry } from "./types.js";
 
-/**
- * Seed-only registry scaffold. Copies seeds into a registry stamped
- * `unverified` throughout. This output is explicitly NOT probe data and
- * must never be presented as verified.
- */
-
-const SEEDS_FILE_NAME = "seeds.json";
 const REGISTRY_FILE_NAME = "customs_registry.json";
+const ATOMIC_FILE_SUFFIX = ".tmp";
 
 /**
- * Generate an unverified registry from a seeds file.
- * @param argv - Optional `[seedsPath] [registryPath]`; defaults to workspace `data/`.
+ * Write registry output atomically from an array of registry entries.
+ * Writes to a temp file first, then renames — so the destination is never
+ * in a partially-written state.
+ * @param entries - Registry entries to write (produced by the mapper).
+ * @param registryPath - Optional explicit path; defaults to workspace `data/customs_registry.json`.
  * @param log - Success line sink; writes to stdout in production.
- * @returns The number of registry entries written.
+ * @returns The path the registry was written to.
  */
-export async function runGenerateRegistry(argv: string[], log: (line: string) => void = console.log): Promise<number> {
-  const [seedsPathArg, registryPathArg] = argv;
-  const dataDir = projectDataDir(import.meta.url);
-  const seedsPath = seedsPathArg ?? join(dataDir, SEEDS_FILE_NAME);
-  const registryPath = registryPathArg ?? join(dataDir, REGISTRY_FILE_NAME);
+export async function runWriteRegistry(
+  entries: RegistryEntry[],
+  registryPath?: string,
+  log?: (line: string) => void,
+): Promise<string> {
+  const dataDir = registryPath ? dirname(registryPath) : projectDataDir(import.meta.url);
+  const finalPath = registryPath ?? join(dataDir, REGISTRY_FILE_NAME);
+  const tmpPath = finalPath + ATOMIC_FILE_SUFFIX;
 
-  const seeds = JSON.parse(await readFile(seedsPath, "utf8")) as Seed[];
   const registry: CustomsRegistry = {
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),
-    entries: seeds.map((seed) => ({
-      ...seed,
-      verification: {
-        status: "unverified",
-        checkedAt: null,
-        evidence: [],
-      },
-    })),
+    entries,
   };
 
-  await mkdir(dirname(registryPath), { recursive: true });
-  await writeFile(registryPath, `${JSON.stringify(registry, null, 2)}\n`, "utf8");
-  log(`Generated ${registry.entries.length} unverified registry entries at ${registryPath}`);
-  return registry.entries.length;
+  await mkdir(dataDir, { recursive: true });
+  await writeFile(tmpPath, JSON.stringify(registry, null, 2) + "\n", "utf8");
+  await rename(tmpPath, finalPath);
+  log?.(`Wrote ${registry.entries.length} registry entries at ${finalPath}`);
+  return finalPath;
 }

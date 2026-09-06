@@ -3,41 +3,49 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { runGenerateRegistry } from "../../packages/registry/src/index.js";
+import { runWriteRegistry } from "../../packages/registry/src/generate.js";
+import type { RegistryEntry } from "../../packages/registry/src/types.js";
 
-const seed = {
+const seed: RegistryEntry = {
   isoCode: "US",
   countryName: "United States",
   authority: "USITC",
   portalUrl: "https://hts.usitc.gov/",
   sourceUrl: "https://www.usitc.gov/tariff_affairs",
+  verification: {
+    status: "unverified",
+    checkedAt: "2026-01-01T00:00:00.000Z",
+    method: "direct",
+    provider: null,
+    directStatus: 200,
+    directLatencyMs: 9,
+    directAttempts: 1,
+    directError: null,
+    browserStatus: null,
+    browserFinalUrl: null,
+    browserTitle: null,
+    browserLatencyMs: null,
+    evidence: ["direct_response"],
+    error: null,
+  },
 };
 
-function writeSeeds(dir: string): string {
-  const seedsFile = join(dir, "seeds.json");
-  writeFileSync(seedsFile, JSON.stringify([seed]));
-  return seedsFile;
-}
-
-describe("runGenerateRegistry", () => {
-  it("writes unverified entries to an explicit path", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "generate-test-"));
+describe("runWriteRegistry", () => {
+  it("writes entries to an explicit path", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "write-registry-"));
     try {
       const out = join(dir, "registry.json");
-      const lines: string[] = [];
-      await expect(runGenerateRegistry([writeSeeds(dir), out], (line) => lines.push(line))).resolves.toBe(1);
-      const written = JSON.parse(readFileSync(out, "utf8")) as {
-        entries: Array<{ verification: { status: string } }>;
-      };
+      const result = await runWriteRegistry([seed], out);
+      expect(result).toBe(out);
+      const written = JSON.parse(readFileSync(out, "utf8")) as { entries: RegistryEntry[] };
       expect(written.entries).toHaveLength(1);
       expect(written.entries[0]?.verification.status).toBe("unverified");
-      expect(lines).toEqual([`Generated 1 unverified registry entries at ${out}`]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  it("defaults to the workspace data directory", async () => {
+  it("falls back to projectDataDir when no explicit path is given", async () => {
     const out = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "data", "customs_registry.json");
     let existed = false;
     let backup = "";
@@ -48,9 +56,33 @@ describe("runGenerateRegistry", () => {
       } catch {
         existed = false;
       }
-      await expect(runGenerateRegistry([])).resolves.toBe(8);
+      const result = await runWriteRegistry([seed]);
+      expect(result).toBe(out);
+      const written = JSON.parse(readFileSync(out, "utf8")) as { entries: RegistryEntry[] };
+      expect(written.entries).toHaveLength(1);
+    } finally {
+      if (existed) {
+        writeFileSync(out, backup);
+      } else {
+        rmSync(out, { force: true });
+      }
+    }
+  });
+
+  it("defaults to the workspace data directory when path is explicitly provided", async () => {
+    const out = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "data", "customs_registry.json");
+    let existed = false;
+    let backup = "";
+    try {
+      try {
+        backup = readFileSync(out, "utf8");
+        existed = true;
+      } catch {
+        existed = false;
+      }
+      await expect(runWriteRegistry([seed], out)).resolves.toBe(out);
       const written = JSON.parse(readFileSync(out, "utf8")) as { entries: unknown[] };
-      expect(written.entries).toHaveLength(8);
+      expect(written.entries).toHaveLength(1);
     } finally {
       if (existed) {
         writeFileSync(out, backup);

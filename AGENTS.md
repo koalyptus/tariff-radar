@@ -12,7 +12,7 @@ module + resolution, shared base in `tsconfig.base.json`.
   `tests/fakes/`), aliasing workspace sources (no prior build needed).
   Coverage thresholds are 100% lines/functions/branches/statements over
   `packages/**/src/**` with no exclusions: entry scripts stay thin and
-  delegate to tested mains (`runProbeCommand`, `runGenerateRegistry`), exercised by
+  delegate to tested mains (`runProbeCommand`, `runWriteRegistry`), exercised by
   mocked-dependency entry tests. Keep the suite hermetic: stub `fetch`, fake
   providers, never touch portals or the Solari API (`@solarisdk/browser` is
   aliased to `tests/fakes/`).
@@ -28,14 +28,13 @@ module + resolution, shared base in `tsconfig.base.json`.
 - CI (`.github/workflows/ci.yaml`, push + PR, ubuntu/node 22) runs
   install, format:check, lint, typecheck, test, build as separate steps
   (same scripts `pnpm verify` chains locally). Hermetic — no secrets needed.
-- `pnpm generate-registry` → runs `node packages/registry/dist/generate-registry.js`
-  (build first: `pnpm build`), writes `data/customs_registry.json`
 - `pnpm probe [ISO] [--browser=direct|solari] [--timeout-ms=N] [--stealth]
 [--proxy-country=XX] [--captcha] [--log=json] [--concurrency=N]` → runs
   `node --env-file-if-exists=.env packages/cli/dist/probe.js` (build first:
   `pnpm build`). Solari fallback by default when `SOLARI_API_KEY` is set
   (warns and continues direct-only without it); `--browser=direct` forces
   direct-only, explicit `--browser=solari` without a key fails fast.
+  The probe command writes `data/customs_registry.json` atomically.
 
 ## Package boundaries
 
