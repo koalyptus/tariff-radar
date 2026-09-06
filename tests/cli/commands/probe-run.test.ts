@@ -37,12 +37,12 @@ function stubDeps(result: WorkflowResult | string): RunDeps {
     },
   };
   return {
-    runWorkflow: (async () => {
+    probeWorkflow: (async () => {
       if (typeof result === "string") {
         throw result;
       }
       return result;
-    }) as RunDeps["runWorkflow"],
+    }) as RunDeps["probeWorkflow"],
     createSolariProvider: () => fakeProvider,
     readApiKey: () => "test-key",
     logger: noopProbeLogger,
@@ -145,7 +145,7 @@ describe("runProbeCommand", () => {
       const base = stubDeps(directResult());
       const deps: RunDeps = {
         ...base,
-        runWorkflow: (async () => queued[index++]) as RunDeps["runWorkflow"],
+        probeWorkflow: (async () => queued[index++]) as RunDeps["probeWorkflow"],
       };
       await expect(runProbeCommand([], deps, seedsFile, recordOutput().output)).resolves.toBe(0);
     } finally {

@@ -4,7 +4,7 @@ import { PROBE_METHOD, consoleProbeLogger, progressLogger } from "@tariff-radar/
 import { SolariBrowserProvider } from "@tariff-radar/provider-solari";
 import { loadSeeds } from "@tariff-radar/registry";
 import { projectDataDir } from "@tariff-radar/shared";
-import { runProbeWorkflow, runTargets } from "@tariff-radar/workflow";
+import { probeTargets, probeWorkflow } from "@tariff-radar/workflow";
 import type { RunDeps } from "@tariff-radar/workflow";
 import { BROWSER_MODE, MAX_CONCURRENCY } from "@tariff-radar/workflow";
 import type { BrowserMode } from "@tariff-radar/workflow";
@@ -164,7 +164,7 @@ export function parseProbeArgs(argv: string[]): CliOptions {
  */
 export function defaultDeps(): RunDeps {
   return {
-    runWorkflow: runProbeWorkflow,
+    probeWorkflow,
     createSolariProvider: (apiKey) => new SolariBrowserProvider({ apiKey }),
     readApiKey: () => process.env.SOLARI_API_KEY,
     logger: consoleProbeLogger,
@@ -198,7 +198,7 @@ export async function runProbeCommand(
     if (options.log === "pretty") {
       output.printProgress(`Probe: STARTING — ${String(total)} portal${total === 1 ? "" : "s"}`);
     }
-    const results = await runTargets(seeds, options, { ...deps, logger });
+    const results = await probeTargets(seeds, options, { ...deps, logger });
     output.printTable(formatTable(results));
     if (options.log === "pretty") {
       const direct = results.filter((result) => result.method === PROBE_METHOD.DIRECT).length;

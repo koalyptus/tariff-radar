@@ -44,9 +44,9 @@ module + resolution, shared base in `tsconfig.base.json`.
   `DEFAULT_DIRECT_PROBE_TIMEOUT_MS = 10_000`) + loggers (`consoleProbeLogger`
   for machines, `progressLogger` for humans, `noopProbeLogger` for tests).
   Use `PROBE_METHOD` / `PROBE_EVIDENCE` constants, not string literals.
-- `packages/workflow`: `runProbeWorkflow(seed, {browserProvider, browserOptions,
+- `packages/workflow`: `probeWorkflow(seed, {browserProvider, browserOptions,
 timeoutMs})` — direct-first, browser only after direct failure, always closes
-  page + session (`finally` on both paths). `runTargets(seeds, options, deps)`
+  page + session (`finally` on both paths). `probeTargets(seeds, options, deps)`
   fans seeds out with bounded concurrency (results and log blocks in seed
   order). Use `BROWSER_MODE` / `DEFAULT_CONCURRENCY` / `MAX_CONCURRENCY`
   constants, not string literals.

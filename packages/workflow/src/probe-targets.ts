@@ -6,8 +6,8 @@ import type {
   ProbeLogger,
   WorkflowResult,
 } from "@tariff-radar/probe-core";
-import { runProbeWorkflow } from "./run-probe-workflow.js";
-import type { WorkflowSeed } from "./run-probe-workflow.js";
+import { probeWorkflow } from "./probe-workflow.js";
+import type { WorkflowSeed } from "./probe-workflow.js";
 
 /**
  * Browser fallback vocabulary for target probing. Use these constants, never
@@ -49,8 +49,8 @@ export interface TargetProbeOptions {
 
 /** Injectable seams; tests stub every seam without network access. */
 export interface RunDeps {
-  /** Workflow runner (real `runProbeWorkflow`, or a stub in tests). */
-  runWorkflow: typeof runProbeWorkflow;
+  /** Workflow runner (real `probeWorkflow`, or a stub in tests). */
+  probeWorkflow: typeof probeWorkflow;
   /** Solari provider factory (keeps the SDK constructible without a key). */
   createSolariProvider: (apiKey: string) => BrowserProbeProvider;
   /** API key source; defaults to `process.env.SOLARI_API_KEY`. */
@@ -72,7 +72,7 @@ type LogLevel = "debug" | "info" | "warn" | "error";
  * @returns One workflow result per probed seed, in order.
  * @throws When the ISO code is unknown or the Solari key is missing.
  */
-export async function runTargets(
+export async function probeTargets(
   seeds: WorkflowSeed[],
   options: TargetProbeOptions,
   deps: RunDeps,
@@ -111,7 +111,7 @@ export async function runTargets(
           recorded.push({ level, message, fields });
         };
       }
-      const result = await deps.runWorkflow(seed, {
+      const result = await deps.probeWorkflow(seed, {
         browserProvider,
         browserOptions,
         timeoutMs: options.timeoutMs,

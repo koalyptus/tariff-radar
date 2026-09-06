@@ -41,10 +41,7 @@ export interface ProbeWorkflowOptions {
  * @param options - Browser provider, timeouts, and logger overrides.
  * @returns The workflow result; failures carry the error, never guesses.
  */
-export async function runProbeWorkflow(
-  seed: WorkflowSeed,
-  options: ProbeWorkflowOptions = {},
-): Promise<WorkflowResult> {
+export async function probeWorkflow(seed: WorkflowSeed, options: ProbeWorkflowOptions = {}): Promise<WorkflowResult> {
   const log = new ProbeRunLogger(options.logger ?? noopProbeLogger, seed);
   log.start();
 

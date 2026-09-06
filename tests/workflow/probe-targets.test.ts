@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { BrowserProbeProvider, ProbeLogger, WorkflowResult } from "@tariff-radar/probe-core";
 import { PROBE_LOG_EVENT, noopProbeLogger } from "@tariff-radar/probe-core";
-import { runTargets } from "@tariff-radar/workflow";
+import { probeTargets } from "@tariff-radar/workflow";
 import type { ProbeWorkflowOptions, RunDeps, WorkflowSeed } from "@tariff-radar/workflow";
 
 const seedUS: WorkflowSeed = {
@@ -68,7 +68,7 @@ function stubDeps(
   };
   let index = 0;
   const deps: RunDeps = {
-    runWorkflow: (async (seed: WorkflowSeed, options?: ProbeWorkflowOptions) => {
+    probeWorkflow: (async (seed: WorkflowSeed, options?: ProbeWorkflowOptions) => {
       calls.push({
         isoCode: seed.isoCode,
         provider: options?.browserProvider,
@@ -76,7 +76,7 @@ function stubDeps(
         browserOptions: options?.browserOptions,
       });
       return results[index++];
-    }) as RunDeps["runWorkflow"],
+    }) as RunDeps["probeWorkflow"],
     createSolariProvider: () => fakeProvider,
     readApiKey: () => ("apiKey" in opts ? opts.apiKey : "test-key"),
     logger: opts.logger ?? noopProbeLogger,
@@ -84,11 +84,11 @@ function stubDeps(
   return { deps, calls };
 }
 
-describe("runTargets", () => {
+describe("probeTargets", () => {
   it("builds the default Solari provider", async () => {
     const expected = workflowResult({ seed: seedUS });
     const { deps, calls } = stubDeps([expected]);
-    const results = await runTargets([seedUS, seedMX], { target: "US", all: false, browser: null }, deps);
+    const results = await probeTargets([seedUS, seedMX], { target: "US", all: false, browser: null }, deps);
     expect(results).toEqual([expected]);
     expect(calls).toEqual([
       {
@@ -104,7 +104,7 @@ describe("runTargets", () => {
   it("matches ISO codes case-insensitively", async () => {
     const expected = workflowResult({ seed: seedUS });
     const { deps, calls } = stubDeps([expected]);
-    const results = await runTargets([seedUS, seedMX], { target: "us", all: false, browser: null }, deps);
+    const results = await probeTargets([seedUS, seedMX], { target: "us", all: false, browser: null }, deps);
     expect(results).toEqual([expected]);
     expect(calls.map((call) => call.isoCode)).toEqual(["US"]);
   });
@@ -112,7 +112,7 @@ describe("runTargets", () => {
   it("builds the Solari provider and forwards flags when requested", async () => {
     const expected = workflowResult({ seed: seedUS, method: "browser", provider: "fake" });
     const { deps, calls } = stubDeps([expected]);
-    const results = await runTargets(
+    const results = await probeTargets(
       [seedUS],
       {
         target: "US",
@@ -133,7 +133,7 @@ describe("runTargets", () => {
 
   it("throws when the Solari key is missing", async () => {
     const { deps } = stubDeps([], { apiKey: undefined });
-    await expect(runTargets([seedUS], { target: "US", all: false, browser: "solari" }, deps)).rejects.toThrow(
+    await expect(probeTargets([seedUS], { target: "US", all: false, browser: "solari" }, deps)).rejects.toThrow(
       "SOLARI_API_KEY is not set.",
     );
   });
@@ -145,7 +145,7 @@ describe("runTargets", () => {
       apiKey: undefined,
       logger: { debug: () => {}, info: () => {}, warn: (message) => warnings.push(message), error: () => {} },
     });
-    const results = await runTargets([seedUS], { target: "US", all: false, browser: null }, deps);
+    const results = await probeTargets([seedUS], { target: "US", all: false, browser: null }, deps);
     expect(results).toEqual([expected]);
     expect(calls[0]?.provider).toBeUndefined();
     expect(warnings).toEqual(["SOLARI_API_KEY is not set — continuing direct-only."]);
@@ -154,7 +154,7 @@ describe("runTargets", () => {
   it("skips the browser entirely for direct mode", async () => {
     const expected = workflowResult({ seed: seedUS });
     const { deps, calls } = stubDeps([expected]);
-    const results = await runTargets([seedUS], { target: "US", all: false, browser: "direct" }, deps);
+    const results = await probeTargets([seedUS], { target: "US", all: false, browser: "direct" }, deps);
     expect(results).toEqual([expected]);
     expect(calls[0]?.provider).toBeUndefined();
   });
@@ -163,7 +163,7 @@ describe("runTargets", () => {
     const first = workflowResult({ seed: seedUS });
     const second = workflowResult({ seed: seedMX });
     const { deps, calls } = stubDeps([first, second]);
-    const results = await runTargets([seedUS, seedMX], { target: "all", all: true, browser: null }, deps);
+    const results = await probeTargets([seedUS, seedMX], { target: "all", all: true, browser: null }, deps);
     expect(results).toEqual([first, second]);
     expect(calls.map((call) => call.isoCode)).toEqual(["US", "MX"]);
   });
@@ -173,13 +173,13 @@ describe("runTargets", () => {
     const second = workflowResult({ seed: seedMX });
     let inFlight = 0;
     let maxInFlight = 0;
-    const runWorkflow = (async (seed: WorkflowSeed) => {
+    const probeWorkflow = (async (seed: WorkflowSeed) => {
       inFlight += 1;
       maxInFlight = Math.max(maxInFlight, inFlight);
       await Promise.resolve();
       inFlight -= 1;
       return seed.isoCode === "US" ? first : second;
-    }) as RunDeps["runWorkflow"];
+    }) as RunDeps["probeWorkflow"];
     const fakeProvider: BrowserProbeProvider = {
       name: "fake",
       launch: async () => {
@@ -187,12 +187,12 @@ describe("runTargets", () => {
       },
     };
     const deps: RunDeps = {
-      runWorkflow,
+      probeWorkflow,
       createSolariProvider: () => fakeProvider,
       readApiKey: () => "test-key",
       logger: noopProbeLogger,
     };
-    const results = await runTargets(
+    const results = await probeTargets(
       [seedUS, seedMX],
       { target: "all", all: true, browser: null, concurrency: 2 },
       deps,
@@ -209,16 +209,16 @@ describe("runTargets", () => {
     const gate = new Promise<void>((resolve) => {
       releaseUS = resolve;
     });
-    const runWorkflow = (async (seed: WorkflowSeed, options?: ProbeWorkflowOptions) => {
+    const probeWorkflow = (async (seed: WorkflowSeed, options?: ProbeWorkflowOptions) => {
       options?.logger?.info(PROBE_LOG_EVENT.START, { isoCode: seed.isoCode });
       if (seed.isoCode === "US") {
         await gate;
       }
       options?.logger?.info(`end-${seed.isoCode}`);
       return seed.isoCode === "US" ? first : second;
-    }) as RunDeps["runWorkflow"];
+    }) as RunDeps["probeWorkflow"];
     const deps: RunDeps = {
-      runWorkflow,
+      probeWorkflow,
       createSolariProvider: () => ({
         name: "fake",
         launch: async () => {
@@ -235,7 +235,7 @@ describe("runTargets", () => {
         error: () => {},
       },
     };
-    const pending = runTargets([seedUS, seedMX], { target: "all", all: true, browser: null, concurrency: 2 }, deps);
+    const pending = probeTargets([seedUS, seedMX], { target: "all", all: true, browser: null, concurrency: 2 }, deps);
     await new Promise((resolve) => setImmediate(resolve));
     releaseUS();
     const results = await pending;
@@ -245,7 +245,7 @@ describe("runTargets", () => {
 
   it("throws for unknown ISO codes", async () => {
     const { deps } = stubDeps([]);
-    await expect(runTargets([seedUS], { target: "ZZ", all: false, browser: null }, deps)).rejects.toThrow(
+    await expect(probeTargets([seedUS], { target: "ZZ", all: false, browser: null }, deps)).rejects.toThrow(
       'Unknown ISO code "ZZ".',
     );
   });
@@ -253,15 +253,15 @@ describe("runTargets", () => {
   it("forwards every log level through the buffer", async () => {
     const expected = workflowResult({ seed: seedUS });
     const forwarded: Array<{ level: string; message: string }> = [];
-    const runWorkflow = (async (_seed: WorkflowSeed, options?: ProbeWorkflowOptions) => {
+    const probeWorkflow = (async (_seed: WorkflowSeed, options?: ProbeWorkflowOptions) => {
       options?.logger?.debug("d");
       options?.logger?.info("i");
       options?.logger?.warn("w");
       options?.logger?.error("e");
       return expected;
-    }) as RunDeps["runWorkflow"];
+    }) as RunDeps["probeWorkflow"];
     const deps: RunDeps = {
-      runWorkflow,
+      probeWorkflow,
       createSolariProvider: () => {
         throw new Error("unused");
       },
@@ -281,7 +281,7 @@ describe("runTargets", () => {
         },
       },
     };
-    const results = await runTargets([seedUS], { target: "US", all: false, browser: "direct" }, deps);
+    const results = await probeTargets([seedUS], { target: "US", all: false, browser: "direct" }, deps);
     expect(results).toEqual([expected]);
     expect(forwarded).toEqual([
       { level: "debug", message: "d" },
