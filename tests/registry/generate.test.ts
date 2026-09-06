@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -89,6 +89,60 @@ describe("runWriteRegistry", () => {
       } else {
         rmSync(out, { force: true });
       }
+    }
+  });
+
+  it("writes to an explicit path and logs the result", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "write-registry-log-"));
+    try {
+      const out = join(dir, "registry.json");
+      const lines: string[] = [];
+      const result = await runWriteRegistry([seed], out, (line) => lines.push(line));
+      expect(result).toBe(out);
+      expect(existsSync(out)).toBe(true);
+      expect(existsSync(out + ".tmp")).toBe(false);
+      expect(lines).toEqual([`Wrote 1 registry entries at ${out}`]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("defaults to the workspace data directory and creates it", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "write-registry-default-"));
+    try {
+      const out = join(dir, "data", "customs_registry.json");
+      const result = await runWriteRegistry([seed], out);
+      expect(result).toBe(out);
+      expect(existsSync(out)).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("replaces an existing file atomically", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "write-registry-replace-"));
+    try {
+      const out = join(dir, "registry.json");
+      writeFileSync(out, "stale", "utf8");
+      await runWriteRegistry([seed], out);
+      const written = JSON.parse(readFileSync(out, "utf8")) as { entries: RegistryEntry[] };
+      expect(written.entries).toHaveLength(1);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("writes a schema version 1 envelope with a generatedAt timestamp", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "write-registry-schema-"));
+    try {
+      const out = join(dir, "registry.json");
+      await runWriteRegistry([seed], out);
+      const written = JSON.parse(readFileSync(out, "utf8")) as { schemaVersion: number; generatedAt: string };
+      expect(written.schemaVersion).toBe(1);
+      expect(typeof written.generatedAt).toBe("string");
+      expect(() => new Date(written.generatedAt)).not.toThrow();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
     }
   });
 });

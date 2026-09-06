@@ -13,10 +13,10 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@tariff-radar/shared": "workspace:*",
-    "@tariff-radar/probe-core": "workspace:*"
+    "@tariff-radar/shared": "workspace:*"
   },
   "devDependencies": {
+    "@tariff-radar/probe-core": "workspace:*",
     "@types/node": "^22.10.2",
     "typescript": "^5.7.2"
   }

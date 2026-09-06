@@ -17,7 +17,13 @@ export interface Seed {
   sourceUrl: string;
 }
 
-export type VerificationStatus = "unverified" | "http_ok" | "http_failed" | "browser_ok" | "browser_failed";
+/**
+ * Verification status for one registry record. Phase 8 only ever produces
+ * `"unverified"` — nothing reaches a verified claim until Phase 10 adds
+ * content-relevance checks. The outcome itself lives in `method` + `error`,
+ * so this field does not need to re-encode transport success.
+ */
+export type VerificationStatus = "unverified";
 
 export interface RegistryVerification {
   status: VerificationStatus;
