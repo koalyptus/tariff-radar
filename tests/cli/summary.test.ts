@@ -50,7 +50,7 @@ function workflowResult(partial: Partial<WorkflowResult> & { seed: WorkflowResul
 describe("formatTable", () => {
   it("renders one row per seed with error details", () => {
     const text = formatTable([
-      workflowResult({ seed: seedUS }),
+      workflowResult({ seed: seedUS, direct: { ...directOk(), attempts: 3, latencyMs: 2100 } }),
       workflowResult({
         seed: seedMX,
         method: "browser",
@@ -81,7 +81,7 @@ describe("formatTable", () => {
       "EVIDENCE",
       "US",
       "direct",
-      "HTTP 200 in 42ms",
+      "HTTP 200 in 2100ms (3 attempts)",
       "direct_response",
       "MX",
       "browser",
@@ -112,7 +112,13 @@ describe("formatTable", () => {
   });
 
   it("renders an unknown failure without a recorded error", () => {
-    const text = formatTable([workflowResult({ seed: seedUS, method: "failed", direct: directFailed(null) })]);
-    expect(text).toContain("unknown error");
+    const text = formatTable([
+      workflowResult({
+        seed: seedUS,
+        method: "failed",
+        direct: { ...directFailed(null), attempts: 2 },
+      }),
+    ]);
+    expect(text).toContain("unknown error (2 attempts)");
   });
 });

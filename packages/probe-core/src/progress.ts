@@ -60,14 +60,16 @@ function describeOptions(fields: LogFields): string {
  */
 export function formatStage(message: string, fields: LogFields): string {
   const iso = String(fields.isoCode);
+  const tries = typeof fields.attempts === "number" && fields.attempts > 1 ? fields.attempts : 0;
   switch (message) {
     case PROBE_LOG_EVENT.START:
       return `── ${iso} ${String(fields.portalUrl)}`;
     case PROBE_LOG_EVENT.DIRECT_COMPLETE:
       if (fields.ok !== true) {
-        return `[${iso}] direct: failed (${String(fields.error ?? "unknown error")})`;
+        const retry = tries > 0 ? ` after ${String(tries)} attempts` : "";
+        return `[${iso}] direct: failed${retry} (${String(fields.error ?? "unknown error")})`;
       }
-      return `[${iso}] direct: HTTP ${String(fields.status)} in ${String(fields.latencyMs)}ms`;
+      return `[${iso}] direct: HTTP ${String(fields.status)} in ${String(fields.latencyMs)}ms${tries > 0 ? ` (${String(tries)} attempts)` : ""}`;
     case PROBE_LOG_EVENT.BROWSER_FALLBACK:
       return `[${iso}] browser via ${String(fields.provider)}${describeOptions(fields)}`;
     case PROBE_LOG_EVENT.BROWSER_COMPLETE:

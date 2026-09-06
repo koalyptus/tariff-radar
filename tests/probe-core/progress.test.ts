@@ -39,6 +39,36 @@ describe("formatStage", () => {
     );
   });
 
+  it("names the attempt count when direct succeeds after retries", () => {
+    expect(
+      formatStage(PROBE_LOG_EVENT.DIRECT_COMPLETE, {
+        isoCode: "US",
+        portalUrl: "https://hts.usitc.gov/",
+        ok: true,
+        status: 200,
+        finalUrl: "https://hts.usitc.gov/",
+        latencyMs: 2100,
+        attempts: 3,
+        error: null,
+      }),
+    ).toBe("[US] direct: HTTP 200 in 2100ms (3 attempts)");
+  });
+
+  it("names the attempt count when direct fails after retries", () => {
+    expect(
+      formatStage(PROBE_LOG_EVENT.DIRECT_COMPLETE, {
+        isoCode: "BR",
+        portalUrl: "https://www.gov.br/",
+        ok: false,
+        status: null,
+        finalUrl: null,
+        latencyMs: 3200,
+        attempts: 3,
+        error: "connect ETIMEDOUT 161.148.164.31:443",
+      }),
+    ).toBe("[BR] direct: failed after 3 attempts (connect ETIMEDOUT 161.148.164.31:443)");
+  });
+
   it("announces the browser fallback with the effective options", () => {
     const fallback = {
       isoCode: "CN",

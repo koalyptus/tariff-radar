@@ -40,14 +40,16 @@ export function formatTable(results: WorkflowResult[]): string {
  */
 function describeOutcome(result: WorkflowResult): string {
   if (result.direct.ok) {
-    return `HTTP ${String(result.direct.status)} in ${String(result.direct.latencyMs)}ms`;
+    const outcome = `HTTP ${String(result.direct.status)} in ${String(result.direct.latencyMs)}ms`;
+    return result.direct.attempts > 1 ? `${outcome} (${String(result.direct.attempts)} attempts)` : outcome;
   }
   if (result.browser) {
     return result.browser.status !== null
       ? `HTTP ${String(result.browser.status)} in ${String(result.browser.latencyMs)}ms`
       : "no response";
   }
-  return result.error ?? "unknown error";
+  const error = result.error ?? "unknown error";
+  return result.direct.attempts > 1 ? `${error} (${String(result.direct.attempts)} attempts)` : error;
 }
 
 /**
