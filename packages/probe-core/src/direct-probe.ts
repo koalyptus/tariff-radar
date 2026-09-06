@@ -16,6 +16,17 @@ export const DIRECT_PROBE_RETRY_DELAY_MS = 1_000;
  */
 export const DIRECT_PROBE_USER_AGENT = "TariffRadar/1.0";
 
+/** Shared defaults for every direct-probe outcome; call sites spread and override. */
+const initialProbeResult: DirectProbeResult = {
+  ok: false,
+  status: null,
+  finalUrl: null,
+  latencyMs: 0,
+  title: null,
+  attempts: 0,
+  error: null,
+};
+
 /**
  * Probe a URL with native `fetch` under a bounded timeout, retrying failed
  * attempts for flaky edges. Never throws: timeouts, network errors, and
@@ -80,17 +91,6 @@ export async function runDirectProbe(
     error: lastError,
   };
 }
-
-/** Shared defaults for every direct-probe outcome; call sites spread and override. */
-const initialProbeResult: DirectProbeResult = {
-  ok: false,
-  status: null,
-  finalUrl: null,
-  latencyMs: 0,
-  title: null,
-  attempts: 0,
-  error: null,
-};
 
 /**
  * Render a fetch failure specifically. Undici wraps network failures in a
