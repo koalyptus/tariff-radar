@@ -47,15 +47,12 @@ export async function runDirectProbe(
         signal: AbortSignal.timeout(timeoutMs),
         headers: { "User-Agent": DIRECT_PROBE_USER_AGENT },
       });
-      return {
+      return buildDirectResult(startedAt, attempts, {
         ok: response.ok,
         status: response.status,
         finalUrl: response.url,
-        latencyMs: Math.round(performance.now() - startedAt),
-        title: null,
-        attempts,
         error: response.ok ? null : `HTTP ${response.status}`,
-      };
+      });
     } catch (error) {
       lastError = describeError(error, timeoutMs);
       if (attempts < allowed) {
@@ -65,25 +62,41 @@ export async function runDirectProbe(
   }
 
   if (attempts === 0) {
-    return {
+    return buildDirectResult(startedAt, attempts, {
       ok: false,
       status: null,
       finalUrl: null,
-      latencyMs: Math.round(performance.now() - startedAt),
-      title: null,
-      attempts,
       error: "no attempts made",
-    };
+    });
   }
 
-  return {
+  return buildDirectResult(startedAt, attempts, {
     ok: false,
     status: null,
     finalUrl: null,
+    error: lastError,
+  });
+}
+
+/**
+ * Assemble a direct-probe result with measured fields filled in. Single
+ * construction site so the shape cannot drift between success, exhausted,
+ * and zero-attempt paths.
+ * @param startedAt - Monotonic start of the whole operation.
+ * @param attempts - Attempts used.
+ * @param outcome - Observed per-attempt outcome.
+ * @returns The complete result record.
+ */
+function buildDirectResult(
+  startedAt: number,
+  attempts: number,
+  outcome: { ok: boolean; status: number | null; finalUrl: string | null; error: string | null },
+): DirectProbeResult {
+  return {
+    ...outcome,
     latencyMs: Math.round(performance.now() - startedAt),
     title: null,
     attempts,
-    error: lastError,
   };
 }
 
