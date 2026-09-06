@@ -60,6 +60,8 @@ function describeOptions(fields: LogFields): string {
  */
 export function formatStage(message: string, fields: LogFields): string {
   const iso = String(fields.isoCode);
+  // LogFields is loosely typed, so narrow before comparing: the workflow
+  // always sends a numeric attempts, but the type cannot promise it.
   const tries = typeof fields.attempts === "number" && fields.attempts > 1 ? fields.attempts : 0;
   switch (message) {
     case PROBE_LOG_EVENT.START:

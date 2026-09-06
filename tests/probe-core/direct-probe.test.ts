@@ -213,6 +213,13 @@ describe("runDirectProbe", () => {
     expect(result.error).toBe("no attempts made");
   });
 
+  it("clamps negative attempts to zero", async () => {
+    const result = await runDirectProbe("https://portal.example/", undefined, -2);
+    expect(result.ok).toBe(false);
+    expect(result.attempts).toBe(0);
+    expect(result.error).toBe("no attempts made");
+  });
+
   it("skips empty entries inside AggregateError lists", async () => {
     vi.stubGlobal(
       "fetch",
