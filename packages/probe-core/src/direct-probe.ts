@@ -4,6 +4,15 @@ import type { DirectProbeResult } from "./index.js";
 export const DEFAULT_DIRECT_PROBE_TIMEOUT_MS = 10_000;
 
 /**
+ * Browser-like User-Agent for direct probes. Portal bot-mitigation often
+ * drops bare HTTP clients silently (surfacing as ETIMEDOUT); sending what a
+ * real browser sends isolates network reachability from client filtering,
+ * matching what the Solari browser path presents.
+ */
+export const DIRECT_PROBE_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+
+/**
  * Probe a URL with a single native `fetch` under a bounded timeout. Never
  * throws: timeouts, network errors, and non-2xx statuses fold into the
  * returned result. A 2xx response alone never means verified.
@@ -20,7 +29,10 @@ export async function runDirectProbe(
   const startedAt = performance.now();
 
   try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(timeoutMs),
+      headers: { "User-Agent": DIRECT_PROBE_USER_AGENT },
+    });
     return {
       ok: response.ok,
       status: response.status,

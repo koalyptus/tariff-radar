@@ -11,9 +11,13 @@ afterEach(() => {
 
 describe("runDirectProbe", () => {
   it("returns ok for an HTTP 200 response", async () => {
+    const seen: Array<{ url: unknown; init?: { headers?: Record<string, string> } }> = [];
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => okResponse()),
+      vi.fn(async (url: unknown, init?: { headers?: Record<string, string> }) => {
+        seen.push({ url, init });
+        return okResponse();
+      }),
     );
     const result = await runDirectProbe("https://portal.example/tariff");
     expect(result.ok).toBe(true);
@@ -21,6 +25,7 @@ describe("runDirectProbe", () => {
     expect(result.finalUrl).toBe("https://portal.example/tariff");
     expect(result.error).toBeNull();
     expect(result.latencyMs).toBeGreaterThanOrEqual(0);
+    expect(seen[0]?.init?.headers?.["User-Agent"]).toContain("Mozilla/5.0");
   });
 
   it("stays non-negative when the wall clock jumps backwards", async () => {
