@@ -46,6 +46,7 @@ export async function runDirectProbe(
  * generic `fetch failed` TypeError and hides the cause (DNS, refused,
  * timeout) in `error.cause` — surfacing it is the difference between
  * `direct: failed (fetch failed)` and knowing the portal never resolved.
+ * Never returns empty: an anonymous failure still names itself.
  * @param error - Rejection reason from `fetch`.
  * @param timeoutMs - Abort threshold, for naming timeouts honestly.
  * @returns The specific failure reason.
@@ -55,10 +56,13 @@ function describeError(error: unknown, timeoutMs: number): string {
     if (error.name === "TimeoutError") {
       return `timeout after ${String(timeoutMs)}ms`;
     }
-    if (error.cause instanceof Error) {
+    if (error.cause instanceof Error && error.cause.message) {
       return error.cause.message;
     }
-    return error.message;
+    if (error.message) {
+      return error.message;
+    }
+    return `fetch failed (${String(error.cause ?? "unknown reason")})`;
   }
   return String(error);
 }

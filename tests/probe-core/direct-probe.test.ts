@@ -103,4 +103,41 @@ describe("runDirectProbe", () => {
     expect(result.ok).toBe(false);
     expect(result.error).toBe("getaddrinfo ENOTFOUND portal.example");
   });
+
+  it("names anonymous failures instead of printing empty", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new Error();
+      }),
+    );
+    const anonymous = await runDirectProbe("https://portal.example/");
+    expect(anonymous.error).toBe("fetch failed (unknown reason)");
+  });
+
+  it("stringifies a non-Error cause behind an empty message", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        const error = new Error();
+        (error as { cause?: unknown }).cause = "socket hung up";
+        throw error;
+      }),
+    );
+    const result = await runDirectProbe("https://portal.example/");
+    expect(result.error).toBe("fetch failed (socket hung up)");
+  });
+
+  it("ignores an empty cause message in favor of a reason", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        const error = new Error() as Error & { cause?: unknown };
+        error.cause = new Error();
+        throw error;
+      }),
+    );
+    const result = await runDirectProbe("https://portal.example/");
+    expect(result.error).toBe("fetch failed (Error)");
+  });
 });
