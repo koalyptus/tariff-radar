@@ -18,10 +18,11 @@ export interface Seed {
 }
 
 /**
- * Verification status for one registry record. Phase 8 only ever produces
- * `"unverified"` — nothing reaches a verified claim until Phase 10 adds
- * content-relevance checks. The outcome itself lives in `method` + `error`,
- * so this field does not need to re-encode transport success.
+ * Verification status for one registry record. Currently only produces
+ * "unverified" — transport success (HTTP 200 or browser render) is captured
+ * via method, error, and the per-method status fields, not via this field.
+ * This field is reserved for future content-relevance checks before any
+ * record can claim verification beyond reachable.
  */
 export type VerificationStatus = "unverified";
 
