@@ -199,6 +199,40 @@ HTTP, not that tariff content was verified (see _Evidence and Limitations_).
 - Any regulatory interpretation must be checked against the original authority
   and should not be treated as legal advice.
 
+## Glossary
+
+### Evidence
+
+| Evidence key       | Observation                                                            |
+| ------------------ | ---------------------------------------------------------------------- |
+| `direct_response`  | A direct HTTP request received a response from the portal's server.    |
+| `browser_response` | A browser-rendered page returned an HTTP status code.                  |
+| `browser_text`     | Extractable text content was retrieved from the browser-rendered page. |
+
+Absence of an observation produces no entry — e.g., a failed direct probe yields `evidence: []` alongside an error message.
+
+### Method
+
+| Method    | Description                                                                                                                |
+| --------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `direct`  | A native `fetch` HTTP request with a bounded timeout (`DEFAULT_DIRECT_PROBE_TIMEOUT_MS = 10_000`). No browser is launched. |
+| `browser` | A browser session was launched (via Solari or another provider) after direct access failed or was inconclusive.            |
+| `failed`  | Neither direct nor browser probing succeeded; the result carries `error` and empty evidence.                               |
+
+### Verification status
+
+| Status       | Meaning                                                                                                                                                                                                                                                                                        |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `unverified` | The only current status. Every registry record is `unverified` because content-relevance checks (Phase 10) have not been implemented. Transport success is captured in `method`, `evidence`, and per-method status fields — never in this status. Reserved for future content-relevance gates. |
+
+### Access profile
+
+| Property                        | Description                                                                                                                                                                                                           |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Direct                          | Native HTTP request without browser automation.                                                                                                                                                                       |
+| Browser                         | Browser automation used as a fallback when direct access fails or is inconclusive.                                                                                                                                    |
+| Proxy country, stealth, CAPTCHA | Access methods determined automatically per target by the browser provider (e.g., Solari) based on observed access behavior. The user does not select these per run; the provider detects and applies them as needed. |
+
 ## Solari Examples
 
 The original runnable examples remain available while TariffRadar is developed:
