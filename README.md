@@ -200,6 +200,8 @@ HTTP, not that tariff content was verified (see _Evidence and Limitations_).
 - Domain patterns alone do not establish official status.
 - Registry timestamps, source attribution, response metadata, and probe logs are
   essential for reviewing each result.
+- Seeds that fail content-relevance checks will be separated into a
+  `needs_review.json` file for human triage (future, Phase 10).
 - Any regulatory interpretation must be checked against the original authority
   and should not be treated as legal advice.
 
