@@ -150,9 +150,10 @@ try {
 
 The adapter translates provider-neutral probe options into Solari options. The
 final probe should measure what happened, rather than treating every Solari
-option as necessary. Open portals should not incur proxy or browser cost
-without a reason. CAPTCHA solving, proxy routing, and stealth should be enabled
-only where the run and the target's terms permit it.
+option as necessary. When browser fallback is selected, stealth and CAPTCHA
+are enabled by default and the proxy country is derived from the target's
+ISO code. Direct-first probing still avoids browser cost entirely for open
+portals.
 
 ## Quickstart
 
@@ -170,16 +171,19 @@ usage errors. Per-seed progress prints on stderr, the result table on stdout.
 
 ### probe
 
-| Flag                       | Default   | Description                                                          |
-| -------------------------- | --------- | -------------------------------------------------------------------- |
-| `[ISO]`                    | all seeds | Probe one portal candidate by ISO code.                              |
-| `--browser=direct\|solari` | `solari`  | Browser fallback after direct failure; `direct` disables it.         |
-| `--timeout-ms=N`           | `10000`   | Direct-probe timeout in milliseconds.                                |
-| `--stealth`                | off       | Opt-in provider stealth/anti-detection measures.                     |
-| `--proxy-country=XX`       | off       | Opt-in two-letter proxy egress country code.                         |
-| `--captcha`                | off       | Opt-in provider CAPTCHA handling where the target's terms permit it. |
-| `--log=pretty\|json`       | `pretty`  | Progress rendering: stage lines on stderr, or JSON lines.            |
-| `--concurrency=N`          | `6`       | Max parallel seed probes (1–8).                                      |
+| Flag                       | Default   | Description                                                            |
+| -------------------------- | --------- | ---------------------------------------------------------------------- |
+| `[ISO]`                    | all seeds | Probe one portal candidate by ISO code.                                |
+| `--browser=direct\|solari` | `solari`  | Browser fallback after direct failure; `direct` disables it.           |
+| `--timeout-ms=N`           | `10000`   | Direct-probe timeout in milliseconds.                                  |
+| `--stealth`                | on\*      | Provider stealth/anti-detection measures (browser fallback only).      |
+| `--proxy-country=XX`       | auto\*\*  | Two-letter proxy egress country code. Defaults to the seed's ISO code. |
+| `--captcha`                | on\*      | Provider CAPTCHA solving (browser fallback only).                      |
+| `--log=pretty\|json`       | `pretty`  | Progress rendering: stage lines on stderr, or JSON lines.              |
+| `--concurrency=N`          | `6`       | Max parallel seed probes (1–8).                                        |
+
+\* Off when `--browser=direct`. Defaults to on for the Solari browser fallback.
+\*\* Derived from the target seed's ISO code when browser fallback is selected; override with `--proxy-country=XX`.
 
 Pass `--log=json` for the original machine-readable JSON lines.
 
@@ -196,8 +200,44 @@ HTTP, not that tariff content was verified (see _Evidence and Limitations_).
 - Domain patterns alone do not establish official status.
 - Registry timestamps, source attribution, response metadata, and probe logs are
   essential for reviewing each result.
+- Seeds that fail content-relevance checks will be separated into a
+  `needs_review.json` file for human triage (future, Phase 10).
 - Any regulatory interpretation must be checked against the original authority
   and should not be treated as legal advice.
+
+## Glossary
+
+### Evidence
+
+| Evidence key       | Observation                                                            |
+| ------------------ | ---------------------------------------------------------------------- |
+| `direct_response`  | A direct HTTP request received a response from the portal's server.    |
+| `browser_response` | A browser-rendered page returned an HTTP status code.                  |
+| `browser_text`     | Extractable text content was retrieved from the browser-rendered page. |
+
+Absence of an observation produces no entry — e.g., a failed direct probe yields `evidence: []` alongside an error message.
+
+### Method
+
+| Method    | Description                                                                                                                |
+| --------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `direct`  | A native `fetch` HTTP request with a bounded timeout (`DEFAULT_DIRECT_PROBE_TIMEOUT_MS = 10_000`). No browser is launched. |
+| `browser` | A browser session was launched (via Solari or another provider) after direct access failed or was inconclusive.            |
+| `failed`  | Neither direct nor browser probing succeeded; the result carries `error` and empty evidence.                               |
+
+### Verification status
+
+| Status       | Meaning                                                                                                                                                                                                                                                                             |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `unverified` | The only current status. Every registry record is `unverified` because content-relevance checks have not been implemented. Transport success is captured in `method`, `evidence`, and per-method status fields — never in this status. Reserved for future content-relevance gates. |
+
+### Access profile
+
+| Property                        | Description                                                                                                                                                                                                                                                                                                                 |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Direct                          | Native HTTP request without browser automation.                                                                                                                                                                                                                                                                             |
+| Browser                         | Browser automation used as a fallback when direct access fails or is inconclusive.                                                                                                                                                                                                                                          |
+| Proxy country, stealth, CAPTCHA | Proxy country is selected from the target's ISO code; stealth and CAPTCHA solving are enabled when browser fallback is selected. The user does not individually toggle these per run — the proxy country is derived from the seed, and the other access methods are applied together as a default browser fallback profile. |
 
 ## Solari Examples
 

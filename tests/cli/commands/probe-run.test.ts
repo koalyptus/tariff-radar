@@ -19,7 +19,13 @@ const seed: Seed = {
 
 function directResult(): WorkflowResult {
   return {
-    seed: { isoCode: "US", countryName: "United States", portalUrl: seed.portalUrl, sourceUrl: seed.sourceUrl },
+    seed: {
+      isoCode: "US",
+      countryName: "United States",
+      authority: "USITC",
+      portalUrl: seed.portalUrl,
+      sourceUrl: seed.sourceUrl,
+    },
     method: "direct",
     provider: null,
     direct: { ok: true, status: 200, finalUrl: seed.portalUrl, latencyMs: 9, title: null, attempts: 1, error: null },
@@ -88,11 +94,14 @@ describe("runProbeCommand", () => {
     const { dir, seedsFile } = writeSeeds();
     const recorded = recordOutput();
     try {
-      await expect(runProbeCommand(["US"], stubDeps(directResult()), seedsFile, recorded.output)).resolves.toBe(0);
+      await expect(
+        runProbeCommand(["US"], stubDeps(directResult()), seedsFile, undefined, recorded.output),
+      ).resolves.toBe(0);
       expect(recorded.tables).toHaveLength(1);
       expect(recorded.tables[0]).toContain("US");
       expect(recorded.progress[0]).toContain("Probe: STARTING");
-      expect(recorded.progress[recorded.progress.length - 1]).toContain("Probe: COMPLETED");
+      expect(recorded.progress.some((l) => l.includes("Probe: COMPLETED"))).toBe(true);
+      expect(recorded.progress.some((l) => l.includes("Registry: wrote"))).toBe(true);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -100,7 +109,9 @@ describe("runProbeCommand", () => {
 
   it("defaults to the workspace seeds file", async () => {
     const recorded = recordOutput();
-    await expect(runProbeCommand(["US"], stubDeps(directResult()), undefined, recorded.output)).resolves.toBe(0);
+    await expect(
+      runProbeCommand(["US"], stubDeps(directResult()), undefined, undefined, recorded.output),
+    ).resolves.toBe(0);
     expect(recorded.tables).toHaveLength(1);
   });
 
@@ -109,7 +120,7 @@ describe("runProbeCommand", () => {
     const recorded = recordOutput();
     try {
       await expect(
-        runProbeCommand(["US", "--log=json"], stubDeps(directResult()), seedsFile, recorded.output),
+        runProbeCommand(["US", "--log=json"], stubDeps(directResult()), seedsFile, undefined, recorded.output),
       ).resolves.toBe(0);
       expect(recorded.tables).toHaveLength(1);
       expect(recorded.progress).toEqual([]);
@@ -136,6 +147,7 @@ describe("runProbeCommand", () => {
           seed: {
             isoCode: "MX",
             countryName: "Mexico",
+            authority: "SE",
             portalUrl: "https://www.snice.gob.mx/",
             sourceUrl: seed.sourceUrl,
           },
@@ -147,7 +159,7 @@ describe("runProbeCommand", () => {
         ...base,
         probeWorkflow: (async () => queued[index++]) as RunDeps["probeWorkflow"],
       };
-      await expect(runProbeCommand([], deps, seedsFile, recordOutput().output)).resolves.toBe(0);
+      await expect(runProbeCommand([], deps, seedsFile, undefined, recordOutput().output)).resolves.toBe(0);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -164,7 +176,7 @@ describe("runProbeCommand", () => {
     };
     try {
       await expect(
-        runProbeCommand(["US", "--browser=direct"], stubDeps(failed), seedsFile, recordOutput().output),
+        runProbeCommand(["US", "--browser=direct"], stubDeps(failed), seedsFile, undefined, recordOutput().output),
       ).resolves.toBe(1);
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -175,7 +187,7 @@ describe("runProbeCommand", () => {
     const { dir, seedsFile } = writeSeeds();
     try {
       await expect(
-        runProbeCommand(["--help"], stubDeps(directResult()), seedsFile, recordOutput().output),
+        runProbeCommand(["--help"], stubDeps(directResult()), seedsFile, undefined, recordOutput().output),
       ).resolves.toBe(0);
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -186,7 +198,9 @@ describe("runProbeCommand", () => {
     const { dir, seedsFile } = writeSeeds();
     const recorded = recordOutput();
     try {
-      await expect(runProbeCommand(["--nope"], stubDeps(directResult()), seedsFile, recorded.output)).resolves.toBe(2);
+      await expect(
+        runProbeCommand(["--nope"], stubDeps(directResult()), seedsFile, undefined, recorded.output),
+      ).resolves.toBe(2);
       expect(recorded.errors).toEqual(["Unknown argument: nope"]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -198,7 +212,7 @@ describe("runProbeCommand", () => {
     const recorded = recordOutput();
     try {
       await expect(
-        runProbeCommand(["US", "--browser=direct"], stubDeps("plain failure"), seedsFile, recorded.output),
+        runProbeCommand(["US", "--browser=direct"], stubDeps("plain failure"), seedsFile, undefined, recorded.output),
       ).resolves.toBe(2);
       expect(recorded.errors).toEqual(["plain failure"]);
     } finally {

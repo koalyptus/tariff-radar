@@ -13,6 +13,7 @@ const DIRECT_PROBE_FAILURE = "direct probe failed and no browser provider was co
 export interface WorkflowSeed {
   isoCode: string;
   countryName: string;
+  authority: string;
   portalUrl: string;
   sourceUrl: string;
 }

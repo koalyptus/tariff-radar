@@ -99,6 +99,7 @@ export interface WorkflowResult {
   seed: {
     isoCode: string;
     countryName: string;
+    authority: string;
     portalUrl: string;
     sourceUrl: string;
   };

@@ -218,8 +218,10 @@ path half (Phase 8) stays open.
 - [ ] Detect relevant links and downloadable tariff documents.
 - [ ] Separate authority verification from content relevance verification.
 - [ ] Store evidence snippets or stable evidence identifiers.
+      |- [ ] Write inconclusive or content-relevance-failing seeds to
+      | `needs_review.json` for human triage, preserving the full evidence trail.
 - [ ] Avoid inferring CAPTCHA, WAF, geo-blocking, or stealth requirements
-      without observations.
+      | without observations.
 
 **Done when:** A successful network response alone cannot produce a verified
 customs registry record.

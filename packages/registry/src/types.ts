@@ -18,15 +18,33 @@ export interface Seed {
 }
 
 /**
- * Seed plus placeholder verification. The seed-only generator stamps every
- * record `unverified`; only a completed workflow result may upgrade this.
+ * Verification status for one registry record. Currently only produces
+ * "unverified" — transport success (HTTP 200 or browser render) is captured
+ * via method, error, and the per-method status fields, not via this field.
+ * This field is reserved for future content-relevance checks before any
+ * record can claim verification beyond reachable.
  */
+export type VerificationStatus = "unverified";
+
+export interface RegistryVerification {
+  status: VerificationStatus;
+  checkedAt: string;
+  method: string;
+  provider: string | null;
+  directStatus: number | null;
+  directLatencyMs: number;
+  directAttempts: number;
+  directError: string | null;
+  browserStatus: number | null;
+  browserFinalUrl: string | null;
+  browserTitle: string | null;
+  browserLatencyMs: number | null;
+  evidence: string[];
+  error: string | null;
+}
+
 export interface RegistryEntry extends Seed {
-  verification: {
-    status: "unverified";
-    checkedAt: null;
-    evidence: [];
-  };
+  verification: RegistryVerification;
 }
 
 /** Versioned set of registry records written to `data/customs_registry.json`. */
