@@ -209,18 +209,34 @@ and one Solari-backed example with `SOLARI_API_KEY`.
 
 ## Phase 10: Verification Quality
 
-- [ ] Verify that the final URL and page title are captured.
-- [ ] Detect relevant tariff, customs, duty, or HS-code terminology.
+- [x] Verify that the final URL and page title are captured.
+- [x] Detect relevant tariff, customs, duty, or HS-code terminology.
 - [ ] Detect relevant links and downloadable tariff documents.
-- [ ] Separate authority verification from content relevance verification.
-- [ ] Store evidence snippets or stable evidence identifiers.
-      |- [ ] Write inconclusive or content-relevance-failing seeds to
+- [x] Separate authority verification from content relevance verification.
+- [x] Store evidence snippets or stable evidence identifiers.
+      |- [x] Write inconclusive or content-relevance-failing seeds to
       | `needs_review.json` for human triage, preserving the full evidence trail.
-- [ ] Avoid inferring CAPTCHA, WAF, geo-blocking, or stealth requirements
+- [x] Avoid inferring CAPTCHA, WAF, geo-blocking, or stealth requirements
       | without observations.
 
 **Done when:** A successful network response alone cannot produce a verified
 customs registry record.
+
+Notes (Phase 10, as shipped):
+
+- Final URL is captured on both paths; page title is captured on the browser
+  path only. Direct probes stay `fetch`-only by design, so direct titles
+  remain null.
+- Terminology detection is English landing-page keywords
+  (`assessContentRelevance` in `probe-core`); any one of the four keyword
+  families keeps an entry out of triage. No match proves nothing.
+- Authority vs content stays separated by construction: authority lives in
+  seed provenance (`portalUrl` vs `sourceUrl`), content lives in evidence
+  keys, and `status` stays `unverified` — no score, no threshold.
+- Evidence uses stable identifiers, never raw page snippets.
+- Link/document href extraction needs a `BrowserProbePage` contract
+  extension (links provider) and belongs with Phase 11 document ingestion;
+  deferred, not silently dropped.
 
 ## Phase 11: Document Ingestion
 
