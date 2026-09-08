@@ -31,6 +31,8 @@ function fakeProvider(hooks: {
   response: { status: number; url: string } | null;
   launchError?: unknown;
   gotoError?: unknown;
+  title?: string;
+  text?: string;
   onPageClose?: () => void;
   onSessionClose?: () => void;
 }): BrowserProbeProvider {
@@ -49,8 +51,8 @@ function fakeProvider(hooks: {
             const response = hooks.response;
             return response ? { status: () => response.status, url: () => response.url } : null;
           },
-          title: async () => "Tariff portal",
-          text: async () => "customs duty tariff",
+          title: async () => hooks.title ?? "Tariff portal",
+          text: async () => hooks.text ?? "customs duty tariff",
           close: async () => {
             hooks.onPageClose?.();
           },
@@ -109,7 +111,13 @@ describe("probeWorkflow", () => {
     expect(result.browser?.status).toBe(200);
     expect(result.browser?.finalUrl).toBe("https://portal.example/final");
     expect(result.browser?.title).toBe("Tariff portal");
-    expect(result.evidence).toEqual([PROBE_EVIDENCE.BROWSER_RESPONSE, PROBE_EVIDENCE.BROWSER_TEXT]);
+    expect(result.evidence).toEqual([
+      PROBE_EVIDENCE.BROWSER_RESPONSE,
+      PROBE_EVIDENCE.BROWSER_TEXT,
+      PROBE_EVIDENCE.TARIFF_KEYWORD,
+      PROBE_EVIDENCE.CUSTOMS_KEYWORD,
+      PROBE_EVIDENCE.DUTY_KEYWORD,
+    ]);
     expect(result.error).toBeNull();
     expect(pageClosed).toBe(true);
     expect(sessionClosed).toBe(true);
@@ -124,7 +132,25 @@ describe("probeWorkflow", () => {
     expect(result.browser?.status).toBeNull();
     expect(result.browser?.finalUrl).toBeNull();
     // No response observed, so no browser_response evidence is claimed.
-    expect(result.evidence).toEqual([PROBE_EVIDENCE.BROWSER_TEXT]);
+    expect(result.evidence).toEqual([
+      PROBE_EVIDENCE.BROWSER_TEXT,
+      PROBE_EVIDENCE.TARIFF_KEYWORD,
+      PROBE_EVIDENCE.CUSTOMS_KEYWORD,
+      PROBE_EVIDENCE.DUTY_KEYWORD,
+    ]);
+  });
+
+  it("emits no keyword evidence when the page lacks tariff terminology", async () => {
+    fetchFail();
+    const result = await probeWorkflow(seed, {
+      browserProvider: fakeProvider({
+        response: { status: 200, url: "https://portal.example/final" },
+        title: "Welcome",
+        text: "News and contact details.",
+      }),
+    });
+    expect(result.method).toBe(PROBE_METHOD.BROWSER);
+    expect(result.evidence).toEqual([PROBE_EVIDENCE.BROWSER_RESPONSE, PROBE_EVIDENCE.BROWSER_TEXT]);
   });
 
   it("fails with the launch error when the browser provider throws", async () => {

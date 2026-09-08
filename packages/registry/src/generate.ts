@@ -4,6 +4,7 @@ import { projectDataDir } from "@tariff-radar/shared";
 import type { RegistryEntry, CustomsRegistry } from "./types.js";
 
 const REGISTRY_FILE_NAME = "customs_registry.json";
+const NEEDS_REVIEW_FILE_NAME = "needs_review.json";
 const ATOMIC_FILE_SUFFIX = ".tmp";
 
 /**
@@ -26,6 +27,34 @@ export async function runWriteRegistry(
 ): Promise<string> {
   const dataDir = registryPath ? dirname(registryPath) : projectDataDir(import.meta.url);
   const finalPath = registryPath ?? join(dataDir, REGISTRY_FILE_NAME);
+  return writeRegistryFile(entries, finalPath, "registry entries", log);
+}
+
+/**
+ * Write human-triage output atomically from a subset of registry entries.
+ * Same atomic `.tmp` + rename discipline as {@link runWriteRegistry}, same
+ * envelope shape, so reviewers see the full evidence trail per entry.
+ * @param entries - Registry entries needing review (see `selectNeedsReviewEntries`).
+ * @param reviewPath - Optional explicit path; defaults to workspace `data/needs_review.json`.
+ * @param log - Success line sink; writes to stdout in production.
+ * @returns The path the review file was written to.
+ */
+export async function runWriteNeedsReview(
+  entries: RegistryEntry[],
+  reviewPath?: string,
+  log?: (line: string) => void,
+): Promise<string> {
+  const dataDir = reviewPath ? dirname(reviewPath) : projectDataDir(import.meta.url);
+  const finalPath = reviewPath ?? join(dataDir, NEEDS_REVIEW_FILE_NAME);
+  return writeRegistryFile(entries, finalPath, "needs-review entries", log);
+}
+
+async function writeRegistryFile(
+  entries: RegistryEntry[],
+  finalPath: string,
+  label: string,
+  log?: (line: string) => void,
+): Promise<string> {
   const tmpPath = finalPath + ATOMIC_FILE_SUFFIX;
 
   const registry: CustomsRegistry = {
@@ -34,7 +63,7 @@ export async function runWriteRegistry(
     entries,
   };
 
-  await mkdir(dataDir, { recursive: true });
+  await mkdir(dirname(finalPath), { recursive: true });
   try {
     await writeFile(tmpPath, JSON.stringify(registry, null, 2) + "\n", "utf8");
     await rename(tmpPath, finalPath);
@@ -44,6 +73,6 @@ export async function runWriteRegistry(
     await rm(tmpPath, { force: true }).catch(() => undefined);
     throw error;
   }
-  log?.(`Wrote ${registry.entries.length} registry entries at ${finalPath}`);
+  log?.(`Wrote ${registry.entries.length} ${label} at ${finalPath}`);
   return finalPath;
 }

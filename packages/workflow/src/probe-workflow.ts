@@ -2,6 +2,7 @@ import {
   PROBE_EVIDENCE,
   PROBE_METHOD,
   ProbeRunLogger,
+  assessContentRelevance,
   noopProbeLogger,
   runDirectProbe,
 } from "@tariff-radar/probe-core";
@@ -84,10 +85,12 @@ export async function probeWorkflow(seed: WorkflowSeed, options: ProbeWorkflowOp
       try {
         const response = await page.goto(seed.portalUrl);
         const text = await page.text();
+        const title = await page.title();
         const status = response?.status() ?? null;
         const finalUrl = response?.url() ?? null;
         const latencyMs = Math.round(performance.now() - browserStartedAt);
         log.browserComplete(options.browserProvider.name, status, finalUrl, latencyMs);
+        const relevance = assessContentRelevance({ title, text });
         return {
           seed,
           method: PROBE_METHOD.BROWSER,
@@ -96,13 +99,19 @@ export async function probeWorkflow(seed: WorkflowSeed, options: ProbeWorkflowOp
           browser: {
             status,
             finalUrl,
-            title: await page.title(),
+            title,
             text,
             latencyMs,
           },
           // Claim only what was observed: a null response yields no
           // browser_response evidence, even though the page rendered.
-          evidence: [...(status !== null ? [PROBE_EVIDENCE.BROWSER_RESPONSE] : []), PROBE_EVIDENCE.BROWSER_TEXT],
+          // Keyword evidence comes from the pure content-relevance check;
+          // transport success alone never implies relevance.
+          evidence: [
+            ...(status !== null ? [PROBE_EVIDENCE.BROWSER_RESPONSE] : []),
+            PROBE_EVIDENCE.BROWSER_TEXT,
+            ...relevance.evidence,
+          ],
           error: null,
         };
       } finally {

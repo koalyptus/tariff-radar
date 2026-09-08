@@ -187,11 +187,13 @@ usage errors. Per-seed progress prints on stderr, the result table on stdout.
 
 Pass `--log=json` for the original machine-readable JSON lines.
 
-The CLI prints a per-seed summary to stdout and writes `data/customs_registry.json`
-from completed workflow results (Phase 8): every entry preserves seed
-provenance with verification status, method, provider, and evidence. All
-records stay `unverified` until content-relevance checks land (Phase 10).
-In the results above, `HTTP 200` means the portal answered
+The CLI prints a per-seed summary to stdout, writes `data/customs_registry.json`
+from completed workflow results (Phase 8), and writes `data/needs_review.json`
+with the subset needing human triage (Phase 10): failed runs and
+transport-only successes without observed tariff-domain terminology. Every
+entry preserves seed provenance with verification status, method, provider,
+and evidence. All records stay `unverified`; content signals live in
+evidence only. In the results above, `HTTP 200` means the portal answered
 HTTP, not that tariff content was verified (see _Evidence and Limitations_).
 
 ## Evidence and Limitations
@@ -202,8 +204,10 @@ HTTP, not that tariff content was verified (see _Evidence and Limitations_).
 - Domain patterns alone do not establish official status.
 - Registry timestamps, source attribution, response metadata, and probe logs are
   essential for reviewing each result.
-- Seeds that fail content-relevance checks will be separated into a
-  `needs_review.json` file for human triage (future, Phase 10).
+- Seeds that fail content-relevance checks are separated into a
+  `needs_review.json` file for human triage, preserving the full evidence
+  trail per entry. English keywords only; absence of a match never proves a
+  portal lacks tariff content.
 - Any regulatory interpretation must be checked against the original authority
   and should not be treated as legal advice.
 
@@ -211,11 +215,15 @@ HTTP, not that tariff content was verified (see _Evidence and Limitations_).
 
 ### Evidence
 
-| Evidence key       | Observation                                                            |
-| ------------------ | ---------------------------------------------------------------------- |
-| `direct_response`  | A direct HTTP request received a response from the portal's server.    |
-| `browser_response` | A browser-rendered page returned an HTTP status code.                  |
-| `browser_text`     | Extractable text content was retrieved from the browser-rendered page. |
+| Evidence key       | Observation                                                              |
+| ------------------ | ------------------------------------------------------------------------ |
+| `direct_response`  | A direct HTTP request received a response from the portal's server.      |
+| `browser_response` | A browser-rendered page returned an HTTP status code.                    |
+| `browser_text`     | Extractable text content was retrieved from the browser-rendered page.   |
+| `tariff_keyword`   | English tariff terminology (`tariff`, `tariffs`) observed in title/text. |
+| `customs_keyword`  | English customs terminology (`custom`, `customs`) observed.              |
+| `duty_keyword`     | English duty terminology (`duty`, `duties`) observed.                    |
+| `hs_code_keyword`  | HS-code terminology (`hs code`, `hts`, `harmonized system`) observed.    |
 
 Absence of an observation produces no entry — e.g., a failed direct probe yields `evidence: []` alongside an error message.
 
