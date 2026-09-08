@@ -8,13 +8,19 @@ import type { WorkflowResult } from "@tariff-radar/probe-core";
  */
 
 /**
+ * Result-table column order. The error-detail row spans all of them, so it
+ * references this array's length instead of a bare literal.
+ */
+const TABLE_HEAD = ["ISO", "METHOD", "PROVIDER", "OUTCOME", "EVIDENCE"];
+
+/**
  * Format all workflow results as an aligned table.
  * @param results - Completed workflow results in run order.
  * @returns Bordered table with one row per seed and detail lines for errors.
  */
 export function formatTable(results: WorkflowResult[]): string {
   const table = new Table({
-    head: ["ISO", "METHOD", "PROVIDER", "OUTCOME", "EVIDENCE"],
+    head: TABLE_HEAD,
     style: { head: [], border: [] },
   });
   for (const result of results) {
@@ -27,7 +33,7 @@ export function formatTable(results: WorkflowResult[]): string {
     ]);
     const detail = describeDetail(result);
     if (detail !== null) {
-      table.push([{ colSpan: 5, content: detail }]);
+      table.push([{ colSpan: TABLE_HEAD.length, content: detail }]);
     }
   }
   return table.toString();

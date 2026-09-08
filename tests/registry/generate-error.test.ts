@@ -16,7 +16,7 @@ vi.mock("node:fs/promises", () => ({
   writeFile: (...args: unknown[]) => mockWriteFile(...args),
 }));
 
-const { runWriteRegistry } = await import("../../packages/registry/src/generate.js");
+const { runWriteRegistry } = await import("@tariff-radar/registry");
 
 const seedEntry = {
   isoCode: "US",

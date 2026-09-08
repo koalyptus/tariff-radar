@@ -12,7 +12,7 @@ import {
 import { projectDataDir } from "@tariff-radar/shared";
 import { probeTargets, probeWorkflow } from "@tariff-radar/workflow";
 import type { RunDeps } from "@tariff-radar/workflow";
-import { BROWSER_MODE, MAX_CONCURRENCY } from "@tariff-radar/workflow";
+import { BROWSER_MODE, DEFAULT_CONCURRENCY, MAX_CONCURRENCY } from "@tariff-radar/workflow";
 import type { BrowserMode } from "@tariff-radar/workflow";
 import { stdioOutput } from "../output.js";
 import type { RunCliOutput } from "../output.js";
@@ -109,7 +109,10 @@ export function parseProbeArgs(argv: string[]): CliOptions {
       default: "pretty",
       describe: "Progress rendering: pretty stage lines on stderr, or JSON lines.",
     })
-    .option("concurrency", { type: "number", describe: "Max parallel seed probes (default 6)." })
+    .option("concurrency", {
+      type: "number",
+      describe: `Max parallel seed probes (default ${String(DEFAULT_CONCURRENCY)}).`,
+    })
     .strict()
     .help()
     .version(false)

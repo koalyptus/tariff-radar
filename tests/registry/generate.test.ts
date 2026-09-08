@@ -2,8 +2,9 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it, vi } from "vitest";
-import { runWriteRegistry } from "../../packages/registry/src/generate.js";
-import type { RegistryEntry } from "../../packages/registry/src/types.js";
+import { runWriteRegistry } from "@tariff-radar/registry";
+import { REGISTRY_SCHEMA_VERSION } from "@tariff-radar/registry";
+import type { RegistryEntry } from "@tariff-radar/registry";
 
 // Hermetic default-path coverage: the tests below exercise the
 // no-explicit-path branch, but `projectDataDir` is redirected to a fake tmp
@@ -128,7 +129,7 @@ describe("runWriteRegistry", () => {
       const out = join(dir, "registry.json");
       await runWriteRegistry([seed], out);
       const written = JSON.parse(readFileSync(out, "utf8")) as { schemaVersion: number; generatedAt: string };
-      expect(written.schemaVersion).toBe(1);
+      expect(written.schemaVersion).toBe(REGISTRY_SCHEMA_VERSION);
       expect(typeof written.generatedAt).toBe("string");
       expect(() => new Date(written.generatedAt)).not.toThrow();
     } finally {

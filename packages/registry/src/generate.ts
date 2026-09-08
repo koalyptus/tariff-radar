@@ -1,6 +1,7 @@
 import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { projectDataDir } from "@tariff-radar/shared";
+import { REGISTRY_SCHEMA_VERSION } from "./types.js";
 import type { RegistryEntry, CustomsRegistry } from "./types.js";
 
 const REGISTRY_FILE_NAME = "customs_registry.json";
@@ -58,7 +59,7 @@ async function writeRegistryFile(
   const tmpPath = finalPath + ATOMIC_FILE_SUFFIX;
 
   const registry: CustomsRegistry = {
-    schemaVersion: 1,
+    schemaVersion: REGISTRY_SCHEMA_VERSION,
     generatedAt: new Date().toISOString(),
     entries,
   };
