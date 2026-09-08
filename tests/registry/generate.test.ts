@@ -1,10 +1,33 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
-import { runWriteRegistry } from "../../packages/registry/src/generate.js";
-import type { RegistryEntry } from "../../packages/registry/src/types.js";
+import { join } from "node:path";
+import { afterAll, describe, expect, it, vi } from "vitest";
+import { runWriteRegistry } from "@tariff-radar/registry";
+import { REGISTRY_FILE_NAME, REGISTRY_SCHEMA_VERSION } from "@tariff-radar/registry";
+import type { RegistryEntry } from "@tariff-radar/registry";
+
+// Hermetic default-path coverage: the tests below exercise the
+// no-explicit-path branch, but `projectDataDir` is redirected to a fake tmp
+// dir so the suite never touches the real workspace `data/` — not even with
+// backup/restore, which still leaks on crash or interrupt.
+const workspace = vi.hoisted(() => ({ dir: "" }));
+
+vi.mock("@tariff-radar/shared", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@tariff-radar/shared")>();
+  if (!workspace.dir) {
+    const { mkdtempSync: makeTemp } = await import("node:fs");
+    const { tmpdir: osTmp } = await import("node:os");
+    const { join: joinPath } = await import("node:path");
+    workspace.dir = makeTemp(joinPath(osTmp(), "fake-workspace-"));
+  }
+  return { ...actual, projectDataDir: () => workspace.dir };
+});
+
+afterAll(() => {
+  if (workspace.dir) {
+    rmSync(workspace.dir, { recursive: true, force: true });
+  }
+});
 
 const seed: RegistryEntry = {
   isoCode: "US",
@@ -25,6 +48,7 @@ const seed: RegistryEntry = {
     browserFinalUrl: null,
     browserTitle: null,
     browserLatencyMs: null,
+    browserSessionId: null,
     evidence: ["direct_response"],
     error: null,
   },
@@ -46,50 +70,17 @@ describe("runWriteRegistry", () => {
   });
 
   it("falls back to projectDataDir when no explicit path is given", async () => {
-    const out = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "data", "customs_registry.json");
-    let existed = false;
-    let backup = "";
-    try {
-      try {
-        backup = readFileSync(out, "utf8");
-        existed = true;
-      } catch {
-        existed = false;
-      }
-      const result = await runWriteRegistry([seed]);
-      expect(result).toBe(out);
-      const written = JSON.parse(readFileSync(out, "utf8")) as { entries: RegistryEntry[] };
-      expect(written.entries).toHaveLength(1);
-    } finally {
-      if (existed) {
-        writeFileSync(out, backup);
-      } else {
-        rmSync(out, { force: true });
-      }
-    }
+    const result = await runWriteRegistry([seed]);
+    expect(result).toBe(join(workspace.dir, REGISTRY_FILE_NAME));
+    const written = JSON.parse(readFileSync(result, "utf8")) as { entries: RegistryEntry[] };
+    expect(written.entries).toHaveLength(1);
   });
 
-  it("defaults to the workspace data directory when path is explicitly provided", async () => {
-    const out = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "data", "customs_registry.json");
-    let existed = false;
-    let backup = "";
-    try {
-      try {
-        backup = readFileSync(out, "utf8");
-        existed = true;
-      } catch {
-        existed = false;
-      }
-      await expect(runWriteRegistry([seed], out)).resolves.toBe(out);
-      const written = JSON.parse(readFileSync(out, "utf8")) as { entries: unknown[] };
-      expect(written.entries).toHaveLength(1);
-    } finally {
-      if (existed) {
-        writeFileSync(out, backup);
-      } else {
-        rmSync(out, { force: true });
-      }
-    }
+  it("resolves an explicit path inside the data directory", async () => {
+    const out = join(workspace.dir, REGISTRY_FILE_NAME);
+    await expect(runWriteRegistry([seed], out)).resolves.toBe(out);
+    const written = JSON.parse(readFileSync(out, "utf8")) as { entries: unknown[] };
+    expect(written.entries).toHaveLength(1);
   });
 
   it("writes to an explicit path and logs the result", async () => {
@@ -138,7 +129,7 @@ describe("runWriteRegistry", () => {
       const out = join(dir, "registry.json");
       await runWriteRegistry([seed], out);
       const written = JSON.parse(readFileSync(out, "utf8")) as { schemaVersion: number; generatedAt: string };
-      expect(written.schemaVersion).toBe(1);
+      expect(written.schemaVersion).toBe(REGISTRY_SCHEMA_VERSION);
       expect(typeof written.generatedAt).toBe("string");
       expect(() => new Date(written.generatedAt)).not.toThrow();
     } finally {

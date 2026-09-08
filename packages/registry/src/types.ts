@@ -39,6 +39,8 @@ export interface RegistryVerification {
   browserFinalUrl: string | null;
   browserTitle: string | null;
   browserLatencyMs: number | null;
+  /** Provider session id for console lookup, or null when unreported. */
+  browserSessionId: string | null;
   evidence: string[];
   error: string | null;
 }
@@ -47,9 +49,12 @@ export interface RegistryEntry extends Seed {
   verification: RegistryVerification;
 }
 
+/** Schema version stamped into every registry envelope; single source of truth. */
+export const REGISTRY_SCHEMA_VERSION = 1 as const;
+
 /** Versioned set of registry records written to `data/customs_registry.json`. */
 export interface CustomsRegistry {
-  schemaVersion: 1;
+  schemaVersion: typeof REGISTRY_SCHEMA_VERSION;
   generatedAt: string;
   entries: RegistryEntry[];
 }

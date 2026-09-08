@@ -34,7 +34,8 @@ module + resolution, shared base in `tsconfig.base.json`.
   `pnpm build`). Solari fallback by default when `SOLARI_API_KEY` is set
   (warns and continues direct-only without it); `--browser=direct` forces
   direct-only, explicit `--browser=solari` without a key fails fast.
-  The probe command writes `data/customs_registry.json` atomically.
+  The probe command writes `data/customs_registry.json` and
+  `data/needs_review.json` atomically.
 
 ## Package boundaries
 

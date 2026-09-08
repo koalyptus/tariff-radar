@@ -18,6 +18,10 @@ export const PROBE_EVIDENCE = {
   DIRECT_RESPONSE: "direct_response",
   BROWSER_RESPONSE: "browser_response",
   BROWSER_TEXT: "browser_text",
+  TARIFF_KEYWORD: "tariff_keyword",
+  CUSTOMS_KEYWORD: "customs_keyword",
+  DUTY_KEYWORD: "duty_keyword",
+  HS_CODE_KEYWORD: "hs_code_keyword",
 } as const;
 
 /** One of the {@link PROBE_METHOD} outcome values. */

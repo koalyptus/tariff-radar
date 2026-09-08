@@ -11,8 +11,8 @@ afterEach(() => {
 
 describe("probe entry on usage error", () => {
   it("sets exit 2", async () => {
-    process.argv = ["node", "probe.js", "--nope"];
-    process.exitCode = await runProbeCommand(["--nope"]);
+    process.argv = ["node", "probe.js", "--bogus"];
+    process.exitCode = await runProbeCommand(["--bogus"]);
     expect(process.exitCode).toBe(2);
   });
 });

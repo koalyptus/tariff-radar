@@ -184,12 +184,12 @@ sequence and verifies cleanup on every path.
 
 ## Phase 8: Registry Output
 
-- [ ] Define the final registry entry schema from observed workflow results.
-- [ ] Preserve seed provenance in every successful registry record.
-- [ ] Record verification status, timestamp, method, provider, and evidence.
-- [ ] Represent failed and inconclusive runs without calling them verified.
-- [ ] Write registry output atomically to `data/customs_registry.json`.
-- [ ] Do not generate registry records from seeds alone.
+- [x] Define the final registry entry schema from observed workflow results.
+- [x] Preserve seed provenance in every successful registry record.
+- [x] Record verification status, timestamp, method, provider, and evidence.
+- [x] Represent failed and inconclusive runs without calling them verified.
+- [x] Write registry output atomically to `data/customs_registry.json`.
+- [x] Do not generate registry records from seeds alone.
 
 **Done when:** The output contains only records supported by a completed
 workflow result and can be reviewed without reading application logs.
@@ -200,31 +200,48 @@ workflow result and can be reviewed without reading application logs.
 - [x] Add a CLI mode for all eight seeds.
 - [x] Make the provider selection explicit.
 - [x] Require `SOLARI_API_KEY` only when the Solari provider is selected.
-- [ ] Print a concise result summary and output path.
+- [x] Print a concise result summary and output path.
 - [x] Add a dry-run or direct-only mode that needs no Solari credentials.
 - [x] Document the real commands in the README.
 
 **Done when:** A contributor can run one direct-only example without secrets,
 and one Solari-backed example with `SOLARI_API_KEY`.
 
-Note: `pnpm probe` prints a concise per-seed summary to stdout but writes no
-registry file yet, so the summary half of the checkbox is done and the output
-path half (Phase 8) stays open.
-
 ## Phase 10: Verification Quality
 
-- [ ] Verify that the final URL and page title are captured.
-- [ ] Detect relevant tariff, customs, duty, or HS-code terminology.
+- [x] Verify that the final URL and page title are captured.
+- [x] Detect relevant tariff, customs, duty, or HS-code terminology.
 - [ ] Detect relevant links and downloadable tariff documents.
-- [ ] Separate authority verification from content relevance verification.
-- [ ] Store evidence snippets or stable evidence identifiers.
-      |- [ ] Write inconclusive or content-relevance-failing seeds to
+- [x] Separate authority verification from content relevance verification.
+- [x] Store evidence snippets or stable evidence identifiers.
+      |- [x] Write inconclusive or content-relevance-failing seeds to
       | `needs_review.json` for human triage, preserving the full evidence trail.
-- [ ] Avoid inferring CAPTCHA, WAF, geo-blocking, or stealth requirements
+- [x] Avoid inferring CAPTCHA, WAF, geo-blocking, or stealth requirements
       | without observations.
 
 **Done when:** A successful network response alone cannot produce a verified
 customs registry record.
+
+Notes (Phase 10, as shipped):
+
+- Final URL is captured on both paths; page title is captured on the browser
+  path only. Direct probes stay `fetch`-only by design, so direct titles
+  remain null.
+- Terminology detection is English landing-page keywords
+  (`assessContentRelevance` in `probe-core`); any one of the four keyword
+  families keeps an entry out of triage. No match proves nothing.
+- Direct probes capture capped textual bodies (binary skipped, failures yield
+  null text), so `direct`-ok entries carry keyword evidence as well. The
+  browser path exists for reach — portals unreachable or unrenderable over
+  direct fetch — not for keywords: keyword-less direct runs sit in triage
+  without automatic browser escalation.
+- Authority vs content stays separated by construction: authority lives in
+  seed provenance (`portalUrl` vs `sourceUrl`), content lives in evidence
+  keys, and `status` stays `unverified` — no score, no threshold.
+- Evidence uses stable identifiers, never raw page snippets.
+- Link/document href extraction needs a `BrowserProbePage` contract
+  extension (links provider) and belongs with Phase 11 document ingestion;
+  deferred, not silently dropped.
 
 ## Phase 11: Document Ingestion
 

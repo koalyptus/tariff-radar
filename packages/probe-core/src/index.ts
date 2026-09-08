@@ -51,6 +51,8 @@ export interface BrowserProbeSession {
   newPage(): Promise<BrowserProbePage>;
   /** Release the browser and any provider-side resources. Always called. */
   close(): Promise<void>;
+  /** Cloud session id when the provider runs remotely, otherwise absent. */
+  readonly sessionId?: string;
 }
 
 /**
@@ -80,6 +82,8 @@ export interface DirectProbeResult {
   latencyMs: number;
   /** Page title when captured; direct probes leave this null. */
   title: string | null;
+  /** Capped body text for content checks on success; null otherwise. */
+  text: string | null;
   /** Attempts used, including retries. */
   attempts: number;
   /** Failure reason (`HTTP <status>` or the network error), or null on success. */
@@ -109,12 +113,14 @@ export interface WorkflowResult {
   provider: string | null;
   /** Direct attempt outcome, always present. */
   direct: DirectProbeResult;
-  /** Browser observation (status, URLs, title, text, latency), or null when unused. */
+  /** Browser observation (status, URLs, title, text, session, latency), or null when unused. */
   browser: {
     status: number | null;
     finalUrl: string | null;
     title: string | null;
     text: string | null;
+    /** Provider session id for console lookup, or null when unreported. */
+    sessionId: string | null;
     /** Wall-clock time for the browser fallback, launch through observation. */
     latencyMs: number;
   } | null;
@@ -124,7 +130,9 @@ export interface WorkflowResult {
   error: string | null;
 }
 
-export { DEFAULT_DIRECT_PROBE_TIMEOUT_MS, runDirectProbe } from "./direct-probe.js";
+export { DEFAULT_DIRECT_PROBE_TIMEOUT_MS, DIRECT_PROBE_MAX_BODY_CHARS, runDirectProbe } from "./direct-probe.js";
+export { CONTENT_RELEVANCE_TERM, assessContentRelevance } from "./content-relevance.js";
+export type { ContentRelevanceInput, ContentRelevanceResult, ContentRelevanceTerm } from "./content-relevance.js";
 export { formatStage, progressLogger } from "./progress.js";
 export { consoleProbeLogger, noopProbeLogger, PROBE_LOG_EVENT, ProbeRunLogger } from "./logger.js";
 export type {

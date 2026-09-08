@@ -3,8 +3,8 @@
     "isoCode": "US",
     "countryName": "United States",
     "authority": "United States International Trade Commission",
-    "portalUrl": "https://hts.usitc.gov/",
-    "sourceUrl": "https://www.usitc.gov/tariff_affairs"
+    "portalUrl": "https://hts.usitc.gov",
+    "sourceUrl": "https://hts.usitc.gov"
   },
   {
     "isoCode": "MX",
@@ -24,8 +24,8 @@
     "isoCode": "DE",
     "countryName": "Germany",
     "authority": "German Customs (Zoll)",
-    "portalUrl": "https://www.zoll.de/EN/Home/home_node.html",
-    "sourceUrl": "https://www.zoll.de/EN/Businesses/Movement-of-goods/Import/import_node.html"
+    "portalUrl": "https://www.zoll.de/EN/Businesses/Movement-of-goods/Import/import_node.html",
+    "sourceUrl": "https://www.zoll.de/EN/Home/home_node.html"
   },
   {
     "isoCode": "CN",

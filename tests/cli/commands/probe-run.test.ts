@@ -1,13 +1,36 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import type { BrowserProbeProvider, WorkflowResult } from "@tariff-radar/probe-core";
 import { noopProbeLogger } from "@tariff-radar/probe-core";
 import type { Seed } from "@tariff-radar/registry";
+import { NEEDS_REVIEW_FILE_NAME, REGISTRY_FILE_NAME } from "@tariff-radar/registry";
 import { runProbeCommand, defaultDeps } from "@tariff-radar/cli";
 import type { RunCliOutput } from "@tariff-radar/cli";
 import type { RunDeps } from "@tariff-radar/workflow";
+
+// Hermetic CLI coverage: tests that exercise default seeds/registry/review
+// paths run against a fake tmp data dir, so the suite never touches the real
+// workspace `data/` — no backup/restore, hence nothing to leak on crash.
+const workspace = vi.hoisted(() => ({ dir: "" }));
+
+vi.mock("@tariff-radar/shared", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@tariff-radar/shared")>();
+  if (!workspace.dir) {
+    const { mkdtempSync: makeTemp } = await import("node:fs");
+    const { tmpdir: osTmp } = await import("node:os");
+    const { join: joinPath } = await import("node:path");
+    workspace.dir = makeTemp(joinPath(osTmp(), "fake-workspace-"));
+  }
+  return { ...actual, projectDataDir: () => workspace.dir };
+});
+
+afterAll(() => {
+  if (workspace.dir) {
+    rmSync(workspace.dir, { recursive: true, force: true });
+  }
+});
 
 const seed: Seed = {
   isoCode: "US",
@@ -28,7 +51,16 @@ function directResult(): WorkflowResult {
     },
     method: "direct",
     provider: null,
-    direct: { ok: true, status: 200, finalUrl: seed.portalUrl, latencyMs: 9, title: null, attempts: 1, error: null },
+    direct: {
+      ok: true,
+      status: 200,
+      finalUrl: seed.portalUrl,
+      latencyMs: 9,
+      title: null,
+      text: null,
+      attempts: 1,
+      error: null,
+    },
     browser: null,
     evidence: ["direct_response"],
     error: null,
@@ -94,25 +126,37 @@ describe("runProbeCommand", () => {
     const { dir, seedsFile } = writeSeeds();
     const recorded = recordOutput();
     try {
+      const registryFile = join(dir, "registry.json");
       await expect(
-        runProbeCommand(["US"], stubDeps(directResult()), seedsFile, undefined, recorded.output),
+        runProbeCommand(["US"], stubDeps(directResult()), seedsFile, registryFile, recorded.output),
       ).resolves.toBe(0);
       expect(recorded.tables).toHaveLength(1);
       expect(recorded.tables[0]).toContain("US");
       expect(recorded.progress[0]).toContain("Probe: STARTING");
       expect(recorded.progress.some((l) => l.includes("Probe: COMPLETED"))).toBe(true);
       expect(recorded.progress.some((l) => l.includes("Registry: wrote"))).toBe(true);
+      expect(recorded.progress.some((l) => l.includes("Review: wrote 1 entries"))).toBe(true);
+      const review = JSON.parse(readFileSync(join(dir, "needs_review.json"), "utf8")) as {
+        entries: unknown[];
+      };
+      expect(review.entries).toHaveLength(1);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
   });
 
   it("defaults to the workspace seeds file", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "run-cli-test-"));
     const recorded = recordOutput();
-    await expect(
-      runProbeCommand(["US"], stubDeps(directResult()), undefined, undefined, recorded.output),
-    ).resolves.toBe(0);
-    expect(recorded.tables).toHaveLength(1);
+    try {
+      writeFileSync(join(workspace.dir, "seeds.json"), JSON.stringify([seed]));
+      await expect(
+        runProbeCommand(["US"], stubDeps(directResult()), undefined, join(dir, "registry.json"), recorded.output),
+      ).resolves.toBe(0);
+      expect(recorded.tables).toHaveLength(1);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("returns 0 for JSON rendering", async () => {
@@ -120,7 +164,13 @@ describe("runProbeCommand", () => {
     const recorded = recordOutput();
     try {
       await expect(
-        runProbeCommand(["US", "--log=json"], stubDeps(directResult()), seedsFile, undefined, recorded.output),
+        runProbeCommand(
+          ["US", "--log=json"],
+          stubDeps(directResult()),
+          seedsFile,
+          join(dir, "registry.json"),
+          recorded.output,
+        ),
       ).resolves.toBe(0);
       expect(recorded.tables).toHaveLength(1);
       expect(recorded.progress).toEqual([]);
@@ -159,7 +209,9 @@ describe("runProbeCommand", () => {
         ...base,
         probeWorkflow: (async () => queued[index++]) as RunDeps["probeWorkflow"],
       };
-      await expect(runProbeCommand([], deps, seedsFile, undefined, recordOutput().output)).resolves.toBe(0);
+      await expect(
+        runProbeCommand([], deps, seedsFile, join(dir, "registry.json"), recordOutput().output),
+      ).resolves.toBe(0);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -170,17 +222,117 @@ describe("runProbeCommand", () => {
     const failed: WorkflowResult = {
       ...directResult(),
       method: "failed",
-      direct: { ok: false, status: null, finalUrl: null, latencyMs: 9, title: null, attempts: 1, error: "nope" },
+      direct: {
+        ok: false,
+        status: null,
+        finalUrl: null,
+        latencyMs: 9,
+        title: null,
+        text: null,
+        attempts: 1,
+        error: "stub error",
+      },
       evidence: [],
-      error: "nope",
+      error: "stub error",
     };
     try {
       await expect(
-        runProbeCommand(["US", "--browser=direct"], stubDeps(failed), seedsFile, undefined, recordOutput().output),
+        runProbeCommand(
+          ["US", "--browser=direct"],
+          stubDeps(failed),
+          seedsFile,
+          join(dir, "registry.json"),
+          recordOutput().output,
+        ),
       ).resolves.toBe(1);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  it("leaves content-relevant browser runs out of triage", async () => {
+    const { dir, seedsFile } = writeSeeds();
+    const recorded = recordOutput();
+    const relevant: WorkflowResult = {
+      ...directResult(),
+      method: "browser",
+      provider: "fake",
+      direct: {
+        ok: false,
+        status: null,
+        finalUrl: null,
+        latencyMs: 7,
+        title: null,
+        text: null,
+        attempts: 1,
+        error: "stub error",
+      },
+      browser: {
+        status: 200,
+        finalUrl: seed.portalUrl,
+        title: "Tariff portal",
+        text: "customs duty",
+        sessionId: "fake-session-1",
+        latencyMs: 11,
+      },
+      evidence: ["browser_response", "browser_text", "tariff_keyword", "customs_keyword", "duty_keyword"],
+      error: null,
+    };
+    try {
+      await expect(
+        runProbeCommand(["US"], stubDeps(relevant), seedsFile, join(dir, "registry.json"), recorded.output),
+      ).resolves.toBe(0);
+      expect(recorded.progress.some((l) => l.includes("Review: wrote 0 entries"))).toBe(true);
+      const review = JSON.parse(readFileSync(join(dir, "needs_review.json"), "utf8")) as {
+        entries: unknown[];
+      };
+      expect(review.entries).toEqual([]);
+      const registry = JSON.parse(readFileSync(join(dir, "registry.json"), "utf8")) as {
+        entries: Array<{ verification: { browserSessionId: string | null } }>;
+      };
+      expect(registry.entries[0]?.verification.browserSessionId).toBe("fake-session-1");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("honours an explicit review-file override", async () => {
+    const { dir, seedsFile } = writeSeeds();
+    const recorded = recordOutput();
+    try {
+      const reviewFile = join(dir, "custom-review.json");
+      await expect(
+        runProbeCommand(
+          ["US"],
+          stubDeps(directResult()),
+          seedsFile,
+          join(dir, "registry.json"),
+          recorded.output,
+          reviewFile,
+        ),
+      ).resolves.toBe(0);
+      const review = JSON.parse(readFileSync(reviewFile, "utf8")) as { entries: unknown[] };
+      expect(review.entries).toHaveLength(1);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("defaults to the data directory when no paths are given", async () => {
+    writeFileSync(join(workspace.dir, "seeds.json"), JSON.stringify([seed]));
+    const recorded = recordOutput();
+    await expect(
+      runProbeCommand(["US"], stubDeps(directResult()), undefined, undefined, recorded.output),
+    ).resolves.toBe(0);
+    const registry = JSON.parse(readFileSync(join(workspace.dir, REGISTRY_FILE_NAME), "utf8")) as {
+      entries: unknown[];
+    };
+    const review = JSON.parse(readFileSync(join(workspace.dir, NEEDS_REVIEW_FILE_NAME), "utf8")) as {
+      entries: unknown[];
+    };
+    expect(registry.entries).toHaveLength(1);
+    expect(review.entries).toHaveLength(1);
+    expect(recorded.progress.some((l) => l.includes("Review: wrote"))).toBe(true);
   });
 
   it("returns 0 for --help without probing", async () => {
@@ -199,9 +351,9 @@ describe("runProbeCommand", () => {
     const recorded = recordOutput();
     try {
       await expect(
-        runProbeCommand(["--nope"], stubDeps(directResult()), seedsFile, undefined, recorded.output),
+        runProbeCommand(["--bogus"], stubDeps(directResult()), seedsFile, undefined, recorded.output),
       ).resolves.toBe(2);
-      expect(recorded.errors).toEqual(["Unknown argument: nope"]);
+      expect(recorded.errors).toEqual(["Unknown argument: bogus"]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

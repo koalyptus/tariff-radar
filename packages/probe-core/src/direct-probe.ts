@@ -6,6 +6,9 @@ export const DEFAULT_DIRECT_PROBE_TIMEOUT_MS = 10_000;
 /** Direct attempts per probe: one try plus two retries for flaky edges. */
 export const DEFAULT_DIRECT_PROBE_ATTEMPTS = 3;
 
+/** Upper bound on captured body characters: a memory/regex bound, not a semantic one. */
+export const DIRECT_PROBE_MAX_BODY_CHARS = 256_000;
+
 /** Error message when probing is disabled before any attempt. */
 export const NO_ATTEMPTS_MESSAGE = "no attempts made";
 
@@ -23,6 +26,7 @@ const initialProbeResult: DirectProbeResult = {
   finalUrl: null,
   latencyMs: 0,
   title: null,
+  text: null,
   attempts: 0,
   error: null,
 };
@@ -31,7 +35,9 @@ const initialProbeResult: DirectProbeResult = {
  * Probe a URL with native `fetch` under a bounded timeout, retrying failed
  * attempts for flaky edges. Never throws: timeouts, network errors, and
  * non-2xx statuses fold into the returned result. A 2xx response alone never
- * means verified.
+ * means verified. Successful textual bodies are captured (capped) for
+ * content checks; binary bodies and body-read failures yield null text
+ * without revoking the transport success.
  * @param url - Candidate portal URL to request.
  * @param timeoutMs - Abort threshold per attempt; defaults to
  * {@link DEFAULT_DIRECT_PROBE_TIMEOUT_MS}.
@@ -57,14 +63,16 @@ export async function runDirectProbe(
         signal: AbortSignal.timeout(timeoutMs),
         headers: { "User-Agent": DIRECT_PROBE_USER_AGENT },
       });
+      const ok = response.ok;
       return {
         ...initialProbeResult,
-        ok: response.ok,
+        ok,
         status: response.status,
         finalUrl: response.url,
         latencyMs: Math.round(performance.now() - startedAt),
         attempts,
-        error: response.ok ? null : `HTTP ${response.status}`,
+        text: ok ? await readBodyText(response) : null,
+        error: ok ? null : `HTTP ${response.status}`,
       };
     } catch (error) {
       lastError = describeError(error, timeoutMs);
@@ -86,6 +94,37 @@ export async function runDirectProbe(
     attempts,
     error: lastError,
   };
+}
+
+/**
+ * Read a successful response body for content checks. Textual bodies only
+ * (missing content-type counts as textual); binary bodies are skipped rather
+ * than decoded into garbage. Never throws: a body-read failure yields null
+ * so transport success is never revoked by it.
+ * @param response - Successful fetch response.
+ * @returns The body capped at {@link DIRECT_PROBE_MAX_BODY_CHARS}, or null.
+ */
+async function readBodyText(response: Response): Promise<string | null> {
+  const contentType = response.headers?.get("content-type") ?? "";
+  if (!isTextualContent(contentType)) {
+    return null;
+  }
+  try {
+    return (await response.text()).slice(0, DIRECT_PROBE_MAX_BODY_CHARS);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Decide whether a body is worth scanning. Deliberately narrow: markup, text,
+ * and data serializations only. Anything else (PDF, images, archives) skips
+ * the scan instead of matching word boundaries against decoded noise.
+ * @param contentType - Raw `content-type` header value, possibly empty.
+ * @returns True for textual bodies, including a missing content-type.
+ */
+function isTextualContent(contentType: string): boolean {
+  return contentType === "" || /text|html|json|xml/i.test(contentType);
 }
 
 /**

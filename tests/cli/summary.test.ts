@@ -27,12 +27,13 @@ function directOk() {
     latencyMs: 42,
     attempts: 1,
     title: null,
+    text: null,
     error: null,
   };
 }
 
 function directFailed(error: string | null) {
-  return { ok: false, status: null, finalUrl: null, latencyMs: 7, title: null, attempts: 1, error };
+  return { ok: false, status: null, finalUrl: null, latencyMs: 7, title: null, text: null, attempts: 1, error };
 }
 
 function workflowResult(partial: Partial<WorkflowResult> & { seed: WorkflowResult["seed"] }): WorkflowResult {
@@ -61,6 +62,7 @@ describe("formatTable", () => {
           finalUrl: "https://www.snice.gob.mx/final",
           title: "SNICE",
           text: "arancel",
+          sessionId: "solari-session-1",
           latencyMs: 812,
         },
         evidence: ["browser_response", "browser_text"],
@@ -103,7 +105,7 @@ describe("formatTable", () => {
         method: "browser",
         provider: "solari",
         direct: directFailed("timeout"),
-        browser: { status: null, finalUrl: null, title: null, text: "body", latencyMs: 96 },
+        browser: { status: null, finalUrl: null, title: null, text: "body", sessionId: null, latencyMs: 96 },
         evidence: ["browser_text"],
       }),
     ]);

@@ -33,6 +33,7 @@ function buildVerification(result: WorkflowResult, checkedAt: string): RegistryV
     browserFinalUrl: result.browser?.finalUrl ?? null,
     browserTitle: result.browser?.title ?? null,
     browserLatencyMs: result.browser?.latencyMs ?? null,
+    browserSessionId: result.browser?.sessionId ?? null,
     evidence: result.evidence,
     error: result.error,
   };

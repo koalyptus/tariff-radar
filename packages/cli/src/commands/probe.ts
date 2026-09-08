@@ -1,12 +1,20 @@
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import yargs from "yargs";
 import { PROBE_METHOD, consoleProbeLogger, progressLogger } from "@tariff-radar/probe-core";
 import { SolariBrowserProvider } from "@tariff-radar/provider-solari";
-import { loadSeeds, mapWorkflowResultsToEntries, runWriteRegistry } from "@tariff-radar/registry";
+import {
+  NEEDS_REVIEW_FILE_NAME,
+  REGISTRY_FILE_NAME,
+  loadSeeds,
+  mapWorkflowResultsToEntries,
+  runWriteNeedsReview,
+  runWriteRegistry,
+  selectNeedsReviewEntries,
+} from "@tariff-radar/registry";
 import { projectDataDir } from "@tariff-radar/shared";
 import { probeTargets, probeWorkflow } from "@tariff-radar/workflow";
 import type { RunDeps } from "@tariff-radar/workflow";
-import { BROWSER_MODE, MAX_CONCURRENCY } from "@tariff-radar/workflow";
+import { BROWSER_MODE, DEFAULT_CONCURRENCY, MAX_CONCURRENCY } from "@tariff-radar/workflow";
 import type { BrowserMode } from "@tariff-radar/workflow";
 import { stdioOutput } from "../output.js";
 import type { RunCliOutput } from "../output.js";
@@ -103,7 +111,10 @@ export function parseProbeArgs(argv: string[]): CliOptions {
       default: "pretty",
       describe: "Progress rendering: pretty stage lines on stderr, or JSON lines.",
     })
-    .option("concurrency", { type: "number", describe: "Max parallel seed probes (default 6)." })
+    .option("concurrency", {
+      type: "number",
+      describe: `Max parallel seed probes (default ${String(DEFAULT_CONCURRENCY)}).`,
+    })
     .strict()
     .help()
     .version(false)
@@ -182,6 +193,8 @@ export function defaultDeps(): RunDeps {
  * @param seedsFile - Seeds path override for tests; defaults to workspace data.
  * @param registryFile - Registry path override for tests; defaults to workspace `data/customs_registry.json`.
  * @param output - Injectable sinks; production defaults write stdio.
+ * @param reviewFile - Needs-review path override for tests; defaults to a
+ *   `needs_review.json` sibling of the resolved registry path.
  * @returns Process exit code: 0 ok, 1 on any failed result, 2 on usage errors.
  */
 export async function runProbeCommand(
@@ -190,6 +203,7 @@ export async function runProbeCommand(
   seedsFile?: string,
   registryFile?: string,
   output: RunCliOutput = stdioOutput(),
+  reviewFile?: string,
 ): Promise<number> {
   try {
     const options = parseProbeArgs(argv);
@@ -211,12 +225,17 @@ export async function runProbeCommand(
         `Probe: COMPLETED in ${elapsed}s — ${String(direct)} direct, ${String(browser)} browser, ${String(failed)} failed`,
       );
     }
-    const registryPath = await runWriteRegistry(
-      mapWorkflowResultsToEntries(results, new Date().toISOString()),
-      registryFile ?? join(projectDataDir(import.meta.url), "customs_registry.json"),
+    const entries = mapWorkflowResultsToEntries(results, new Date().toISOString());
+    const resolvedRegistry = registryFile ?? join(projectDataDir(import.meta.url), REGISTRY_FILE_NAME);
+    const registryPath = await runWriteRegistry(entries, resolvedRegistry);
+    const needsReview = selectNeedsReviewEntries(entries);
+    const reviewPath = await runWriteNeedsReview(
+      needsReview,
+      reviewFile ?? join(dirname(resolvedRegistry), NEEDS_REVIEW_FILE_NAME),
     );
     if (options.log === "pretty") {
       output.printProgress(`Registry: wrote ${String(results.length)} entries at ${registryPath}`);
+      output.printProgress(`Review: wrote ${String(needsReview.length)} entries at ${reviewPath}`);
     }
     return results.some((result) => result.method === PROBE_METHOD.FAILED) ? 1 : 0;
   } catch (error) {

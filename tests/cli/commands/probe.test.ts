@@ -39,7 +39,7 @@ describe("parseProbeArgs", () => {
 
   it("rejects invalid concurrency values", () => {
     expect(() => parseProbeArgs(["US", "--concurrency=0"])).toThrow("Invalid --concurrency value (1-8).");
-    expect(() => parseProbeArgs(["US", "--concurrency=nope"])).toThrow("Invalid --concurrency value (1-8).");
+    expect(() => parseProbeArgs(["US", "--concurrency=bogus"])).toThrow("Invalid --concurrency value (1-8).");
     expect(() => parseProbeArgs(["US", "--concurrency=1.5"])).toThrow("Invalid --concurrency value (1-8).");
     expect(() => parseProbeArgs(["US", "--concurrency=9"])).toThrow("Invalid --concurrency value (1-8).");
   });
@@ -62,7 +62,7 @@ describe("parseProbeArgs", () => {
 
   it("rejects invalid timeout values", () => {
     expect(() => parseProbeArgs(["US", "--timeout-ms=0"])).toThrow("Invalid --timeout-ms value.");
-    expect(() => parseProbeArgs(["US", "--timeout-ms=nope"])).toThrow("Invalid --timeout-ms value.");
+    expect(() => parseProbeArgs(["US", "--timeout-ms=bogus"])).toThrow("Invalid --timeout-ms value.");
     expect(() => parseProbeArgs(["US", "--timeout-ms=1.5"])).toThrow("Invalid --timeout-ms value.");
   });
 
@@ -72,7 +72,7 @@ describe("parseProbeArgs", () => {
   });
 
   it("rejects unknown flags and extra positionals", () => {
-    expect(() => parseProbeArgs(["US", "--nope"])).toThrow("Unknown argument: nope");
+    expect(() => parseProbeArgs(["US", "--bogus"])).toThrow("Unknown argument: bogus");
     expect(() => parseProbeArgs(["US", "MX"])).toThrow("Unknown argument: MX");
   });
 

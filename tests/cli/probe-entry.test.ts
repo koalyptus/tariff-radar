@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { runProbeCommand } from "../../packages/cli/src/commands/probe.js";
+import { runProbeCommand } from "@tariff-radar/cli";
+// The thin entry script has no package alias by design, so both its
+// side-effect import and this mock stay on the relative path: the mock must
+// target the exact module the entry imports, or the real command would run.
 import "../../packages/cli/src/probe.js";
 
 vi.mock("../../packages/cli/src/commands/probe.js", () => ({

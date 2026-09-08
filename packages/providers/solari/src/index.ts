@@ -1,4 +1,5 @@
 import { Solari } from "@solarisdk/browser";
+import type { BrowserSession } from "@solarisdk/browser";
 import type {
   BrowserProbeOptions,
   BrowserProbePage,
@@ -16,7 +17,7 @@ export interface SolariProviderOptions {
   apiKey: string;
 }
 
-type SolariBrowser = Awaited<ReturnType<Solari["launch"]>>;
+type SolariBrowser = BrowserSession;
 type SolariPage = Awaited<ReturnType<SolariBrowser["newPage"]>>;
 
 const PROVIDER_NAME = "solari";
@@ -68,6 +69,7 @@ export class SolariBrowserProvider implements BrowserProbeProvider {
     }
 
     return {
+      sessionId: browser.id,
       newPage: async () => createPageAdapter(await browser.newPage()),
       close: async () => {
         // The client holds a loopback proxy open: always release it, even
