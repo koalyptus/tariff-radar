@@ -190,7 +190,10 @@ Pass `--log=json` for the original machine-readable JSON lines.
 The CLI prints a per-seed summary to stdout, writes `data/customs_registry.json`
 from completed workflow results (Phase 8), and writes `data/needs_review.json`
 with the subset needing human triage (Phase 10): failed runs and
-transport-only successes without observed tariff-domain terminology. Every
+transport successes without observed tariff-domain terminology. Direct probes
+capture capped textual bodies, so `direct`-ok entries can carry keyword
+evidence too; keyword-less direct runs stay in triage without browser
+escalation. Every
 entry preserves seed provenance with verification status, method, provider,
 and evidence. All records stay `unverified`; content signals live in
 evidence only. In the results above, `HTTP 200` means the portal answered

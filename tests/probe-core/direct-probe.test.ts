@@ -1,8 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { runDirectProbe } from "@tariff-radar/probe-core";
+import { DIRECT_PROBE_MAX_BODY_CHARS, runDirectProbe } from "@tariff-radar/probe-core";
 
-function okResponse() {
-  return { ok: true, status: 200, url: "https://portal.example/tariff" };
+function okResponse(body = "", contentType = "text/html") {
+  return {
+    ok: true,
+    status: 200,
+    url: "https://portal.example/tariff",
+    headers: { get: () => contentType },
+    text: async () => body,
+  };
 }
 
 afterEach(() => {
@@ -24,8 +30,67 @@ describe("runDirectProbe", () => {
     expect(result.status).toBe(200);
     expect(result.finalUrl).toBe("https://portal.example/tariff");
     expect(result.error).toBeNull();
+    expect(result.text).toBe("");
     expect(result.latencyMs).toBeGreaterThanOrEqual(0);
     expect(result.attempts).toBe(1);
+  });
+
+  it("captures the body text of a successful response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => okResponse("<html><body>tariff schedule</body></html>")),
+    );
+    const result = await runDirectProbe("https://portal.example/tariff");
+    expect(result.ok).toBe(true);
+    expect(result.text).toBe("<html><body>tariff schedule</body></html>");
+  });
+
+  it("treats a missing content-type as textual", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: true, status: 200, url: "https://portal.example/", text: async () => "duty rates" })),
+    );
+    const result = await runDirectProbe("https://portal.example/");
+    expect(result.ok).toBe(true);
+    expect(result.text).toBe("duty rates");
+  });
+
+  it("skips bodies with a binary content-type", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => okResponse("%PDF-1.4 binary", "application/pdf")),
+    );
+    const result = await runDirectProbe("https://portal.example/tariff.pdf");
+    expect(result.ok).toBe(true);
+    expect(result.text).toBeNull();
+  });
+
+  it("keeps transport success when the body read fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        url: "https://portal.example/",
+        headers: { get: () => "text/html" },
+        text: async () => {
+          throw new Error("body already used");
+        },
+      })),
+    );
+    const result = await runDirectProbe("https://portal.example/");
+    expect(result.ok).toBe(true);
+    expect(result.error).toBeNull();
+    expect(result.text).toBeNull();
+  });
+
+  it("caps captured bodies at the documented bound", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => okResponse("x".repeat(DIRECT_PROBE_MAX_BODY_CHARS + 10))),
+    );
+    const result = await runDirectProbe("https://portal.example/tariff");
+    expect(result.text).toHaveLength(DIRECT_PROBE_MAX_BODY_CHARS);
   });
 
   it("stays non-negative when the wall clock jumps backwards", async () => {

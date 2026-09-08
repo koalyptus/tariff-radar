@@ -82,6 +82,8 @@ export interface DirectProbeResult {
   latencyMs: number;
   /** Page title when captured; direct probes leave this null. */
   title: string | null;
+  /** Capped body text for content checks on success; null otherwise. */
+  text: string | null;
   /** Attempts used, including retries. */
   attempts: number;
   /** Failure reason (`HTTP <status>` or the network error), or null on success. */
@@ -128,7 +130,7 @@ export interface WorkflowResult {
   error: string | null;
 }
 
-export { DEFAULT_DIRECT_PROBE_TIMEOUT_MS, runDirectProbe } from "./direct-probe.js";
+export { DEFAULT_DIRECT_PROBE_TIMEOUT_MS, DIRECT_PROBE_MAX_BODY_CHARS, runDirectProbe } from "./direct-probe.js";
 export { CONTENT_RELEVANCE_TERM, assessContentRelevance } from "./content-relevance.js";
 export type { ContentRelevanceInput, ContentRelevanceResult, ContentRelevanceTerm } from "./content-relevance.js";
 export { formatStage, progressLogger } from "./progress.js";

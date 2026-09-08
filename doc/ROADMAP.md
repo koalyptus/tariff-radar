@@ -230,6 +230,11 @@ Notes (Phase 10, as shipped):
 - Terminology detection is English landing-page keywords
   (`assessContentRelevance` in `probe-core`); any one of the four keyword
   families keeps an entry out of triage. No match proves nothing.
+- Direct probes capture capped textual bodies (binary skipped, failures yield
+  null text), so `direct`-ok entries carry keyword evidence as well. The
+  browser path exists for reach — portals unreachable or unrenderable over
+  direct fetch — not for keywords: keyword-less direct runs sit in triage
+  without automatic browser escalation.
 - Authority vs content stays separated by construction: authority lives in
   seed provenance (`portalUrl` vs `sourceUrl`), content lives in evidence
   keys, and `status` stays `unverified` — no score, no threshold.

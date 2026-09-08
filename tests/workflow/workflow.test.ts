@@ -11,10 +11,16 @@ const seed: WorkflowSeed = {
   sourceUrl: "https://authority.example/",
 };
 
-function fetchOk() {
+function fetchOk(body = "") {
   vi.stubGlobal(
     "fetch",
-    vi.fn(async () => ({ ok: true, status: 200, url: "https://portal.example/tariff" })),
+    vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      url: "https://portal.example/tariff",
+      headers: { get: () => "text/html" },
+      text: async () => body,
+    })),
   );
 }
 
@@ -80,6 +86,20 @@ describe("probeWorkflow", () => {
     expect(result.browser).toBeNull();
     expect(result.direct.ok).toBe(true);
     expect(result.evidence).toEqual([PROBE_EVIDENCE.DIRECT_RESPONSE]);
+    expect(result.error).toBeNull();
+  });
+
+  it("attaches keyword evidence to direct results with tariff terminology", async () => {
+    fetchOk("<html><body>customs tariff schedule</body></html>");
+    const result = await probeWorkflow(seed);
+    expect(result.method).toBe(PROBE_METHOD.DIRECT);
+    expect(result.provider).toBeNull();
+    expect(result.browser).toBeNull();
+    expect(result.evidence).toEqual([
+      PROBE_EVIDENCE.DIRECT_RESPONSE,
+      PROBE_EVIDENCE.TARIFF_KEYWORD,
+      PROBE_EVIDENCE.CUSTOMS_KEYWORD,
+    ]);
     expect(result.error).toBeNull();
   });
 

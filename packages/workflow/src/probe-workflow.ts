@@ -51,13 +51,16 @@ export async function probeWorkflow(seed: WorkflowSeed, options: ProbeWorkflowOp
   log.directComplete(direct);
 
   if (direct.ok) {
+    const relevance = assessContentRelevance({ title: null, text: direct.text });
     return {
       seed,
       method: PROBE_METHOD.DIRECT,
       provider: null,
       direct,
       browser: null,
-      evidence: [PROBE_EVIDENCE.DIRECT_RESPONSE],
+      // Transport success plus whatever the body scan observed: a keyword
+      // hit is content evidence, but the record stays unverified either way.
+      evidence: [PROBE_EVIDENCE.DIRECT_RESPONSE, ...relevance.evidence],
       error: null,
     };
   }

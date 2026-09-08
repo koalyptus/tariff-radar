@@ -27,12 +27,13 @@ function directOk() {
     latencyMs: 42,
     attempts: 1,
     title: null,
+    text: null,
     error: null,
   };
 }
 
 function directFailed(error: string | null) {
-  return { ok: false, status: null, finalUrl: null, latencyMs: 7, title: null, attempts: 1, error };
+  return { ok: false, status: null, finalUrl: null, latencyMs: 7, title: null, text: null, attempts: 1, error };
 }
 
 function workflowResult(partial: Partial<WorkflowResult> & { seed: WorkflowResult["seed"] }): WorkflowResult {
