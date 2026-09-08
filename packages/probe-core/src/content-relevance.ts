@@ -39,11 +39,29 @@ interface TermPattern {
   pattern: RegExp;
 }
 
+/**
+ * Curated content-relevance patterns. This list is a reviewed heuristic, not
+ * an exhaustive taxonomy: each family below names why it is here and where it
+ * can misfire. English only (see limits on {@link assessContentRelevance});
+ * seed-language coverage was deliberately deferred, not overlooked.
+ */
 const TERM_PATTERNS: readonly TermPattern[] = [
+  // The project's core domain noun: every seed is a tariff-portal candidate,
+  // so a landing page naming tariffs is weak but direct content evidence.
   { term: CONTENT_RELEVANCE_TERM.TARIFF, evidence: PROBE_EVIDENCE.TARIFF_KEYWORD, pattern: /\btariffs?\b/i },
+  // The owning authority type: all eight seeds are customs administrations.
+  // Matches bare "custom" too — known over-match (e.g. "custom search"),
+  // accepted because customs pages routinely write "custom" attributively.
+  // Word boundaries keep "customer" out.
   { term: CONTENT_RELEVANCE_TERM.CUSTOMS, evidence: PROBE_EVIDENCE.CUSTOMS_KEYWORD, pattern: /\bcustoms?\b/i },
+  // The charge itself: "duty"/"duties" is standard customs vocabulary
+  // (e.g. "duty rates", "duty-free"). No verb sense collides at a word
+  // boundary in portal copy.
   { term: CONTENT_RELEVANCE_TERM.DUTY, evidence: PROBE_EVIDENCE.DUTY_KEYWORD, pattern: /\bdut(?:y|ies)\b/i },
   {
+    // The most standard-grounded family: the WCO Harmonized System is the
+    // international goods-classification standard behind tariff schedules;
+    // HTS is the US Harmonized Tariff Schedule. Any one spelling counts.
     term: CONTENT_RELEVANCE_TERM.HS_CODE,
     evidence: PROBE_EVIDENCE.HS_CODE_KEYWORD,
     pattern: /\bhs\s*-?\s*codes?\b|\bharmonized\s+system\b|\bhts\b/i,
