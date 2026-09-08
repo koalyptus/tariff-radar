@@ -5,6 +5,7 @@ import { afterAll, describe, expect, it, vi } from "vitest";
 import type { BrowserProbeProvider, WorkflowResult } from "@tariff-radar/probe-core";
 import { noopProbeLogger } from "@tariff-radar/probe-core";
 import type { Seed } from "@tariff-radar/registry";
+import { NEEDS_REVIEW_FILE_NAME, REGISTRY_FILE_NAME } from "@tariff-radar/registry";
 import { runProbeCommand, defaultDeps } from "@tariff-radar/cli";
 import type { RunCliOutput } from "@tariff-radar/cli";
 import type { RunDeps } from "@tariff-radar/workflow";
@@ -323,10 +324,10 @@ describe("runProbeCommand", () => {
     await expect(
       runProbeCommand(["US"], stubDeps(directResult()), undefined, undefined, recorded.output),
     ).resolves.toBe(0);
-    const registry = JSON.parse(readFileSync(join(workspace.dir, "customs_registry.json"), "utf8")) as {
+    const registry = JSON.parse(readFileSync(join(workspace.dir, REGISTRY_FILE_NAME), "utf8")) as {
       entries: unknown[];
     };
-    const review = JSON.parse(readFileSync(join(workspace.dir, "needs_review.json"), "utf8")) as {
+    const review = JSON.parse(readFileSync(join(workspace.dir, NEEDS_REVIEW_FILE_NAME), "utf8")) as {
       entries: unknown[];
     };
     expect(registry.entries).toHaveLength(1);

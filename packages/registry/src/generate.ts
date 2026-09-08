@@ -4,8 +4,8 @@ import { projectDataDir } from "@tariff-radar/shared";
 import { REGISTRY_SCHEMA_VERSION } from "./types.js";
 import type { RegistryEntry, CustomsRegistry } from "./types.js";
 
-const REGISTRY_FILE_NAME = "customs_registry.json";
-const NEEDS_REVIEW_FILE_NAME = "needs_review.json";
+export const REGISTRY_FILE_NAME = "customs_registry.json";
+export const NEEDS_REVIEW_FILE_NAME = "needs_review.json";
 const ATOMIC_FILE_SUFFIX = ".tmp";
 
 /**

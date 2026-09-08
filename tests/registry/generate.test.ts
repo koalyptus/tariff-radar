@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it, vi } from "vitest";
 import { runWriteRegistry } from "@tariff-radar/registry";
-import { REGISTRY_SCHEMA_VERSION } from "@tariff-radar/registry";
+import { REGISTRY_FILE_NAME, REGISTRY_SCHEMA_VERSION } from "@tariff-radar/registry";
 import type { RegistryEntry } from "@tariff-radar/registry";
 
 // Hermetic default-path coverage: the tests below exercise the
@@ -71,13 +71,13 @@ describe("runWriteRegistry", () => {
 
   it("falls back to projectDataDir when no explicit path is given", async () => {
     const result = await runWriteRegistry([seed]);
-    expect(result).toBe(join(workspace.dir, "customs_registry.json"));
+    expect(result).toBe(join(workspace.dir, REGISTRY_FILE_NAME));
     const written = JSON.parse(readFileSync(result, "utf8")) as { entries: RegistryEntry[] };
     expect(written.entries).toHaveLength(1);
   });
 
   it("resolves an explicit path inside the data directory", async () => {
-    const out = join(workspace.dir, "customs_registry.json");
+    const out = join(workspace.dir, REGISTRY_FILE_NAME);
     await expect(runWriteRegistry([seed], out)).resolves.toBe(out);
     const written = JSON.parse(readFileSync(out, "utf8")) as { entries: unknown[] };
     expect(written.entries).toHaveLength(1);

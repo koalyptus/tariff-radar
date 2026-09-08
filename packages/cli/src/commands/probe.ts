@@ -3,6 +3,8 @@ import yargs from "yargs";
 import { PROBE_METHOD, consoleProbeLogger, progressLogger } from "@tariff-radar/probe-core";
 import { SolariBrowserProvider } from "@tariff-radar/provider-solari";
 import {
+  NEEDS_REVIEW_FILE_NAME,
+  REGISTRY_FILE_NAME,
   loadSeeds,
   mapWorkflowResultsToEntries,
   runWriteNeedsReview,
@@ -224,12 +226,12 @@ export async function runProbeCommand(
       );
     }
     const entries = mapWorkflowResultsToEntries(results, new Date().toISOString());
-    const resolvedRegistry = registryFile ?? join(projectDataDir(import.meta.url), "customs_registry.json");
+    const resolvedRegistry = registryFile ?? join(projectDataDir(import.meta.url), REGISTRY_FILE_NAME);
     const registryPath = await runWriteRegistry(entries, resolvedRegistry);
     const needsReview = selectNeedsReviewEntries(entries);
     const reviewPath = await runWriteNeedsReview(
       needsReview,
-      reviewFile ?? join(dirname(resolvedRegistry), "needs_review.json"),
+      reviewFile ?? join(dirname(resolvedRegistry), NEEDS_REVIEW_FILE_NAME),
     );
     if (options.log === "pretty") {
       output.printProgress(`Registry: wrote ${String(results.length)} entries at ${registryPath}`);

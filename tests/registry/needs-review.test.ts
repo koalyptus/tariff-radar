@@ -2,7 +2,12 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it, vi } from "vitest";
-import { NEEDS_REVIEW_KEYWORD_EVIDENCE, runWriteNeedsReview, selectNeedsReviewEntries } from "@tariff-radar/registry";
+import {
+  NEEDS_REVIEW_FILE_NAME,
+  NEEDS_REVIEW_KEYWORD_EVIDENCE,
+  runWriteNeedsReview,
+  selectNeedsReviewEntries,
+} from "@tariff-radar/registry";
 import type { RegistryEntry } from "@tariff-radar/registry";
 
 // Same hermetic default-path redirection as generate.test.ts: the default
@@ -110,7 +115,7 @@ describe("runWriteNeedsReview", () => {
 
   it("defaults to the data directory without touching the real workspace", async () => {
     const result = await runWriteNeedsReview([]);
-    expect(result).toBe(join(workspace.dir, "needs_review.json"));
+    expect(result).toBe(join(workspace.dir, NEEDS_REVIEW_FILE_NAME));
     const written = JSON.parse(readFileSync(result, "utf8")) as { entries: unknown[] };
     expect(written.entries).toEqual([]);
   });
