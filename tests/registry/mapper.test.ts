@@ -27,7 +27,15 @@ function browserResult(): WorkflowResult {
     seed: { ...seed },
     method: "browser",
     provider: "solari",
-    direct: { ok: false, status: null, finalUrl: null, latencyMs: 7, title: null, attempts: 1, error: "nope" },
+    direct: {
+      ok: false,
+      status: null,
+      finalUrl: null,
+      latencyMs: 7,
+      title: null,
+      attempts: 1,
+      error: "stub error",
+    },
     browser: { status: 200, finalUrl: seed.portalUrl, title: "Tariff", text: "x", latencyMs: 11 },
     evidence: ["browser_response", "browser_text"],
     error: null,
@@ -39,10 +47,18 @@ function failedResult(): WorkflowResult {
     seed: { ...seed },
     method: "failed",
     provider: null,
-    direct: { ok: false, status: null, finalUrl: null, latencyMs: 7, title: null, attempts: 1, error: "nope" },
+    direct: {
+      ok: false,
+      status: null,
+      finalUrl: null,
+      latencyMs: 7,
+      title: null,
+      attempts: 1,
+      error: "stub error",
+    },
     browser: null,
     evidence: [],
-    error: "nope",
+    error: "stub error",
   };
 }
 
@@ -83,7 +99,7 @@ describe("mapWorkflowResultsToEntries", () => {
       directStatus: null,
       directLatencyMs: 7,
       directAttempts: 1,
-      directError: "nope",
+      directError: "stub error",
       browserStatus: 200,
       browserFinalUrl: seed.portalUrl,
       browserTitle: "Tariff",
@@ -98,7 +114,7 @@ describe("mapWorkflowResultsToEntries", () => {
     const entries = mapWorkflowResultsToEntries([failedResult()], checkedAt);
     const entry = entries[0]!;
     expect(entry.verification.method).toBe("failed");
-    expect(entry.verification.error).toBe("nope");
+    expect(entry.verification.error).toBe("stub error");
     expect(entry.verification.evidence).toEqual([]);
     expect(entry.verification.status).toBe(REGISTRY_VERIFICATION_STATUS);
   });

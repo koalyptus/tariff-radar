@@ -128,8 +128,13 @@ describe("progressLogger", () => {
       portalUrl: "https://hts.usitc.gov/",
       provider: null,
       method: "failed",
-      error: "nope",
+      error: "stub error",
     });
-    expect(lines).toEqual(["probe.unknown", "── US https://hts.usitc.gov/", "probe.unknown", "[US] failed: nope"]);
+    expect(lines).toEqual([
+      "probe.unknown",
+      "── US https://hts.usitc.gov/",
+      "probe.unknown",
+      "[US] failed: stub error",
+    ]);
   });
 });

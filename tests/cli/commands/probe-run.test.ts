@@ -1,14 +1,35 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { join } from "node:path";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import type { BrowserProbeProvider, WorkflowResult } from "@tariff-radar/probe-core";
 import { noopProbeLogger } from "@tariff-radar/probe-core";
 import type { Seed } from "@tariff-radar/registry";
 import { runProbeCommand, defaultDeps } from "@tariff-radar/cli";
 import type { RunCliOutput } from "@tariff-radar/cli";
 import type { RunDeps } from "@tariff-radar/workflow";
+
+// Hermetic CLI coverage: tests that exercise default seeds/registry/review
+// paths run against a fake tmp data dir, so the suite never touches the real
+// workspace `data/` — no backup/restore, hence nothing to leak on crash.
+const workspace = vi.hoisted(() => ({ dir: "" }));
+
+vi.mock("@tariff-radar/shared", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@tariff-radar/shared")>();
+  if (!workspace.dir) {
+    const { mkdtempSync: makeTemp } = await import("node:fs");
+    const { tmpdir: osTmp } = await import("node:os");
+    const { join: joinPath } = await import("node:path");
+    workspace.dir = makeTemp(joinPath(osTmp(), "fake-workspace-"));
+  }
+  return { ...actual, projectDataDir: () => workspace.dir };
+});
+
+afterAll(() => {
+  if (workspace.dir) {
+    rmSync(workspace.dir, { recursive: true, force: true });
+  }
+});
 
 const seed: Seed = {
   isoCode: "US",
@@ -118,6 +139,7 @@ describe("runProbeCommand", () => {
     const dir = mkdtempSync(join(tmpdir(), "run-cli-test-"));
     const recorded = recordOutput();
     try {
+      writeFileSync(join(workspace.dir, "seeds.json"), JSON.stringify([seed]));
       await expect(
         runProbeCommand(["US"], stubDeps(directResult()), undefined, join(dir, "registry.json"), recorded.output),
       ).resolves.toBe(0);
@@ -190,9 +212,17 @@ describe("runProbeCommand", () => {
     const failed: WorkflowResult = {
       ...directResult(),
       method: "failed",
-      direct: { ok: false, status: null, finalUrl: null, latencyMs: 9, title: null, attempts: 1, error: "nope" },
+      direct: {
+        ok: false,
+        status: null,
+        finalUrl: null,
+        latencyMs: 9,
+        title: null,
+        attempts: 1,
+        error: "stub error",
+      },
       evidence: [],
-      error: "nope",
+      error: "stub error",
     };
     try {
       await expect(
@@ -216,7 +246,15 @@ describe("runProbeCommand", () => {
       ...directResult(),
       method: "browser",
       provider: "fake",
-      direct: { ok: false, status: null, finalUrl: null, latencyMs: 7, title: null, attempts: 1, error: "nope" },
+      direct: {
+        ok: false,
+        status: null,
+        finalUrl: null,
+        latencyMs: 7,
+        title: null,
+        attempts: 1,
+        error: "stub error",
+      },
       browser: {
         status: 200,
         finalUrl: seed.portalUrl,
@@ -263,35 +301,21 @@ describe("runProbeCommand", () => {
     }
   });
 
-  it("defaults to workspace data files when no paths are given", async () => {
-    const { dir, seedsFile } = writeSeeds();
-    const dataDir = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "data");
-    const registryOut = join(dataDir, "customs_registry.json");
-    const reviewOut = join(dataDir, "needs_review.json");
-    const backups = new Map<string, string>();
-    for (const out of [registryOut, reviewOut]) {
-      try {
-        backups.set(out, readFileSync(out, "utf8"));
-      } catch {
-        backups.set(out, "");
-      }
-    }
-    try {
-      await expect(
-        runProbeCommand(["US"], stubDeps(directResult()), seedsFile, undefined, recordOutput().output),
-      ).resolves.toBe(0);
-      expect(existsSync(registryOut)).toBe(true);
-      expect(existsSync(reviewOut)).toBe(true);
-    } finally {
-      for (const [out, backup] of backups) {
-        if (backup === "") {
-          rmSync(out, { force: true });
-        } else {
-          writeFileSync(out, backup);
-        }
-      }
-      rmSync(dir, { recursive: true, force: true });
-    }
+  it("defaults to the data directory when no paths are given", async () => {
+    writeFileSync(join(workspace.dir, "seeds.json"), JSON.stringify([seed]));
+    const recorded = recordOutput();
+    await expect(
+      runProbeCommand(["US"], stubDeps(directResult()), undefined, undefined, recorded.output),
+    ).resolves.toBe(0);
+    const registry = JSON.parse(readFileSync(join(workspace.dir, "customs_registry.json"), "utf8")) as {
+      entries: unknown[];
+    };
+    const review = JSON.parse(readFileSync(join(workspace.dir, "needs_review.json"), "utf8")) as {
+      entries: unknown[];
+    };
+    expect(registry.entries).toHaveLength(1);
+    expect(review.entries).toHaveLength(1);
+    expect(recorded.progress.some((l) => l.includes("Review: wrote"))).toBe(true);
   });
 
   it("returns 0 for --help without probing", async () => {
@@ -310,9 +334,9 @@ describe("runProbeCommand", () => {
     const recorded = recordOutput();
     try {
       await expect(
-        runProbeCommand(["--nope"], stubDeps(directResult()), seedsFile, undefined, recorded.output),
+        runProbeCommand(["--bogus"], stubDeps(directResult()), seedsFile, undefined, recorded.output),
       ).resolves.toBe(2);
-      expect(recorded.errors).toEqual(["Unknown argument: nope"]);
+      expect(recorded.errors).toEqual(["Unknown argument: bogus"]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

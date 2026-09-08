@@ -1,10 +1,31 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { join } from "node:path";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import { NEEDS_REVIEW_KEYWORD_EVIDENCE, runWriteNeedsReview, selectNeedsReviewEntries } from "@tariff-radar/registry";
 import type { RegistryEntry } from "@tariff-radar/registry";
+
+// Same hermetic default-path redirection as generate.test.ts: the default
+// `needs_review.json` branch is covered against a fake tmp dir, so the suite
+// never touches the real workspace `data/`.
+const workspace = vi.hoisted(() => ({ dir: "" }));
+
+vi.mock("@tariff-radar/shared", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@tariff-radar/shared")>();
+  if (!workspace.dir) {
+    const { mkdtempSync: makeTemp } = await import("node:fs");
+    const { tmpdir: osTmp } = await import("node:os");
+    const { join: joinPath } = await import("node:path");
+    workspace.dir = makeTemp(joinPath(osTmp(), "fake-workspace-"));
+  }
+  return { ...actual, projectDataDir: () => workspace.dir };
+});
+
+afterAll(() => {
+  if (workspace.dir) {
+    rmSync(workspace.dir, { recursive: true, force: true });
+  }
+});
 
 function entry(overrides: { evidence?: string[]; error?: string | null; isoCode?: string }): RegistryEntry {
   return {
@@ -38,7 +59,10 @@ describe("selectNeedsReviewEntries", () => {
   });
 
   it("flags failed runs even when keyword evidence exists", () => {
-    const flagged = entry({ evidence: ["browser_response", "browser_text", "tariff_keyword"], error: "nope" });
+    const flagged = entry({
+      evidence: ["browser_response", "browser_text", "tariff_keyword"],
+      error: "stub error",
+    });
     expect(selectNeedsReviewEntries([flagged])).toEqual([flagged]);
   });
 
@@ -55,7 +79,7 @@ describe("selectNeedsReviewEntries", () => {
   });
 
   it("preserves run order and the full evidence trail", () => {
-    const failing = entry({ isoCode: "US", evidence: [], error: "nope" });
+    const failing = entry({ isoCode: "US", evidence: [], error: "stub error" });
     const relevant = entry({
       isoCode: "MX",
       evidence: ["browser_response", "browser_text", "customs_keyword"],
@@ -72,7 +96,7 @@ describe("runWriteNeedsReview", () => {
     try {
       const out = join(dir, "needs_review.json");
       const lines: string[] = [];
-      const flagged = entry({ evidence: [], error: "nope" });
+      const flagged = entry({ evidence: [], error: "stub error" });
       const result = await runWriteNeedsReview([flagged], out, (line) => lines.push(line));
       expect(result).toBe(out);
       const written = JSON.parse(readFileSync(out, "utf8")) as { entries: RegistryEntry[] };
@@ -83,27 +107,10 @@ describe("runWriteNeedsReview", () => {
     }
   });
 
-  it("defaults to the workspace data directory", async () => {
-    const out = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "data", "needs_review.json");
-    let existed = false;
-    let backup = "";
-    try {
-      try {
-        backup = readFileSync(out, "utf8");
-        existed = true;
-      } catch {
-        existed = false;
-      }
-      const result = await runWriteNeedsReview([]);
-      expect(result).toBe(out);
-      const written = JSON.parse(readFileSync(out, "utf8")) as { entries: unknown[] };
-      expect(written.entries).toEqual([]);
-    } finally {
-      if (existed) {
-        writeFileSync(out, backup);
-      } else {
-        rmSync(out, { force: true });
-      }
-    }
+  it("defaults to the data directory without touching the real workspace", async () => {
+    const result = await runWriteNeedsReview([]);
+    expect(result).toBe(join(workspace.dir, "needs_review.json"));
+    const written = JSON.parse(readFileSync(result, "utf8")) as { entries: unknown[] };
+    expect(written.entries).toEqual([]);
   });
 });
