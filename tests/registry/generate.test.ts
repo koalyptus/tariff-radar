@@ -47,6 +47,7 @@ const seed: RegistryEntry = {
     browserFinalUrl: null,
     browserTitle: null,
     browserLatencyMs: null,
+    browserSessionId: null,
     evidence: ["direct_response"],
     error: null,
   },

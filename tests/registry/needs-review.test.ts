@@ -47,6 +47,7 @@ function entry(overrides: { evidence?: string[]; error?: string | null; isoCode?
       browserFinalUrl: null,
       browserTitle: null,
       browserLatencyMs: null,
+      browserSessionId: null,
       evidence: overrides.evidence ?? ["direct_response"],
       error: overrides.error ?? null,
     },

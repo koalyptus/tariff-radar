@@ -33,6 +33,7 @@ function fakeProvider(hooks: {
   gotoError?: unknown;
   title?: string;
   text?: string;
+  sessionId?: string;
   onPageClose?: () => void;
   onSessionClose?: () => void;
 }): BrowserProbeProvider {
@@ -43,6 +44,7 @@ function fakeProvider(hooks: {
         throw hooks.launchError;
       }
       return {
+        sessionId: hooks.sessionId,
         newPage: async () => ({
           goto: async () => {
             if (hooks.gotoError !== undefined) {
@@ -111,6 +113,7 @@ describe("probeWorkflow", () => {
     expect(result.browser?.status).toBe(200);
     expect(result.browser?.finalUrl).toBe("https://portal.example/final");
     expect(result.browser?.title).toBe("Tariff portal");
+    expect(result.browser?.sessionId).toBeNull();
     expect(result.evidence).toEqual([
       PROBE_EVIDENCE.BROWSER_RESPONSE,
       PROBE_EVIDENCE.BROWSER_TEXT,
@@ -138,6 +141,18 @@ describe("probeWorkflow", () => {
       PROBE_EVIDENCE.CUSTOMS_KEYWORD,
       PROBE_EVIDENCE.DUTY_KEYWORD,
     ]);
+  });
+
+  it("records the provider session id for console lookup", async () => {
+    fetchFail();
+    const result = await probeWorkflow(seed, {
+      browserProvider: fakeProvider({
+        response: { status: 200, url: "https://portal.example/final" },
+        sessionId: "fake-session-1",
+      }),
+    });
+    expect(result.method).toBe(PROBE_METHOD.BROWSER);
+    expect(result.browser?.sessionId).toBe("fake-session-1");
   });
 
   it("emits no keyword evidence when the page lacks tariff terminology", async () => {

@@ -91,6 +91,7 @@ export async function probeWorkflow(seed: WorkflowSeed, options: ProbeWorkflowOp
         const latencyMs = Math.round(performance.now() - browserStartedAt);
         log.browserComplete(options.browserProvider.name, status, finalUrl, latencyMs);
         const relevance = assessContentRelevance({ title, text });
+        const sessionId = session.sessionId ?? null;
         return {
           seed,
           method: PROBE_METHOD.BROWSER,
@@ -101,6 +102,7 @@ export async function probeWorkflow(seed: WorkflowSeed, options: ProbeWorkflowOp
             finalUrl,
             title,
             text,
+            sessionId,
             latencyMs,
           },
           // Claim only what was observed: a null response yields no

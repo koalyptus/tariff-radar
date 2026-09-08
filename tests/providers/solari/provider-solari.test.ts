@@ -13,6 +13,7 @@ describe("SolariBrowserProvider", () => {
       captcha: true,
       proxyCountry: "mx",
     });
+    expect(session.sessionId).toBe("test-session-id");
     expect(solariControl.apiKey).toBe("test-key");
     expect(solariControl.launchOptions).toEqual({
       stealth: true,

@@ -42,6 +42,7 @@ export class Solari {
     }
     solariControl.launchOptions = options;
     return {
+      id: "test-session-id",
       newPage: async () => ({
         goto: async () => {
           if (solariControl.gotoResponse === "none") {

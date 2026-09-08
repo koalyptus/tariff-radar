@@ -260,6 +260,7 @@ describe("runProbeCommand", () => {
         finalUrl: seed.portalUrl,
         title: "Tariff portal",
         text: "customs duty",
+        sessionId: "fake-session-1",
         latencyMs: 11,
       },
       evidence: ["browser_response", "browser_text", "tariff_keyword", "customs_keyword", "duty_keyword"],
@@ -274,6 +275,10 @@ describe("runProbeCommand", () => {
         entries: unknown[];
       };
       expect(review.entries).toEqual([]);
+      const registry = JSON.parse(readFileSync(join(dir, "registry.json"), "utf8")) as {
+        entries: Array<{ verification: { browserSessionId: string | null } }>;
+      };
+      expect(registry.entries[0]?.verification.browserSessionId).toBe("fake-session-1");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

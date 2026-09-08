@@ -36,7 +36,14 @@ function browserResult(): WorkflowResult {
       attempts: 1,
       error: "stub error",
     },
-    browser: { status: 200, finalUrl: seed.portalUrl, title: "Tariff", text: "x", latencyMs: 11 },
+    browser: {
+      status: 200,
+      finalUrl: seed.portalUrl,
+      title: "Tariff",
+      text: "x",
+      sessionId: "solari-session-1",
+      latencyMs: 11,
+    },
     evidence: ["browser_response", "browser_text"],
     error: null,
   };
@@ -82,6 +89,7 @@ describe("mapWorkflowResultsToEntries", () => {
       browserFinalUrl: null,
       browserTitle: null,
       browserLatencyMs: null,
+      browserSessionId: null,
       evidence: ["direct_response"],
       error: null,
     });
@@ -104,6 +112,7 @@ describe("mapWorkflowResultsToEntries", () => {
       browserFinalUrl: seed.portalUrl,
       browserTitle: "Tariff",
       browserLatencyMs: 11,
+      browserSessionId: "solari-session-1",
       evidence: ["browser_response", "browser_text"],
       error: null,
     });

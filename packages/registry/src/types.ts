@@ -39,6 +39,8 @@ export interface RegistryVerification {
   browserFinalUrl: string | null;
   browserTitle: string | null;
   browserLatencyMs: number | null;
+  /** Provider session id for console lookup, or null when unreported. */
+  browserSessionId: string | null;
   evidence: string[];
   error: string | null;
 }

@@ -51,6 +51,8 @@ export interface BrowserProbeSession {
   newPage(): Promise<BrowserProbePage>;
   /** Release the browser and any provider-side resources. Always called. */
   close(): Promise<void>;
+  /** Cloud session id when the provider runs remotely, otherwise absent. */
+  readonly sessionId?: string;
 }
 
 /**
@@ -109,12 +111,14 @@ export interface WorkflowResult {
   provider: string | null;
   /** Direct attempt outcome, always present. */
   direct: DirectProbeResult;
-  /** Browser observation (status, URLs, title, text, latency), or null when unused. */
+  /** Browser observation (status, URLs, title, text, session, latency), or null when unused. */
   browser: {
     status: number | null;
     finalUrl: string | null;
     title: string | null;
     text: string | null;
+    /** Provider session id for console lookup, or null when unreported. */
+    sessionId: string | null;
     /** Wall-clock time for the browser fallback, launch through observation. */
     latencyMs: number;
   } | null;

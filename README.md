@@ -206,6 +206,10 @@ per-method status fields, evidence, and errors. Selection rule:
 `verification.evidence`. An empty `entries: []` means nothing needed review
 on that run.
 
+Browser-path entries also carry `verification.browserSessionId`: the Solari
+cloud session id for that run, so any record with `method: "browser"` can be
+looked up directly in the Solari Console. Direct-only runs report null.
+
 ## Evidence and Limitations
 
 - A successful page load does not prove that all tariff data is complete or
