@@ -187,9 +187,11 @@ usage errors. Per-seed progress prints on stderr, the result table on stdout.
 
 Pass `--log=json` for the original machine-readable JSON lines.
 
-The CLI prints a per-seed summary to stdout and writes no registry file yet:
-the seed-only scaffold in `packages/registry` still emits `unverified`
-placeholders. In the results above, `HTTP 200` means the portal answered
+The CLI prints a per-seed summary to stdout and writes `data/customs_registry.json`
+from completed workflow results (Phase 8): every entry preserves seed
+provenance with verification status, method, provider, and evidence. All
+records stay `unverified` until content-relevance checks land (Phase 10).
+In the results above, `HTTP 200` means the portal answered
 HTTP, not that tariff content was verified (see _Evidence and Limitations_).
 
 ## Evidence and Limitations
