@@ -125,6 +125,8 @@ export interface WorkflowResult {
 }
 
 export { DEFAULT_DIRECT_PROBE_TIMEOUT_MS, runDirectProbe } from "./direct-probe.js";
+export { CONTENT_RELEVANCE_TERM, assessContentRelevance } from "./content-relevance.js";
+export type { ContentRelevanceInput, ContentRelevanceResult, ContentRelevanceTerm } from "./content-relevance.js";
 export { formatStage, progressLogger } from "./progress.js";
 export { consoleProbeLogger, noopProbeLogger, PROBE_LOG_EVENT, ProbeRunLogger } from "./logger.js";
 export type {
