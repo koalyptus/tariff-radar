@@ -9,3 +9,4 @@ __pycache__/
 venv/
 screenshot.png
 data/customs_registry.json
+data/needs_review.json
