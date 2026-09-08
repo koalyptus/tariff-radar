@@ -196,6 +196,16 @@ and evidence. All records stay `unverified`; content signals live in
 evidence only. In the results above, `HTTP 200` means the portal answered
 HTTP, not that tariff content was verified (see _Evidence and Limitations_).
 
+### needs_review.json
+
+Same envelope as `data/customs_registry.json` (`schemaVersion: 1`,
+`generatedAt`, `entries: RegistryEntry[]`) — triage entries are complete
+registry records, not summaries, so reviewers see seed provenance,
+per-method status fields, evidence, and errors. Selection rule:
+`verification.error !== null`, or no `*_keyword` content signal in
+`verification.evidence`. An empty `entries: []` means nothing needed review
+on that run.
+
 ## Evidence and Limitations
 
 - A successful page load does not prove that all tariff data is complete or
@@ -237,9 +247,9 @@ Absence of an observation produces no entry — e.g., a failed direct probe yiel
 
 ### Verification status
 
-| Status       | Meaning                                                                                                                                                                                                                                                                             |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `unverified` | The only current status. Every registry record is `unverified` because content-relevance checks have not been implemented. Transport success is captured in `method`, `evidence`, and per-method status fields — never in this status. Reserved for future content-relevance gates. |
+| Status       | Meaning                                                                                                                                                                                                                                 |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `unverified` | The only current status. Every registry record is `unverified`: transport success is captured in `method`, `evidence`, and per-method status fields, and content-relevance signals in `*_keyword` evidence keys — never in this status. |
 
 ### Access profile
 
