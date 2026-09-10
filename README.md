@@ -100,6 +100,10 @@ properties of an entire country or customs system.
    content, links, document metadata, and any available tariff or HS-code UI.
 6. **Registry output:** Write validated observations and timestamps to
    `customs_registry.json`, retaining enough evidence to explain each result.
+7. **Document ingestion:** Harvest linked tariff documents and download them
+   direct-first, falling back to the browser provider for guarded or dynamic
+   endpoints. Raw files land under `data/artifacts/` with a manifest tracing
+   each file to its registry record.
 
 Later work may add translation, change detection, and
 structured tariff extraction. Those are outside the current milestones.
@@ -212,6 +216,16 @@ on that run.
 Browser-path entries also carry `verification.browserSessionId`: the Solari
 cloud session id for that run, so any record with `method: "browser"` can be
 looked up directly in the Solari Console. Direct-only runs report null.
+
+### artifact_manifest.json
+
+Same envelope shape (`schemaVersion: 1`, `generatedAt`) with an `artifacts`
+array — one entry per stored document: ISO code, original URL, stored path,
+SHA-256, bytes, content type, text-layer flag, retrieving provider, and
+retrieval timestamp. Raw files live under `data/artifacts/{ISO}/{sha256}.{ext}`.
+A registry record traces to its documents through its ISO code;
+`verification.artifactCount` says how many. An empty `artifacts: []` means
+no run retrieved documents.
 
 ## Evidence and Limitations
 

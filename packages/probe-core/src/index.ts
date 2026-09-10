@@ -1,4 +1,5 @@
 import type { ProbeMethod } from "./constants.js";
+import type { ArtifactRecord, ArtifactDownload, DocumentLink } from "./artifacts.js";
 
 /**
  * Opt-in browser capabilities for one probe run. Every field is optional and
@@ -30,6 +31,21 @@ export interface BrowserProbePage {
   title(): Promise<string>;
   /** @returns The rendered body text (never passed to the logger). */
   text(): Promise<string>;
+  /**
+   * Harvest candidate document links from the rendered DOM: the only path
+   * that sees JS-driven download triggers. Optional so providers without
+   * DOM evaluation stay valid; the workflow checks presence before calling.
+   * @returns Absolute document links with anchor labels.
+   */
+  extractDocumentLinks?(): Promise<DocumentLink[]>;
+  /**
+   * Download one document inheriting the page's session (cookies) and
+   * provider options (stealth, proxy egress). Optional alongside
+   * {@link extractDocumentLinks}.
+   * @param targetUrl - Absolute document URL to stream.
+   * @returns The raw bytes with the observed content type.
+   */
+  downloadArtifact?(targetUrl: string): Promise<ArtifactDownload>;
   /** Release the tab. Always called by the workflow. */
   close(): Promise<void>;
 }
@@ -126,11 +142,22 @@ export interface WorkflowResult {
   } | null;
   /** Observed-evidence keys; see {@link PROBE_EVIDENCE}. */
   evidence: string[];
+  /** Retrieved documents with provenance; empty when none were stored. */
+  artifacts: ArtifactRecord[];
   /** Terminal failure reason, or null when the run produced an observation. */
   error: string | null;
 }
 
 export { DEFAULT_DIRECT_PROBE_TIMEOUT_MS, DIRECT_PROBE_MAX_BODY_CHARS, runDirectProbe } from "./direct-probe.js";
+export {
+  DOCUMENT_LINK_EXTENSIONS,
+  MAX_ARTIFACT_BYTES,
+  PDF_TEXT_LAYER_MIN_CHARS,
+  extractDocumentLinksFromHtml,
+  fetchArtifact,
+  hasPdfTextLayer,
+} from "./artifacts.js";
+export type { ArtifactDownload, ArtifactFetchResult, ArtifactRecord, DocumentLink } from "./artifacts.js";
 export { CONTENT_RELEVANCE_TERM, assessContentRelevance } from "./content-relevance.js";
 export type { ContentRelevanceInput, ContentRelevanceResult, ContentRelevanceTerm } from "./content-relevance.js";
 export { formatStage, progressLogger } from "./progress.js";

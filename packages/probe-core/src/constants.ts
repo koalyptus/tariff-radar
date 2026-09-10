@@ -22,6 +22,9 @@ export const PROBE_EVIDENCE = {
   CUSTOMS_KEYWORD: "customs_keyword",
   DUTY_KEYWORD: "duty_keyword",
   HS_CODE_KEYWORD: "hs_code_keyword",
+  DOCUMENT_LINK: "document_link",
+  ARTIFACT_STORED: "artifact_stored",
+  ARTIFACT_BROWSER: "artifact_browser",
 } as const;
 
 /** One of the {@link PROBE_METHOD} outcome values. */

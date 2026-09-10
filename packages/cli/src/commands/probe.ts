@@ -7,6 +7,7 @@ import {
   REGISTRY_FILE_NAME,
   loadSeeds,
   mapWorkflowResultsToEntries,
+  runStoreArtifacts,
   runWriteNeedsReview,
   runWriteRegistry,
   selectNeedsReviewEntries,
@@ -233,9 +234,11 @@ export async function runProbeCommand(
       needsReview,
       reviewFile ?? join(dirname(resolvedRegistry), NEEDS_REVIEW_FILE_NAME),
     );
+    const stored = await runStoreArtifacts(results, dirname(resolvedRegistry));
     if (options.log === "pretty") {
       output.printProgress(`Registry: wrote ${String(results.length)} entries at ${registryPath}`);
       output.printProgress(`Review: wrote ${String(needsReview.length)} entries at ${reviewPath}`);
+      output.printProgress(`Artifacts: wrote ${String(stored.fileCount)} files, manifest at ${stored.manifestPath}`);
     }
     return results.some((result) => result.method === PROBE_METHOD.FAILED) ? 1 : 0;
   } catch (error) {

@@ -10,6 +10,15 @@ export const solariControl = {
   clientClosed: false,
   pageClosed: false,
   browserCloseError: undefined as unknown,
+  anchors: [] as Array<{ href: string | null; label: string | null }>,
+  pageUrl: "https://portal.example/final",
+  download: {
+    ok: true,
+    status: 200,
+    headers: { "content-type": "application/pdf" } as Record<string, string>,
+    body: new Uint8Array([1, 2, 3]),
+  },
+  downloadError: undefined as unknown,
 };
 
 export function resetSolariControl() {
@@ -21,6 +30,15 @@ export function resetSolariControl() {
   solariControl.clientClosed = false;
   solariControl.pageClosed = false;
   solariControl.browserCloseError = undefined;
+  solariControl.anchors = [];
+  solariControl.pageUrl = "https://portal.example/final";
+  solariControl.download = {
+    ok: true,
+    status: 200,
+    headers: { "content-type": "application/pdf" },
+    body: new Uint8Array([1, 2, 3]),
+  };
+  solariControl.downloadError = undefined;
 }
 
 export class Solari {
@@ -57,6 +75,24 @@ export class Solari {
         locator: () => ({
           innerText: async () => "customs duty tariff",
         }),
+        // Execute the adapter's callback in Node against the test-stubbed
+        // `document` global, so the real harvest logic is exercised.
+        evaluate: async (pageFunction: () => unknown) => pageFunction(),
+        url: () => solariControl.pageUrl,
+        request: {
+          get: async () => {
+            if (solariControl.downloadError !== undefined) {
+              throw solariControl.downloadError;
+            }
+            const download = solariControl.download;
+            return {
+              ok: () => download.ok,
+              status: () => download.status,
+              headers: () => download.headers,
+              body: async () => Buffer.from(download.body),
+            };
+          },
+        },
         close: async () => {
           solariControl.pageClosed = true;
         },
