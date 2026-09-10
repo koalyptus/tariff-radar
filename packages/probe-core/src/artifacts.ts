@@ -142,8 +142,17 @@ async function readCappedBytes(response: Response): Promise<Buffer | null> {
  * @returns True for HTML bodies; an empty content-type counts as unknown,
  *   not as HTML, so extension-less binaries still download.
  */
-function isHtmlContent(contentType: string): boolean {
+export function isHtmlContent(contentType: string): boolean {
   return /html/i.test(contentType);
+}
+
+/**
+ * Decide whether a body is a PDF document.
+ * @param contentType - Raw `content-type` header value, possibly empty.
+ * @returns True for PDF bodies, used for text-layer detection.
+ */
+export function isPdfContent(contentType: string): boolean {
+  return /pdf/i.test(contentType);
 }
 
 /**

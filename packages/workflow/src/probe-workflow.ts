@@ -6,6 +6,7 @@ import {
   extractDocumentLinksFromHtml,
   fetchArtifact,
   hasPdfTextLayer,
+  isPdfContent,
   noopProbeLogger,
   runDirectProbe,
 } from "@tariff-radar/probe-core";
@@ -267,7 +268,7 @@ function toRecord(
     buffer,
     contentType,
     contentLength: buffer.byteLength,
-    textLayer: /pdf/i.test(contentType) ? hasPdfTextLayer(buffer) : null,
+    textLayer: isPdfContent(contentType) ? hasPdfTextLayer(buffer) : null,
     provider,
     retrievedAt,
   };

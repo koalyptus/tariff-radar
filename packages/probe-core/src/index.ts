@@ -156,6 +156,8 @@ export {
   extractDocumentLinksFromHtml,
   fetchArtifact,
   hasPdfTextLayer,
+  isHtmlContent,
+  isPdfContent,
 } from "./artifacts.js";
 export type { ArtifactDownload, ArtifactFetchResult, ArtifactRecord, DocumentLink } from "./artifacts.js";
 export { CONTENT_RELEVANCE_TERM, assessContentRelevance } from "./content-relevance.js";

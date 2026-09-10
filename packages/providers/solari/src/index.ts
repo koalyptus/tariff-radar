@@ -9,7 +9,7 @@ import type {
   BrowserProbeSession,
   DocumentLink,
 } from "@tariff-radar/probe-core";
-import { DOCUMENT_LINK_EXTENSIONS, MAX_ARTIFACT_BYTES } from "@tariff-radar/probe-core";
+import { DOCUMENT_LINK_EXTENSIONS, MAX_ARTIFACT_BYTES, isHtmlContent } from "@tariff-radar/probe-core";
 
 /**
  * Credentials for the Solari adapter. Supplied by the CLI/composition root;
@@ -153,7 +153,7 @@ async function streamSessionArtifact(page: SolariPage, targetUrl: string): Promi
   if (!response.ok()) {
     throw new Error(`HTTP ${String(response.status())}`);
   }
-  if (/html/i.test(contentType)) {
+  if (isHtmlContent(contentType)) {
     throw new Error(`unexpected content-type ${contentType}`);
   }
   const buffer = await response.body();

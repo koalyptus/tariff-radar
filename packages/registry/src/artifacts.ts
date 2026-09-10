@@ -12,6 +12,15 @@ const ATOMIC_FILE_SUFFIX = ".tmp";
 /** Fallback extension when neither content type nor URL names one. */
 const DEFAULT_ARTIFACT_EXTENSION = "bin";
 
+/** File extension by observed content type (without parameters or case). */
+const EXTENSION_BY_CONTENT_TYPE: Record<string, string> = {
+  "application/pdf": "pdf",
+  "application/vnd.ms-excel": "xls",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+  "text/csv": "csv",
+  "application/zip": "zip",
+};
+
 /**
  * Outcome of storing one run's artifacts: the manifest path and how many
  * files landed on disk.
@@ -108,20 +117,7 @@ function artifactExtension(artifact: ArtifactRecord): string {
  */
 function extensionForContentType(contentType: string): string | null {
   const normalized = contentType.split(";", 1)[0].trim().toLowerCase();
-  switch (normalized) {
-    case "application/pdf":
-      return "pdf";
-    case "application/vnd.ms-excel":
-      return "xls";
-    case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-      return "xlsx";
-    case "text/csv":
-      return "csv";
-    case "application/zip":
-      return "zip";
-    default:
-      return null;
-  }
+  return EXTENSION_BY_CONTENT_TYPE[normalized] ?? null;
 }
 
 /**
