@@ -298,6 +298,26 @@ automation was required.
 - [ ] Surface artifact counts/paths in the CLI summary and document the
       new outputs in the README.
 
+Provisional decisions (refine during implementation):
+
+- Contract shapes, per the earlier discussion:
+  `extractDocumentLinks(): Promise<Array<{ url: string; label: string }>>`
+  and
+  `downloadArtifact(targetUrl: string): Promise<{ buffer: Buffer; contentType: string; contentLength: number }>`.
+- Caps start at `MAX_ARTIFACTS_PER_SEED = 5` documents and
+  `MAX_ARTIFACT_BYTES = 25_000_000` bytes per artifact.
+- Manifest at `data/artifact_manifest.json`: `{ schemaVersion,
+generatedAt, artifacts: Array<{ isoCode, sourceUrl, path, sha256,
+bytes, contentType, provider, retrievedAt }> }`, written atomically.
+- The manifest stands alone; `RegistryVerification` gains only
+  `artifactCount: number`, traced via ISO code.
+- Ingestion runs automatically on every probe, governed by the existing
+  browser flags: `--browser=direct` still harvests open static links but
+  never launches a browser for documents.
+- New evidence keys: `document_link` (candidate link observed),
+  `artifact_stored` (raw artifact written), `artifact_browser` (browser
+  retrieval was required; provider attribution rides on `provider`).
+
 **Done when:** A source document can be traced from registry record to
 its original URL and stored raw artifact, with provider attribution
 showing whether direct HTTP or Solari retrieval produced it — and
