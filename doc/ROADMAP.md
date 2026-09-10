@@ -270,32 +270,33 @@ observation. A stored artifact records which provider retrieved it, so a
 reviewer can see exactly where direct HTTP fell short and browser
 automation was required.
 
-- [ ] Add a binary-safe direct artifact fetch in `probe-core` (byte
+- [x] Add a binary-safe direct artifact fetch in `probe-core` (byte
       download with size caps and content-type observation; never decode
       binary bodies as text).
-- [ ] Extend the `BrowserProbePage` contract with optional document
+- [x] Extend the `BrowserProbePage` contract with optional document
       capability: `extractDocumentLinks()` (rendered-DOM link harvest)
       and `downloadArtifact(url)` (session-bound binary streaming).
       Optional so fakes and future providers stay valid; the workflow
       checks presence before calling.
-- [ ] Implement both methods in `packages/providers/solari` via the
+- [x] Implement both methods in `packages/providers/solari` via the
       Playwright page (rendered-DOM evaluation, cookie-inheriting
       request context, stealth/proxy options carried over).
-- [ ] Orchestrate in the workflow: discover candidate links (direct HTML
+- [x] Orchestrate in the workflow: discover candidate links (direct HTML
       scan plus browser DOM), download direct-first, fall back to the
       browser provider on 401/403, HTML-instead-of-binary, or JS-driven
       links. Bound per-seed artifact count and bytes with named
       constants.
-- [ ] Store raw artifacts at `data/artifacts/{ISO}/{sha256}.{ext}` with a
+- [x] Store raw artifacts at `data/artifacts/{ISO}/{sha256}.{ext}` with a
       manifest tracing each registry record to its original URL and
       stored file (source URL, retrieval timestamp, provider,
       content-type, bytes, sha256). Atomic writes, like the registry.
-- [ ] Detect text PDFs versus scanned documents via the text layer only.
+- [x] Detect text PDFs versus scanned documents via the text layer only.
       No OCR and no image processing in this phase.
-- [ ] Preserve the original artifact alongside any extracted text.
-- [ ] Extend fakes and keep the suite hermetic (no live portals, no
+- [x] Preserve the original artifact; text extraction itself is future
+      work, so there is nothing to sit alongside yet.
+- [x] Extend fakes and keep the suite hermetic (no live portals, no
       `SOLARI_API_KEY`); coverage thresholds stay 100%.
-- [ ] Surface artifact counts/paths in the CLI summary and document the
+- [x] Surface artifact counts/paths in the CLI summary and document the
       new outputs in the README.
 
 Provisional decisions (refine during implementation):
@@ -322,6 +323,16 @@ bytes, contentType, provider, retrievedAt }> }`, written atomically.
 its original URL and stored raw artifact, with provider attribution
 showing whether direct HTTP or Solari retrieval produced it — and
 open static portals still cost no browser.
+
+Notes (Phase 11, as shipped):
+
+- Manifest entries also carry the PDF `textLayer` flag alongside the
+  provisional fields; the registry entry carries only the count.
+- Runs with observed-but-unretrieved document links (`document_link`
+  evidence, `artifactCount` zero) join `needs_review.json` for human
+  triage — guarded endpoints worth a manual look.
+- No text is extracted from stored documents in this phase; the raw
+  bytes plus the text-layer flag are the whole record.
 
 Non-goals (stay in Phase 12+): OCR, image support, translation,
 normalized tariff representation, change detection.
