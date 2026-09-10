@@ -10,3 +10,5 @@ venv/
 screenshot.png
 data/customs_registry.json
 data/needs_review.json
+data/artifact_manifest.json
+data/artifacts/
