@@ -439,4 +439,68 @@ describe("probeWorkflow", () => {
     });
     expect(result.artifacts[0]?.textLayer).toBe(true);
   });
+
+  it("runs the browser pass for every seed, not just direct failures", async () => {
+    fetchPortalDocs("<html><body>tariff schedule</body></html>", 200, "application/pdf", new Uint8Array([1]));
+    const result = await probeWorkflow(seed, {
+      browserProvider: fakeProvider({
+        response: { status: 200, url: "https://portal.example/final" },
+      }),
+    });
+    expect(result.method).toBe(PROBE_METHOD.DIRECT);
+    expect(result.provider).toBe("fake");
+    expect(result.direct.ok).toBe(true);
+    expect(result.browser?.status).toBe(200);
+    expect(result.browser?.title).toBe("Tariff portal");
+    expect(result.evidence).toContain(PROBE_EVIDENCE.DIRECT_RESPONSE);
+    expect(result.evidence).toContain(PROBE_EVIDENCE.BROWSER_RESPONSE);
+    expect(result.evidence).toContain(PROBE_EVIDENCE.BROWSER_TEXT);
+    expect(result.error).toBeNull();
+  });
+
+  it("merges direct and browser links without duplicates", async () => {
+    fetchPortalDocs(
+      '<a href="https://cdn.example/shared.pdf">shared</a><a href="https://cdn.example/direct-only.pdf">direct</a>',
+      403,
+      "text/html",
+      new Uint8Array(),
+    );
+    const result = await probeWorkflow(seed, {
+      browserProvider: fakeProvider({
+        response: { status: 200, url: "https://portal.example/final" },
+        docLinks: [
+          { url: "https://cdn.example/shared.pdf", label: "shared again" },
+          { url: "https://cdn.example/browser-only.pdf", label: "browser" },
+        ],
+        download: { buffer: Buffer.from([7]), contentType: "text/csv" },
+      }),
+    });
+    expect(result.method).toBe(PROBE_METHOD.DIRECT);
+    expect(result.artifacts.map((artifact) => artifact.sourceUrl)).toEqual([
+      "https://cdn.example/shared.pdf",
+      "https://cdn.example/direct-only.pdf",
+      "https://cdn.example/browser-only.pdf",
+    ]);
+    expect(result.evidence).toContain(PROBE_EVIDENCE.DOCUMENT_LINK);
+  });
+
+  it("keeps the direct observation when the browser pass fails after direct success", async () => {
+    fetchPortalDocs(
+      '<a href="https://cdn.example/schedule.pdf">schedule</a>',
+      200,
+      "application/pdf",
+      new Uint8Array([1]),
+    );
+    const result = await probeWorkflow(seed, {
+      browserProvider: fakeProvider({
+        response: { status: 200, url: "https://portal.example/final" },
+        launchError: new Error("browser unavailable"),
+      }),
+    });
+    expect(result.method).toBe(PROBE_METHOD.DIRECT);
+    expect(result.provider).toBeNull();
+    expect(result.browser).toBeNull();
+    expect(result.artifacts).toHaveLength(1);
+    expect(result.error).toBeNull();
+  });
 });

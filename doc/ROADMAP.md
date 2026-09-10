@@ -282,10 +282,10 @@ automation was required.
       Playwright page (rendered-DOM evaluation, cookie-inheriting
       request context, stealth/proxy options carried over).
 - [x] Orchestrate in the workflow: discover candidate links (direct HTML
-      scan plus browser DOM), download direct-first, fall back to the
-      browser provider on 401/403, HTML-instead-of-binary, or JS-driven
-      links. Bound per-seed artifact count and bytes with named
-      constants.
+      scan plus browser DOM on every seed), download direct-first, fall
+      back to the browser page's session-bound streaming on 401/403,
+      HTML-instead-of-binary, or JS-driven links. Bound per-seed
+      artifact count and bytes with named constants.
 - [x] Store raw artifacts at `data/artifacts/{ISO}/{sha256}.{ext}` with a
       manifest tracing each registry record to its original URL and
       stored file (source URL, retrieval timestamp, provider,
@@ -314,7 +314,9 @@ bytes, contentType, provider, retrievedAt }> }`, written atomically.
   `artifactCount: number`, traced via ISO code.
 - Ingestion runs automatically on every probe, governed by the existing
   browser flags: `--browser=direct` still harvests open static links but
-  never launches a browser for documents.
+  never launches a browser. The browser pass itself runs on every seed
+  whenever a provider is configured — confirmation and DOM harvest are
+  not gated on direct failure.
 - New evidence keys: `document_link` (candidate link observed),
   `artifact_stored` (raw artifact written), `artifact_browser` (browser
   retrieval was required; provider attribution rides on `provider`).
@@ -326,6 +328,9 @@ open static portals still cost no browser.
 
 Notes (Phase 11, as shipped):
 
+- The browser pass runs on every seed with a configured provider; method
+  stays `direct` when the portal answered directly, with `provider` naming
+  the browser used for confirmation and documents.
 - Manifest entries also carry the PDF `textLayer` flag alongside the
   provisional fields; the registry entry carries only the count.
 - Runs with observed-but-unretrieved document links (`document_link`

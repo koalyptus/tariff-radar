@@ -15,6 +15,7 @@ import type {
   BrowserProbeOptions,
   BrowserProbePage,
   BrowserProbeProvider,
+  DirectProbeResult,
   DocumentLink,
   ProbeLogger,
   WorkflowResult,
@@ -39,7 +40,7 @@ export interface WorkflowSeed {
  * provider the run is direct-only and reports failure when direct fails.
  */
 export interface ProbeWorkflowOptions {
-  /** Browser provider for fallback after direct failure. */
+  /** Browser provider for the confirmation and document pass on every seed. */
   browserProvider?: BrowserProbeProvider;
   /** Opt-in browser capabilities forwarded to the provider. */
   browserOptions?: BrowserProbeOptions;
@@ -50,13 +51,15 @@ export interface ProbeWorkflowOptions {
 }
 
 /**
- * Probe one seed direct-first, escalating to the browser provider only after
- * direct failure. After a successful portal observation, candidate document
- * links are harvested (direct HTML scan, browser DOM) and each document is
- * downloaded direct-first, falling back to the browser page's session-bound
- * streaming only when direct fails. Page and session are always closed, on
- * success and on failure. Logs start, direct completion, browser fallback,
- * browser completion, and failure events with safe structured context.
+ * Probe one seed: direct portal probe first, then the browser provider
+ * whenever one is configured — for every seed, not just direct failures.
+ * The browser pass confirms the portal (rendered title and text) and
+ * harvests JS-driven document links the raw-HTML scan cannot see; each
+ * document still downloads direct-first, falling back to the page's
+ * session-bound streaming only when direct fails. Page and session are
+ * always closed, on success and on failure. Logs start, direct completion,
+ * browser fallback, browser completion, and failure events with safe
+ * structured context.
  * @param seed - Candidate portal hypothesis with provenance URLs.
  * @param options - Browser provider, timeouts, and logger overrides.
  * @returns The workflow result; failures carry the error, never guesses.
@@ -68,37 +71,26 @@ export async function probeWorkflow(seed: WorkflowSeed, options: ProbeWorkflowOp
   const direct = await runDirectProbe(seed.portalUrl, options.timeoutMs);
   log.directComplete(direct);
 
-  if (direct.ok) {
-    const relevance = assessContentRelevance({ title: null, text: direct.text });
-    const links =
-      direct.text === null ? [] : extractDocumentLinksFromHtml(direct.text, direct.finalUrl ?? seed.portalUrl);
-    const artifacts = await retrieveArtifacts(links, null, null, options.timeoutMs);
-    return {
-      seed,
-      method: PROBE_METHOD.DIRECT,
-      provider: null,
-      direct,
-      browser: null,
-      // Transport success plus whatever the body scan observed: a keyword
-      // hit is content evidence, but the record stays unverified either way.
-      evidence: [PROBE_EVIDENCE.DIRECT_RESPONSE, ...relevance.evidence, ...artifactEvidence(links, artifacts)],
-      artifacts,
-      error: null,
-    };
-  }
+  const directLinks =
+    direct.ok && direct.text !== null
+      ? extractDocumentLinksFromHtml(direct.text, direct.finalUrl ?? seed.portalUrl)
+      : [];
 
   if (!options.browserProvider) {
-    log.failed(null, DIRECT_PROBE_FAILURE);
-    return {
-      seed,
-      method: PROBE_METHOD.FAILED,
-      provider: null,
-      direct,
-      browser: null,
-      evidence: [],
-      artifacts: [],
-      error: DIRECT_PROBE_FAILURE,
-    };
+    if (!direct.ok) {
+      log.failed(null, DIRECT_PROBE_FAILURE);
+      return {
+        seed,
+        method: PROBE_METHOD.FAILED,
+        provider: null,
+        direct,
+        browser: null,
+        evidence: [],
+        artifacts: [],
+        error: DIRECT_PROBE_FAILURE,
+      };
+    }
+    return directOnlyResult(seed, direct, directLinks, options.timeoutMs);
   }
 
   log.browserFallback(options.browserProvider.name, options.browserOptions);
@@ -117,12 +109,12 @@ export async function probeWorkflow(seed: WorkflowSeed, options: ProbeWorkflowOp
         const latencyMs = Math.round(performance.now() - browserStartedAt);
         log.browserComplete(options.browserProvider.name, status, finalUrl, latencyMs);
         const relevance = assessContentRelevance({ title, text });
-        const links = await harvestBrowserLinks(page);
+        const links = mergeLinks(directLinks, await harvestBrowserLinks(page));
         const artifacts = await retrieveArtifacts(links, page, options.browserProvider.name, options.timeoutMs);
         const sessionId = session.sessionId ?? null;
         return {
           seed,
-          method: PROBE_METHOD.BROWSER,
+          method: direct.ok ? PROBE_METHOD.DIRECT : PROBE_METHOD.BROWSER,
           provider: options.browserProvider.name,
           direct,
           browser: {
@@ -138,6 +130,7 @@ export async function probeWorkflow(seed: WorkflowSeed, options: ProbeWorkflowOp
           // Keyword evidence comes from the pure content-relevance check;
           // transport success alone never implies relevance.
           evidence: [
+            ...(direct.ok ? [PROBE_EVIDENCE.DIRECT_RESPONSE] : []),
             ...(status !== null ? [PROBE_EVIDENCE.BROWSER_RESPONSE] : []),
             PROBE_EVIDENCE.BROWSER_TEXT,
             ...relevance.evidence,
@@ -155,6 +148,10 @@ export async function probeWorkflow(seed: WorkflowSeed, options: ProbeWorkflowOp
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     log.failed(options.browserProvider.name, message);
+    if (direct.ok) {
+      // The portal observation stands; the browser pass was enhancement.
+      return directOnlyResult(seed, direct, directLinks, options.timeoutMs);
+    }
     return {
       seed,
       method: PROBE_METHOD.FAILED,
@@ -166,6 +163,56 @@ export async function probeWorkflow(seed: WorkflowSeed, options: ProbeWorkflowOp
       error: message,
     };
   }
+}
+
+/**
+ * Build the direct-only result: portal observation plus direct-harvested
+ * documents, no browser involved. Used without a provider and as the
+ * fallback when the browser pass fails after a successful direct probe.
+ * @param seed - Candidate portal hypothesis with provenance URLs.
+ * @param direct - Completed direct probe, known successful.
+ * @param directLinks - Document links from the direct HTML scan.
+ * @param timeoutMs - Direct-download timeout override.
+ * @returns The workflow result with transport and content evidence.
+ */
+async function directOnlyResult(
+  seed: WorkflowSeed,
+  direct: DirectProbeResult,
+  directLinks: DocumentLink[],
+  timeoutMs?: number,
+): Promise<WorkflowResult> {
+  const relevance = assessContentRelevance({ title: null, text: direct.text });
+  const artifacts = await retrieveArtifacts(directLinks, null, null, timeoutMs);
+  return {
+    seed,
+    method: PROBE_METHOD.DIRECT,
+    provider: null,
+    direct,
+    browser: null,
+    // Transport success plus whatever the body scan observed: a keyword
+    // hit is content evidence, but the record stays unverified either way.
+    evidence: [PROBE_EVIDENCE.DIRECT_RESPONSE, ...relevance.evidence, ...artifactEvidence(directLinks, artifacts)],
+    artifacts,
+    error: null,
+  };
+}
+
+/**
+ * Merge direct and browser link discoveries in order, deduplicated by URL.
+ * @param directLinks - Links from the direct HTML scan.
+ * @param browserLinks - Links from the rendered DOM.
+ * @returns The combined links, direct discoveries first.
+ */
+function mergeLinks(directLinks: DocumentLink[], browserLinks: DocumentLink[]): DocumentLink[] {
+  const seen = new Set<string>();
+  const links: DocumentLink[] = [];
+  for (const link of [...directLinks, ...browserLinks]) {
+    if (!seen.has(link.url)) {
+      seen.add(link.url);
+      links.push(link);
+    }
+  }
+  return links;
 }
 
 /**

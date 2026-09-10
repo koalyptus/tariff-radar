@@ -93,12 +93,12 @@ export function parseProbeArgs(argv: string[]): CliOptions {
     .usage("Usage: pnpm probe [ISO] [options]")
     .command(
       "$0 [iso]",
-      "Probe one portal candidate direct-first, with optional Solari fallback after direct failure. Without an ISO, probes every seed.",
+      "Probe one portal candidate direct-first, with an optional Solari browser pass on every seed. Without an ISO, probes every seed.",
       (cmd) => cmd.positional("iso", { describe: "ISO country code of one seed.", type: "string" }),
     )
     .option("browser", {
       choices: [BROWSER_MODE.DIRECT, BROWSER_MODE.SOLARI],
-      describe: "Browser fallback after direct failure (default solari); direct disables it.",
+      describe: "Browser pass after the direct probe (default solari); direct disables it.",
     })
     .option("timeout-ms", { type: "number", describe: "Direct-probe timeout in milliseconds." })
     .option("stealth", { type: "boolean", describe: "Opt-in provider stealth/anti-detection measures." })

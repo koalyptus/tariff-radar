@@ -178,7 +178,7 @@ usage errors. Per-seed progress prints on stderr, the result table on stdout.
 | Flag                       | Default   | Description                                                            |
 | -------------------------- | --------- | ---------------------------------------------------------------------- |
 | `[ISO]`                    | all seeds | Probe one portal candidate by ISO code.                                |
-| `--browser=direct\|solari` | `solari`  | Browser fallback after direct failure; `direct` disables it.           |
+| `--browser=direct\|solari` | `solari`  | Browser pass after the direct probe; `direct` disables it.             |
 | `--timeout-ms=N`           | `10000`   | Direct-probe timeout in milliseconds.                                  |
 | `--stealth`                | on\*      | Provider stealth/anti-detection measures (browser fallback only).      |
 | `--proxy-country=XX`       | auto\*\*  | Two-letter proxy egress country code. Defaults to the seed's ISO code. |
@@ -263,11 +263,11 @@ Absence of an observation produces no entry — e.g., a failed direct probe yiel
 
 ### Method
 
-| Method    | Description                                                                                                                |
-| --------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `direct`  | A native `fetch` HTTP request with a bounded timeout (`DEFAULT_DIRECT_PROBE_TIMEOUT_MS = 10_000`). No browser is launched. |
-| `browser` | A browser session was launched (via Solari or another provider) after direct access failed or was inconclusive.            |
-| `failed`  | Neither direct nor browser probing succeeded; the result carries `error` and empty evidence.                               |
+| Method    | Description                                                                                                                                                                                                                     |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `direct`  | A native `fetch` HTTP request with a bounded timeout (`DEFAULT_DIRECT_PROBE_TIMEOUT_MS = 10_000`). The portal answered directly; a browser session may still have run for confirmation and document discovery (see `provider`). |
+| `browser` | A browser session was launched (via Solari or another provider) after direct access failed or was inconclusive.                                                                                                                 |
+| `failed`  | Neither direct nor browser probing succeeded; the result carries `error` and empty evidence.                                                                                                                                    |
 
 ### Verification status
 
