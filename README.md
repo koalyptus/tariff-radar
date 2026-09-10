@@ -193,8 +193,9 @@ Pass `--log=json` for the original machine-readable JSON lines.
 
 The CLI prints a per-seed summary to stdout, writes `data/customs_registry.json`
 from completed workflow results, and writes `data/needs_review.json`
-with the subset needing human triage: failed runs and
-transport successes without observed tariff-domain terminology. Direct probes
+with the subset needing human triage: failed runs,
+transport successes without observed tariff-domain terminology, and runs
+with observed-but-unretrieved document links. Direct probes
 capture capped textual bodies, so `direct`-ok entries can carry keyword
 evidence too; keyword-less direct runs stay in triage without browser
 escalation. Every
@@ -209,8 +210,10 @@ Same envelope as `data/customs_registry.json` (`schemaVersion: 1`,
 `generatedAt`, `entries: RegistryEntry[]`) — triage entries are complete
 registry records, not summaries, so reviewers see seed provenance,
 per-method status fields, evidence, and errors. Selection rule:
-`verification.error !== null`, or no `*_keyword` content signal in
-`verification.evidence`. An empty `entries: []` means nothing needed review
+`verification.error !== null`, no `*_keyword` content signal in
+`verification.evidence`, or `document_link` evidence with
+`verification.artifactCount === 0` (links observed but nothing retrieved).
+An empty `entries: []` means nothing needed review
 on that run.
 
 Browser-path entries also carry `verification.browserSessionId`: the Solari

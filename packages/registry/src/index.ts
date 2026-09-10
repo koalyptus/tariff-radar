@@ -13,4 +13,8 @@ export type { StoredArtifacts } from "./artifacts.js";
 export { ARTIFACT_MANIFEST_FILE_NAME, ARTIFACTS_DIR_NAME, runStoreArtifacts } from "./artifacts.js";
 export { loadSeeds } from "./seeds.js";
 export { mapWorkflowResultsToEntries, REGISTRY_VERIFICATION_STATUS } from "./mapper.js";
-export { NEEDS_REVIEW_KEYWORD_EVIDENCE, selectNeedsReviewEntries } from "./needs-review.js";
+export {
+  NEEDS_REVIEW_DOCUMENT_LINK_EVIDENCE,
+  NEEDS_REVIEW_KEYWORD_EVIDENCE,
+  selectNeedsReviewEntries,
+} from "./needs-review.js";

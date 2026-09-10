@@ -32,7 +32,12 @@ afterAll(() => {
   }
 });
 
-function entry(overrides: { evidence?: string[]; error?: string | null; isoCode?: string }): RegistryEntry {
+function entry(overrides: {
+  evidence?: string[];
+  error?: string | null;
+  isoCode?: string;
+  artifactCount?: number;
+}): RegistryEntry {
   return {
     isoCode: overrides.isoCode ?? "US",
     countryName: "United States",
@@ -53,6 +58,7 @@ function entry(overrides: { evidence?: string[]; error?: string | null; isoCode?
       browserTitle: null,
       browserLatencyMs: null,
       browserSessionId: null,
+      artifactCount: overrides.artifactCount ?? 0,
       evidence: overrides.evidence ?? ["direct_response"],
       error: overrides.error ?? null,
     },
@@ -82,6 +88,33 @@ describe("selectNeedsReviewEntries", () => {
       const kept = entry({ evidence: ["browser_response", "browser_text", keyword], error: null });
       expect(selectNeedsReviewEntries([kept])).toEqual([]);
     }
+  });
+
+  it("flags keyword runs with observed-but-unretrieved documents", () => {
+    const flagged = entry({
+      evidence: ["direct_response", "tariff_keyword", "document_link"],
+      artifactCount: 0,
+      error: null,
+    });
+    expect(selectNeedsReviewEntries([flagged])).toEqual([flagged]);
+  });
+
+  it("keeps keyword runs with retrieved documents out of triage", () => {
+    const kept = entry({
+      evidence: ["direct_response", "tariff_keyword", "document_link", "artifact_stored"],
+      artifactCount: 1,
+      error: null,
+    });
+    expect(selectNeedsReviewEntries([kept])).toEqual([]);
+  });
+
+  it("keeps keyword runs with no document links out of triage", () => {
+    const kept = entry({
+      evidence: ["direct_response", "tariff_keyword"],
+      artifactCount: 0,
+      error: null,
+    });
+    expect(selectNeedsReviewEntries([kept])).toEqual([]);
   });
 
   it("preserves run order and the full evidence trail", () => {
