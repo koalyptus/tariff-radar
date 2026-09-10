@@ -101,8 +101,8 @@ properties of an entire country or customs system.
 6. **Registry output:** Write validated observations and timestamps to
    `customs_registry.json`, retaining enough evidence to explain each result.
 
-Later work may add document downloads, OCR, translation, change detection, and
-structured tariff extraction. Those are outside the first registry milestone.
+Later work may add translation, change detection, and
+structured tariff extraction. Those are outside the current milestones.
 
 ## Provider Architecture
 
@@ -188,8 +188,8 @@ usage errors. Per-seed progress prints on stderr, the result table on stdout.
 Pass `--log=json` for the original machine-readable JSON lines.
 
 The CLI prints a per-seed summary to stdout, writes `data/customs_registry.json`
-from completed workflow results (Phase 8), and writes `data/needs_review.json`
-with the subset needing human triage (Phase 10): failed runs and
+from completed workflow results, and writes `data/needs_review.json`
+with the subset needing human triage: failed runs and
 transport successes without observed tariff-domain terminology. Direct probes
 capture capped textual bodies, so `direct`-ok entries can carry keyword
 evidence too; keyword-less direct runs stay in triage without browser
