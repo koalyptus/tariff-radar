@@ -27,6 +27,7 @@ function directResult(): WorkflowResult {
     },
     browser: null,
     evidence: ["direct_response"],
+    artifacts: [],
     error: null,
   };
 }
@@ -55,6 +56,7 @@ function browserResult(): WorkflowResult {
       latencyMs: 11,
     },
     evidence: ["browser_response", "browser_text"],
+    artifacts: [],
     error: null,
   };
 }
@@ -76,6 +78,7 @@ function failedResult(): WorkflowResult {
     },
     browser: null,
     evidence: [],
+    artifacts: [],
     error: "stub error",
   };
 }
@@ -101,6 +104,7 @@ describe("mapWorkflowResultsToEntries", () => {
       browserTitle: null,
       browserLatencyMs: null,
       browserSessionId: null,
+      artifactCount: 0,
       evidence: ["direct_response"],
       error: null,
     });
@@ -124,6 +128,7 @@ describe("mapWorkflowResultsToEntries", () => {
       browserTitle: "Tariff",
       browserLatencyMs: 11,
       browserSessionId: "solari-session-1",
+      artifactCount: 0,
       evidence: ["browser_response", "browser_text"],
       error: null,
     });
@@ -146,5 +151,23 @@ describe("mapWorkflowResultsToEntries", () => {
 
   it("returns an empty array for no results", () => {
     expect(mapWorkflowResultsToEntries([], "2026-01-01T00:00:00.000Z")).toEqual([]);
+  });
+
+  it("counts retrieved artifacts without embedding their bytes", () => {
+    const result = directResult();
+    result.artifacts = [
+      {
+        sourceUrl: "https://cdn.example/schedule.pdf",
+        buffer: Buffer.from([1, 2, 3]),
+        contentType: "application/pdf",
+        contentLength: 3,
+        textLayer: false,
+        provider: null,
+        retrievedAt: "2026-01-01T00:00:00.000Z",
+      },
+    ];
+    const entries = mapWorkflowResultsToEntries([result], "2026-01-01T00:00:00.000Z");
+    expect(entries[0]!.verification.artifactCount).toBe(1);
+    expect(JSON.stringify(entries[0])).not.toContain("schedule.pdf");
   });
 });

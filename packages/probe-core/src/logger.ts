@@ -152,7 +152,7 @@ export class ProbeRunLogger {
   }
 
   /**
-   * Log escalation to the browser after direct failure.
+   * Log the browser pass following the direct probe.
    * @param provider - Provider name taking over the run.
    * @param options - Effective opt-in capabilities, so the run record shows
    * exactly what the browser used.

@@ -63,6 +63,7 @@ function directResult(): WorkflowResult {
     },
     browser: null,
     evidence: ["direct_response"],
+    artifacts: [],
     error: null,
   };
 }
@@ -135,7 +136,7 @@ describe("runProbeCommand", () => {
       expect(recorded.progress[0]).toContain("Probe: STARTING");
       expect(recorded.progress.some((l) => l.includes("Probe: COMPLETED"))).toBe(true);
       expect(recorded.progress.some((l) => l.includes("Registry: wrote"))).toBe(true);
-      expect(recorded.progress.some((l) => l.includes("Review: wrote 1 entries"))).toBe(true);
+      expect(recorded.progress.some((l) => l.includes("Review: wrote 1 entry"))).toBe(true);
       const review = JSON.parse(readFileSync(join(dir, "needs_review.json"), "utf8")) as {
         entries: unknown[];
       };
@@ -367,6 +368,46 @@ describe("runProbeCommand", () => {
         runProbeCommand(["US", "--browser=direct"], stubDeps("plain failure"), seedsFile, undefined, recorded.output),
       ).resolves.toBe(2);
       expect(recorded.errors).toEqual(["plain failure"]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("stores retrieved artifacts with a manifest beside the registry", async () => {
+    const { dir, seedsFile } = writeSeeds();
+    const recorded = recordOutput();
+    const withArtifact: WorkflowResult = {
+      ...directResult(),
+      evidence: ["direct_response", "document_link", "artifact_stored"],
+      artifacts: [
+        {
+          sourceUrl: "https://cdn.example/schedule.pdf",
+          buffer: Buffer.from([1, 2, 3]),
+          contentType: "application/pdf",
+          contentLength: 3,
+          textLayer: false,
+          provider: null,
+          retrievedAt: "2026-01-01T00:00:00.000Z",
+        },
+      ],
+    };
+    try {
+      await expect(
+        runProbeCommand(["US"], stubDeps(withArtifact), seedsFile, join(dir, "registry.json"), recorded.output),
+      ).resolves.toBe(0);
+      expect(recorded.progress.some((l) => l.includes("Artifacts: wrote 1 file"))).toBe(true);
+      const manifest = JSON.parse(readFileSync(join(dir, "artifact_manifest.json"), "utf8")) as {
+        schemaVersion: number;
+        artifacts: Array<{ isoCode: string; sourceUrl: string; sha256: string }>;
+      };
+      expect(manifest.schemaVersion).toBe(1);
+      expect(manifest.artifacts).toHaveLength(1);
+      expect(manifest.artifacts[0]?.isoCode).toBe("US");
+      expect(manifest.artifacts[0]?.sourceUrl).toBe("https://cdn.example/schedule.pdf");
+      const registry = JSON.parse(readFileSync(join(dir, "registry.json"), "utf8")) as {
+        entries: Array<{ verification: { artifactCount: number } }>;
+      };
+      expect(registry.entries[0]?.verification.artifactCount).toBe(1);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

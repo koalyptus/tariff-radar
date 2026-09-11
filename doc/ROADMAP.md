@@ -241,18 +241,106 @@ Notes (Phase 10, as shipped):
 - Evidence uses stable identifiers, never raw page snippets.
 - Link/document href extraction needs a `BrowserProbePage` contract
   extension (links provider) and belongs with Phase 11 document ingestion;
-  deferred, not silently dropped.
+  picked up there, not silently dropped.
 
-## Phase 11: Document Ingestion
+## Phase 11: Document Ingestion (Solari as Primary Execution Engine)
 
-- [ ] Capture linked tariff documents and downloads.
-- [ ] Store raw documents with source URL and retrieval timestamp.
-- [ ] Detect text PDFs versus scanned documents.
-- [ ] Add OCR only for documents that need it.
-- [ ] Preserve the original artifact alongside extracted text.
+Direct `fetch` handles open static links. Guarded and dynamic document
+artifacts — the normal case on real customs portals — need the Solari
+browser provider, which is the primary execution engine for this phase:
 
-**Done when:** A source document can be traced from registry record to its
-original URL and stored raw artifact.
+- **JS-rendered download triggers.** Portals often expose no static
+  `<a href="schedule.pdf">` in raw HTML; downloads are driven by
+  client-side execution (`javascript:void(0)`, `onclick` export
+  builders). Only a rendered DOM sees the generated blob/CDN URLs.
+- **WAF / challenge guards on document endpoints.** Download routes
+  (`/api/v1/tariffs/download/pdf`) frequently sit behind Cloudflare
+  Turnstile, Akamai Bot Manager, or JS rate-limit challenges that answer
+  direct `fetch` with 401/403 or an HTML challenge page instead of the
+  binary. Solari passes the guard with its stealth context and automated
+  challenge handling, then streams the raw bytes.
+- **Session-bound and geo-fenced streaming.** Document CDNs often require
+  cookies established during navigation or egress from the portal's
+  region. Solari inherits the verified navigation session and routes
+  through the requested residential proxy region.
+
+Same rules as the portal probe: direct-first, browser only on observed
+need, always close pages/sessions, never infer guards without an
+observation. A stored artifact records which provider retrieved it, so a
+reviewer can see exactly where direct HTTP fell short and browser
+automation was required.
+
+- [x] Add a binary-safe direct artifact fetch in `probe-core` (byte
+      download with size caps and content-type observation; never decode
+      binary bodies as text).
+- [x] Extend the `BrowserProbePage` contract with optional document
+      capability: `extractDocumentLinks()` (rendered-DOM link harvest)
+      and `downloadArtifact(url)` (session-bound binary streaming).
+      Optional so fakes and future providers stay valid; the workflow
+      checks presence before calling.
+- [x] Implement both methods in `packages/providers/solari` via the
+      Playwright page (rendered-DOM evaluation, cookie-inheriting
+      request context, stealth/proxy options carried over).
+- [x] Orchestrate in the workflow: discover candidate links (direct HTML
+      scan plus browser DOM on every seed), download direct-first, fall
+      back to the browser page's session-bound streaming on 401/403,
+      HTML-instead-of-binary, or JS-driven links. Bound per-seed
+      artifact count and bytes with named constants.
+- [x] Store raw artifacts at `data/artifacts/{ISO}/{sha256}.{ext}` with a
+      manifest tracing each registry record to its original URL and
+      stored file (source URL, retrieval timestamp, provider,
+      content-type, bytes, sha256). Atomic writes, like the registry.
+- [x] Detect text PDFs versus scanned documents via the text layer only.
+      No OCR and no image processing in this phase.
+- [x] Preserve the original artifact; text extraction itself is future
+      work, so there is nothing to sit alongside yet.
+- [x] Extend fakes and keep the suite hermetic (no live portals, no
+      `SOLARI_API_KEY`); coverage thresholds stay 100%.
+- [x] Surface artifact counts/paths in the CLI summary and document the
+      new outputs in the README.
+
+Provisional decisions (refine during implementation):
+
+- Contract shapes, per the earlier discussion:
+  `extractDocumentLinks(): Promise<Array<{ url: string; label: string }>>`
+  and
+  `downloadArtifact(targetUrl: string): Promise<{ buffer: Buffer; contentType: string; contentLength: number }>`.
+- Caps start at `MAX_ARTIFACTS_PER_SEED = 5` documents and
+  `MAX_ARTIFACT_BYTES = 25_000_000` bytes per artifact.
+- Manifest at `data/artifact_manifest.json`: `{ schemaVersion,
+generatedAt, artifacts: Array<{ isoCode, sourceUrl, path, sha256,
+bytes, contentType, provider, retrievedAt }> }`, written atomically.
+- The manifest stands alone; `RegistryVerification` gains only
+  `artifactCount: number`, traced via ISO code.
+- Ingestion runs automatically on every probe, governed by the existing
+  browser flags: `--browser=direct` still harvests open static links but
+  never launches a browser. The browser pass itself runs on every seed
+  whenever a provider is configured — confirmation and DOM harvest are
+  not gated on direct failure.
+- New evidence keys: `document_link` (candidate link observed),
+  `artifact_stored` (raw artifact written), `artifact_browser` (browser
+  retrieval was required; provider attribution rides on `provider`).
+
+**Done when:** A source document can be traced from registry record to
+its original URL and stored raw artifact, with provider attribution
+showing whether direct HTTP or Solari retrieval produced it — and
+open static portals still cost no browser.
+
+Notes (Phase 11, as shipped):
+
+- The browser pass runs on every seed with a configured provider; method
+  stays `direct` when the portal answered directly, with `provider` naming
+  the browser used for confirmation and documents.
+- Manifest entries also carry the PDF `textLayer` flag alongside the
+  provisional fields; the registry entry carries only the count.
+- Runs with observed-but-unretrieved document links (`document_link`
+  evidence, `artifactCount` zero) join `needs_review.json` for human
+  triage — guarded endpoints worth a manual look.
+- No text is extracted from stored documents in this phase; the raw
+  bytes plus the text-layer flag are the whole record.
+
+Non-goals (stay in Phase 12+): OCR, image support, translation,
+normalized tariff representation, change detection.
 
 ## Phase 12: Normalization and Change Detection
 
