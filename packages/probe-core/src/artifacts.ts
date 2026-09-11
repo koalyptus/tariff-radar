@@ -3,7 +3,11 @@ import { DEFAULT_DIRECT_PROBE_TIMEOUT_MS, DIRECT_PROBE_USER_AGENT } from "./dire
 /** Upper bound on one artifact download: a memory bound, not a semantic one. */
 export const MAX_ARTIFACT_BYTES = 25_000_000;
 
-/** Minimum extracted text characters to call a PDF text-based rather than scanned. */
+/**
+ * Minimum extracted text characters to call a PDF text-based rather than
+ * scanned. High enough that a scanned page's stray operators and metadata
+ * fragments never qualify; low enough that sparse but real tariff tables do.
+ */
 export const PDF_TEXT_LAYER_MIN_CHARS = 200;
 
 /** Document extensions worth harvesting from link scans. */

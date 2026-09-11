@@ -230,6 +230,26 @@ A registry record traces to its documents through its ISO code;
 `verification.artifactCount` says how many. An empty `artifacts: []` means
 no run retrieved documents.
 
+```json
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-11T00:00:00.000Z",
+  "artifacts": [
+    {
+      "isoCode": "SA",
+      "sourceUrl": "https://zatca.gov.sa/ar/RulesRegulations/Taxes/Documents/Added_Items.pdf",
+      "path": "artifacts/SA/8191c46d7869eb7c92723be3564d5103f71dd6090d215ba926fe66b3aaf62154.pdf",
+      "sha256": "8191c46d7869eb7c92723be3564d5103f71dd6090d215ba926fe66b3aaf62154",
+      "bytes": 710477,
+      "contentType": "application/pdf",
+      "textLayer": false,
+      "provider": "solari",
+      "retrievedAt": "2026-09-11T00:00:00.000Z"
+    }
+  ]
+}
+```
+
 ## Evidence and Limitations
 
 - A successful page load does not prove that all tariff data is complete or

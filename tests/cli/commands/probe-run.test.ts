@@ -136,7 +136,7 @@ describe("runProbeCommand", () => {
       expect(recorded.progress[0]).toContain("Probe: STARTING");
       expect(recorded.progress.some((l) => l.includes("Probe: COMPLETED"))).toBe(true);
       expect(recorded.progress.some((l) => l.includes("Registry: wrote"))).toBe(true);
-      expect(recorded.progress.some((l) => l.includes("Review: wrote 1 entries"))).toBe(true);
+      expect(recorded.progress.some((l) => l.includes("Review: wrote 1 entry"))).toBe(true);
       const review = JSON.parse(readFileSync(join(dir, "needs_review.json"), "utf8")) as {
         entries: unknown[];
       };
@@ -395,7 +395,7 @@ describe("runProbeCommand", () => {
       await expect(
         runProbeCommand(["US"], stubDeps(withArtifact), seedsFile, join(dir, "registry.json"), recorded.output),
       ).resolves.toBe(0);
-      expect(recorded.progress.some((l) => l.includes("Artifacts: wrote 1 files"))).toBe(true);
+      expect(recorded.progress.some((l) => l.includes("Artifacts: wrote 1 file"))).toBe(true);
       const manifest = JSON.parse(readFileSync(join(dir, "artifact_manifest.json"), "utf8")) as {
         schemaVersion: number;
         artifacts: Array<{ isoCode: string; sourceUrl: string; sha256: string }>;
