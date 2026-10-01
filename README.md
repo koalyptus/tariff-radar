@@ -100,9 +100,13 @@ properties of an entire country or customs system.
    content, links, document metadata, and any available tariff or HS-code UI.
 6. **Registry output:** Write validated observations and timestamps to
    `customs_registry.json`, retaining enough evidence to explain each result.
+7. **Document ingestion:** Harvest linked tariff documents and download them
+   direct-first, falling back to the browser provider for guarded or dynamic
+   endpoints. Raw files land under `data/artifacts/` with a manifest tracing
+   each file to its registry record.
 
-Later work may add document downloads, OCR, translation, change detection, and
-structured tariff extraction. Those are outside the first registry milestone.
+Later work may add translation, change detection, and
+structured tariff extraction. Those are outside the current milestones.
 
 ## Provider Architecture
 
@@ -174,7 +178,7 @@ usage errors. Per-seed progress prints on stderr, the result table on stdout.
 | Flag                       | Default   | Description                                                            |
 | -------------------------- | --------- | ---------------------------------------------------------------------- |
 | `[ISO]`                    | all seeds | Probe one portal candidate by ISO code.                                |
-| `--browser=direct\|solari` | `solari`  | Browser fallback after direct failure; `direct` disables it.           |
+| `--browser=direct\|solari` | `solari`  | Browser pass after the direct probe; `direct` disables it.             |
 | `--timeout-ms=N`           | `10000`   | Direct-probe timeout in milliseconds.                                  |
 | `--stealth`                | on\*      | Provider stealth/anti-detection measures (browser fallback only).      |
 | `--proxy-country=XX`       | auto\*\*  | Two-letter proxy egress country code. Defaults to the seed's ISO code. |
@@ -188,9 +192,10 @@ usage errors. Per-seed progress prints on stderr, the result table on stdout.
 Pass `--log=json` for the original machine-readable JSON lines.
 
 The CLI prints a per-seed summary to stdout, writes `data/customs_registry.json`
-from completed workflow results (Phase 8), and writes `data/needs_review.json`
-with the subset needing human triage (Phase 10): failed runs and
-transport successes without observed tariff-domain terminology. Direct probes
+from completed workflow results, and writes `data/needs_review.json`
+with the subset needing human triage: failed runs,
+transport successes without observed tariff-domain terminology, and runs
+with observed-but-unretrieved document links. Direct probes
 capture capped textual bodies, so `direct`-ok entries can carry keyword
 evidence too; keyword-less direct runs stay in triage without browser
 escalation. Every
@@ -205,13 +210,45 @@ Same envelope as `data/customs_registry.json` (`schemaVersion: 1`,
 `generatedAt`, `entries: RegistryEntry[]`) — triage entries are complete
 registry records, not summaries, so reviewers see seed provenance,
 per-method status fields, evidence, and errors. Selection rule:
-`verification.error !== null`, or no `*_keyword` content signal in
-`verification.evidence`. An empty `entries: []` means nothing needed review
+`verification.error !== null`, no `*_keyword` content signal in
+`verification.evidence`, or `document_link` evidence with
+`verification.artifactCount === 0` (links observed but nothing retrieved).
+An empty `entries: []` means nothing needed review
 on that run.
 
 Browser-path entries also carry `verification.browserSessionId`: the Solari
 cloud session id for that run, so any record with `method: "browser"` can be
 looked up directly in the Solari Console. Direct-only runs report null.
+
+### artifact_manifest.json
+
+Same envelope shape (`schemaVersion: 1`, `generatedAt`) with an `artifacts`
+array — one entry per stored document: ISO code, original URL, stored path,
+SHA-256, bytes, content type, text-layer flag, retrieving provider, and
+retrieval timestamp. Raw files live under `data/artifacts/{ISO}/{sha256}.{ext}`.
+A registry record traces to its documents through its ISO code;
+`verification.artifactCount` says how many. An empty `artifacts: []` means
+no run retrieved documents.
+
+```json
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-11T00:00:00.000Z",
+  "artifacts": [
+    {
+      "isoCode": "SA",
+      "sourceUrl": "https://zatca.gov.sa/ar/RulesRegulations/Taxes/Documents/Added_Items.pdf",
+      "path": "artifacts/SA/8191c46d7869eb7c92723be3564d5103f71dd6090d215ba926fe66b3aaf62154.pdf",
+      "sha256": "8191c46d7869eb7c92723be3564d5103f71dd6090d215ba926fe66b3aaf62154",
+      "bytes": 710477,
+      "contentType": "application/pdf",
+      "textLayer": false,
+      "provider": "solari",
+      "retrievedAt": "2026-09-11T00:00:00.000Z"
+    }
+  ]
+}
+```
 
 ## Evidence and Limitations
 
@@ -246,11 +283,11 @@ Absence of an observation produces no entry — e.g., a failed direct probe yiel
 
 ### Method
 
-| Method    | Description                                                                                                                |
-| --------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `direct`  | A native `fetch` HTTP request with a bounded timeout (`DEFAULT_DIRECT_PROBE_TIMEOUT_MS = 10_000`). No browser is launched. |
-| `browser` | A browser session was launched (via Solari or another provider) after direct access failed or was inconclusive.            |
-| `failed`  | Neither direct nor browser probing succeeded; the result carries `error` and empty evidence.                               |
+| Method    | Description                                                                                                                                                                                                                     |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `direct`  | A native `fetch` HTTP request with a bounded timeout (`DEFAULT_DIRECT_PROBE_TIMEOUT_MS = 10_000`). The portal answered directly; a browser session may still have run for confirmation and document discovery (see `provider`). |
+| `browser` | A browser session was launched (via Solari or another provider) after direct access failed or was inconclusive.                                                                                                                 |
+| `failed`  | Neither direct nor browser probing succeeded; the result carries `error` and empty evidence.                                                                                                                                    |
 
 ### Verification status
 

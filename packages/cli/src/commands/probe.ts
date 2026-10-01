@@ -7,6 +7,7 @@ import {
   REGISTRY_FILE_NAME,
   loadSeeds,
   mapWorkflowResultsToEntries,
+  runStoreArtifacts,
   runWriteNeedsReview,
   runWriteRegistry,
   selectNeedsReviewEntries,
@@ -18,7 +19,7 @@ import { BROWSER_MODE, DEFAULT_CONCURRENCY, MAX_CONCURRENCY } from "@tariff-rada
 import type { BrowserMode } from "@tariff-radar/workflow";
 import { stdioOutput } from "../output.js";
 import type { RunCliOutput } from "../output.js";
-import { formatTable } from "../summary.js";
+import { formatTable, pluralize } from "../summary.js";
 
 /**
  * CLI argument parsing via yargs. The framework owns tokenizing, types,
@@ -92,12 +93,12 @@ export function parseProbeArgs(argv: string[]): CliOptions {
     .usage("Usage: pnpm probe [ISO] [options]")
     .command(
       "$0 [iso]",
-      "Probe one portal candidate direct-first, with optional Solari fallback after direct failure. Without an ISO, probes every seed.",
+      "Probe one portal candidate direct-first, with an optional Solari browser pass on every seed. Without an ISO, probes every seed.",
       (cmd) => cmd.positional("iso", { describe: "ISO country code of one seed.", type: "string" }),
     )
     .option("browser", {
       choices: [BROWSER_MODE.DIRECT, BROWSER_MODE.SOLARI],
-      describe: "Browser fallback after direct failure (default solari); direct disables it.",
+      describe: "Browser pass after the direct probe (default solari); direct disables it.",
     })
     .option("timeout-ms", { type: "number", describe: "Direct-probe timeout in milliseconds." })
     .option("stealth", { type: "boolean", describe: "Opt-in provider stealth/anti-detection measures." })
@@ -233,9 +234,13 @@ export async function runProbeCommand(
       needsReview,
       reviewFile ?? join(dirname(resolvedRegistry), NEEDS_REVIEW_FILE_NAME),
     );
+    const stored = await runStoreArtifacts(results, dirname(resolvedRegistry));
     if (options.log === "pretty") {
-      output.printProgress(`Registry: wrote ${String(results.length)} entries at ${registryPath}`);
-      output.printProgress(`Review: wrote ${String(needsReview.length)} entries at ${reviewPath}`);
+      output.printProgress(`Registry: wrote ${pluralize(results.length, "entry", "entries")} at ${registryPath}`);
+      output.printProgress(`Review: wrote ${pluralize(needsReview.length, "entry", "entries")} at ${reviewPath}`);
+      output.printProgress(
+        `Artifacts: wrote ${pluralize(stored.fileCount, "file", "files")}, manifest at ${stored.manifestPath}`,
+      );
     }
     return results.some((result) => result.method === PROBE_METHOD.FAILED) ? 1 : 0;
   } catch (error) {

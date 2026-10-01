@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { WorkflowResult } from "@tariff-radar/probe-core";
 import type { Seed } from "@tariff-radar/registry";
-import { formatTable } from "@tariff-radar/cli";
+import { formatTable, pluralize } from "@tariff-radar/cli";
 
 const seedUS: Seed = {
   isoCode: "US",
@@ -122,5 +122,13 @@ describe("formatTable", () => {
       }),
     ]);
     expect(text).toContain("unknown error (2 attempts)");
+  });
+});
+
+describe("pluralize", () => {
+  it("uses the singular for one and the plural otherwise", () => {
+    expect(pluralize(1, "file", "files")).toBe("1 file");
+    expect(pluralize(0, "entry", "entries")).toBe("0 entries");
+    expect(pluralize(5, "entry", "entries")).toBe("5 entries");
   });
 });

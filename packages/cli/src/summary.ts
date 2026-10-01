@@ -70,3 +70,14 @@ function describeDetail(result: WorkflowResult): string | null {
   }
   return null;
 }
+
+/**
+ * Render a count with the correctly inflected noun (`1 file`, `2 files`).
+ * @param count - The counted quantity.
+ * @param singular - Singular noun for a count of one.
+ * @param plural - Plural noun for any other count.
+ * @returns The count with the correctly inflected noun.
+ */
+export function pluralize(count: number, singular: string, plural: string): string {
+  return `${String(count)} ${count === 1 ? singular : plural}`;
+}
